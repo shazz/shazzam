@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>shazzam.macros.macros API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>shazzam.macros.macros</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import math
+import logging
+from shazzam.py64gen import *
+from shazzam.py64gen import Register as r
+
+logger = logging.getLogger(&#34;shazzam&#34;)
+
+# ------------------------------------------------------------------------
+# add16(res, n1, n2)
+# 16 bits addition
+# ------------------------------------------------------------------------
+def add16(res, n1, n2):
+    clc()
+    lda(abs_adr=n1)
+    adc(abs_adr=n2)
+    sta(abs_adr=res+0)
+    lda(abs_adr=n1+1)
+    adc(abs_adr=n2+1)
+    sta(abs_adr=res+1)
+
+# ------------------------------------------------------------------------
+# add8_to_16(n, val)
+# add a 8bits value to a 16bits value
+# ------------------------------------------------------------------------
+def add8_to_16(n, val):
+    mlabel = get_anonymous_label(&#34;ok&#34;)
+
+    clc()
+    lda(abs_adr=n)
+    adc(value=val)
+    sta(abs_adr=n)
+    bcc(label=mlabel)
+    inc(abs_adr=n+1)
+    label(name=mlabel)
+
+# ------------------------------------------------------------------------
+# sub8_to_16(n, val)
+# substracts a 8bits value to a 16bits value
+# ------------------------------------------------------------------------
+def sub8_to_16(n, val):
+    mlabel = get_anonymous_label(&#34;ok&#34;)
+
+    sec()
+    lda(abs_adr=n)
+    sbc(value=val)
+    sta(abs_adr=n)
+    bcs(label=mlabel)
+    dec(abs_adr=n+1)
+    label(name=mlabel)
+
+# ------------------------------------------------------------------------
+# waste_cycles(n)
+# setup stable raster irq note: cannot be set on a badline or the second
+# interrupt happens before we store the stack pointer (among other things)
+# ------------------------------------------------------------------------
+def waste_cycles(n):
+    nops = math.floor(n/2)
+    rem = n &amp; 1
+    c = n
+    if rem == 0:
+        for i in range(nops):
+            nop()
+            c = c - 2
+    else:
+        for i in range(nops-1):
+            nop()
+            c = c - 2
+        bit(abs_adr=0xfe)
+        c = c - 3
+    if c != 0:
+        logger.error(f&#34;error {c} cycles remaining on {n}&#34;)
+        raise RuntimeError(&#34;should not be here&#34;)
+
+# ------------------------------------------------------------------------------------------
+# clear_screen(clear_byte, screen, use_ptr)
+# clear the ram (all 1024 bytes) from a given address with a given character
+# ------------------------------------------------------------------------------------------
+def clear_screen(clear_byte: int, screen: int, use_ptr: bool):
+    mlabel = get_anonymous_label(&#34;loop&#34;)
+
+    if use_ptr:
+        lda(abs_adr=clear_byte)
+    else:
+        lda(imm=clear_byte)
+    ldx(imm=0)
+    label(mlabel)
+    sta(abs_adr=screen, index=r.X)
+    sta(abs_adr=screen + 0x100, index=r.X)
+    sta(abs_adr=screen + 0x200, index=r.X)
+    sta(abs_adr=screen + 0x300, index=r.X)
+    inx()
+    bne(label=mlabel)
+
+# ------------------------------------------------------------------------------------------
+# basic start
+# generate a compatible basic header
+# ------------------------------------------------------------------------------------------
+def basic_start(addr):
+    with segment(0x0801, &#34;entry&#34;) as s:
+        byte(0x0c)
+        byte(0x08)
+        byte(0x00)
+        byte(0x00)
+        byte(0x9e)
+
+        if (addr &gt;= 10000):
+            byte(0x30 + (addr//10000)%10)
+
+        if (addr &gt;= 1000):
+            byte(0x30 + (addr//1000)%10)
+
+        if (addr &gt;= 100):
+            byte(0x30 + (addr//100)%10)
+
+        if (addr &gt;= 10):
+            byte(0x30 + (addr//10)%10)
+
+        byte(0x30 + addr % 10)
+        byte(0x0, 0x0, 0x0)
+
+        logger.info(f&#34;after basic header, program start at {s.get_stats()[&#39;current_address&#39;]}&#34;)
+
+# ------------------------------------------------------------------------------------------
+# Setup VIC bacnk
+# Usind dd00 or dd02
+# ------------------------------------------------------------------------------------------
+def setup_vic_bank(bank_start, use_dd02):
+
+    def generate_dd00(bank_start):
+        if bank_start == 0:
+            reg = 0b11
+        elif bank_start == 0x4000:
+            reg = 0b10
+        elif bank_start == 0x8000:
+            reg = 0b01
+        elif bank_start == 0xC000:
+            reg = 0b00
+        else:
+            logger.error(f&#34;Unknown bank {bank_start}&#34;)
+
+        return reg
+
+    def generate_dd02(bank_start):
+        if bank_start == 0:
+            reg = 0b00
+        elif bank_start == 0x4000:
+            reg = 0b01          # reverse from d000
+        elif bank_start == 0x8000:
+            reg = 0b10          # reverse from d000
+        elif bank_start == 0xC000:
+            reg = 0b11
+        else:
+            logger.error(f&#34;Unknown bank {bank_start}&#34;)
+
+        return reg
+
+    def generate_full_dd02(bank_start):
+        if bank_start == 0:
+            reg = 0x3c
+        elif bank_start == 0x4000:
+            reg = 0x3d          # reverse from d000
+        elif bank_start == 0x8000:
+            reg = 0x3e          # reverse from d000
+        elif bank_start == 0xC000:
+            reg = 0x3f
+        else:
+            logger.error(f&#34;Unknown bank {bank_start}&#34;)
+
+        return reg
+
+    if use_dd02:
+        dd02 = utils.generate_full_dd02(bank_start)
+
+        logger.info(&#34;bank&#34;, bank_start, BITMAP_ADDR, SCREEN_MEM_ADDR, &#34;dd02&#34;, dd02, &#34;d018&#34;, utils.generate_d018(CHAR_MEM_ADDR, BITMAP_ADDR, SCREEN_MEM_ADDR), d018, &#34;mixed&#34;, (dd02 | d018))
+        lda(imm=dd02)
+        sta(abs_adr=dd02)
+    else:
+        dd00 = utils.generate_dd00(bank_start)
+        lda(imm=dd00)
+        sta(abs_adr=dd00)
+
+# ------------------------------------------------------------------------------------------
+# Generate d018 register
+# ------------------------------------------------------------------------------------------
+def generate_d018(charmem, bitmap, screenmem):
+    mapping_charmem = {
+        0x0000: 0b000,
+        0x0800: 0b001,
+        0x1000: 0b010,
+        0x1800: 0b011,
+        0x2000: 0b100,
+        0x2800: 0b101,
+        0x3000: 0b110,
+        0x3800: 0b111
+    }
+    mapping_bitmap = {
+        0x0000: 0b000,
+        0x2000: 0b100
+    }
+    mapping_screenmem = {
+        0x0000: 0b0000,
+        0x0400: 0b0001,
+        0x0800: 0b0010,
+        0x0C00: 0b0011,
+        0x1000: 0b0100,
+        0x1400: 0b0101,
+        0x1800: 0b0110,
+        0x1C00: 0b0111,
+        0x2000: 0b1000,
+        0x2400: 0b1001,
+        0x2800: 0b1010,
+        0x2C00: 0b1011,
+        0x3000: 0b1100,
+        0x3400: 0b1101,
+        0x3800: 0b1110,
+        0x3C00: 0b1111
+    }
+
+    logger.debug(charmem, mapping_charmem[parseInt(charmem)])
+    logger.debug(bitmap, mapping_bitmap[bitmap])
+    logger.debug(screenmem, mapping_screenmem[screenmem])
+
+    reg = ((mapping_charmem[charmem] &lt;&lt; 1) | (mapping_bitmap[bitmap] &lt;&lt; 1) | (mapping_screenmem[screenmem] &lt;&lt; 4))
+    return reg</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="shazzam.macros.macros.add16"><code class="name flex">
+<span>def <span class="ident">add16</span></span>(<span>res, n1, n2)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add16(res, n1, n2):
+    clc()
+    lda(abs_adr=n1)
+    adc(abs_adr=n2)
+    sta(abs_adr=res+0)
+    lda(abs_adr=n1+1)
+    adc(abs_adr=n2+1)
+    sta(abs_adr=res+1)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros.add8_to_16"><code class="name flex">
+<span>def <span class="ident">add8_to_16</span></span>(<span>n, val)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add8_to_16(n, val):
+    mlabel = get_anonymous_label(&#34;ok&#34;)
+
+    clc()
+    lda(abs_adr=n)
+    adc(value=val)
+    sta(abs_adr=n)
+    bcc(label=mlabel)
+    inc(abs_adr=n+1)
+    label(name=mlabel)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros.basic_start"><code class="name flex">
+<span>def <span class="ident">basic_start</span></span>(<span>addr)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def basic_start(addr):
+    with segment(0x0801, &#34;entry&#34;) as s:
+        byte(0x0c)
+        byte(0x08)
+        byte(0x00)
+        byte(0x00)
+        byte(0x9e)
+
+        if (addr &gt;= 10000):
+            byte(0x30 + (addr//10000)%10)
+
+        if (addr &gt;= 1000):
+            byte(0x30 + (addr//1000)%10)
+
+        if (addr &gt;= 100):
+            byte(0x30 + (addr//100)%10)
+
+        if (addr &gt;= 10):
+            byte(0x30 + (addr//10)%10)
+
+        byte(0x30 + addr % 10)
+        byte(0x0, 0x0, 0x0)
+
+        logger.info(f&#34;after basic header, program start at {s.get_stats()[&#39;current_address&#39;]}&#34;)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros.clear_screen"><code class="name flex">
+<span>def <span class="ident">clear_screen</span></span>(<span>clear_byte: int, screen: int, use_ptr: bool)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clear_screen(clear_byte: int, screen: int, use_ptr: bool):
+    mlabel = get_anonymous_label(&#34;loop&#34;)
+
+    if use_ptr:
+        lda(abs_adr=clear_byte)
+    else:
+        lda(imm=clear_byte)
+    ldx(imm=0)
+    label(mlabel)
+    sta(abs_adr=screen, index=r.X)
+    sta(abs_adr=screen + 0x100, index=r.X)
+    sta(abs_adr=screen + 0x200, index=r.X)
+    sta(abs_adr=screen + 0x300, index=r.X)
+    inx()
+    bne(label=mlabel)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros.generate_d018"><code class="name flex">
+<span>def <span class="ident">generate_d018</span></span>(<span>charmem, bitmap, screenmem)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_d018(charmem, bitmap, screenmem):
+    mapping_charmem = {
+        0x0000: 0b000,
+        0x0800: 0b001,
+        0x1000: 0b010,
+        0x1800: 0b011,
+        0x2000: 0b100,
+        0x2800: 0b101,
+        0x3000: 0b110,
+        0x3800: 0b111
+    }
+    mapping_bitmap = {
+        0x0000: 0b000,
+        0x2000: 0b100
+    }
+    mapping_screenmem = {
+        0x0000: 0b0000,
+        0x0400: 0b0001,
+        0x0800: 0b0010,
+        0x0C00: 0b0011,
+        0x1000: 0b0100,
+        0x1400: 0b0101,
+        0x1800: 0b0110,
+        0x1C00: 0b0111,
+        0x2000: 0b1000,
+        0x2400: 0b1001,
+        0x2800: 0b1010,
+        0x2C00: 0b1011,
+        0x3000: 0b1100,
+        0x3400: 0b1101,
+        0x3800: 0b1110,
+        0x3C00: 0b1111
+    }
+
+    logger.debug(charmem, mapping_charmem[parseInt(charmem)])
+    logger.debug(bitmap, mapping_bitmap[bitmap])
+    logger.debug(screenmem, mapping_screenmem[screenmem])
+
+    reg = ((mapping_charmem[charmem] &lt;&lt; 1) | (mapping_bitmap[bitmap] &lt;&lt; 1) | (mapping_screenmem[screenmem] &lt;&lt; 4))
+    return reg</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros.setup_vic_bank"><code class="name flex">
+<span>def <span class="ident">setup_vic_bank</span></span>(<span>bank_start, use_dd02)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def setup_vic_bank(bank_start, use_dd02):
+
+    def generate_dd00(bank_start):
+        if bank_start == 0:
+            reg = 0b11
+        elif bank_start == 0x4000:
+            reg = 0b10
+        elif bank_start == 0x8000:
+            reg = 0b01
+        elif bank_start == 0xC000:
+            reg = 0b00
+        else:
+            logger.error(f&#34;Unknown bank {bank_start}&#34;)
+
+        return reg
+
+    def generate_dd02(bank_start):
+        if bank_start == 0:
+            reg = 0b00
+        elif bank_start == 0x4000:
+            reg = 0b01          # reverse from d000
+        elif bank_start == 0x8000:
+            reg = 0b10          # reverse from d000
+        elif bank_start == 0xC000:
+            reg = 0b11
+        else:
+            logger.error(f&#34;Unknown bank {bank_start}&#34;)
+
+        return reg
+
+    def generate_full_dd02(bank_start):
+        if bank_start == 0:
+            reg = 0x3c
+        elif bank_start == 0x4000:
+            reg = 0x3d          # reverse from d000
+        elif bank_start == 0x8000:
+            reg = 0x3e          # reverse from d000
+        elif bank_start == 0xC000:
+            reg = 0x3f
+        else:
+            logger.error(f&#34;Unknown bank {bank_start}&#34;)
+
+        return reg
+
+    if use_dd02:
+        dd02 = utils.generate_full_dd02(bank_start)
+
+        logger.info(&#34;bank&#34;, bank_start, BITMAP_ADDR, SCREEN_MEM_ADDR, &#34;dd02&#34;, dd02, &#34;d018&#34;, utils.generate_d018(CHAR_MEM_ADDR, BITMAP_ADDR, SCREEN_MEM_ADDR), d018, &#34;mixed&#34;, (dd02 | d018))
+        lda(imm=dd02)
+        sta(abs_adr=dd02)
+    else:
+        dd00 = utils.generate_dd00(bank_start)
+        lda(imm=dd00)
+        sta(abs_adr=dd00)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros.sub8_to_16"><code class="name flex">
+<span>def <span class="ident">sub8_to_16</span></span>(<span>n, val)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def sub8_to_16(n, val):
+    mlabel = get_anonymous_label(&#34;ok&#34;)
+
+    sec()
+    lda(abs_adr=n)
+    sbc(value=val)
+    sta(abs_adr=n)
+    bcs(label=mlabel)
+    dec(abs_adr=n+1)
+    label(name=mlabel)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros.waste_cycles"><code class="name flex">
+<span>def <span class="ident">waste_cycles</span></span>(<span>n)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def waste_cycles(n):
+    nops = math.floor(n/2)
+    rem = n &amp; 1
+    c = n
+    if rem == 0:
+        for i in range(nops):
+            nop()
+            c = c - 2
+    else:
+        for i in range(nops-1):
+            nop()
+            c = c - 2
+        bit(abs_adr=0xfe)
+        c = c - 3
+    if c != 0:
+        logger.error(f&#34;error {c} cycles remaining on {n}&#34;)
+        raise RuntimeError(&#34;should not be here&#34;)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="shazzam.macros" href="index.html">shazzam.macros</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="two-column">
+<li><code><a title="shazzam.macros.macros.add16" href="#shazzam.macros.macros.add16">add16</a></code></li>
+<li><code><a title="shazzam.macros.macros.add8_to_16" href="#shazzam.macros.macros.add8_to_16">add8_to_16</a></code></li>
+<li><code><a title="shazzam.macros.macros.basic_start" href="#shazzam.macros.macros.basic_start">basic_start</a></code></li>
+<li><code><a title="shazzam.macros.macros.clear_screen" href="#shazzam.macros.macros.clear_screen">clear_screen</a></code></li>
+<li><code><a title="shazzam.macros.macros.generate_d018" href="#shazzam.macros.macros.generate_d018">generate_d018</a></code></li>
+<li><code><a title="shazzam.macros.macros.setup_vic_bank" href="#shazzam.macros.macros.setup_vic_bank">setup_vic_bank</a></code></li>
+<li><code><a title="shazzam.macros.macros.sub8_to_16" href="#shazzam.macros.macros.sub8_to_16">sub8_to_16</a></code></li>
+<li><code><a title="shazzam.macros.macros.waste_cycles" href="#shazzam.macros.macros.waste_cycles">waste_cycles</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

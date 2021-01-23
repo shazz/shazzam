@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>shazzam.Instruction API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>shazzam.Instruction</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import hashlib
+import logging
+
+class Instruction():
+    &#34;&#34;&#34;6502 Instruction class&#34;&#34;&#34;
+    cycle_counts = [
+       # 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+         7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6, # 0
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 1
+         6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6, # 2
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 3
+         6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6, # 4
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 5
+         6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6, # 6
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 7
+         2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, # 8
+         2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5, # 9
+         2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, # A
+         2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4, # B
+         2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, # C
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # D
+         2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, # E
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7  # F
+      ]
+
+    opcodes = [
+        #     0,8           1,9           2,A           3,B           4,C           5,D           6,E           7,F  */
+        [&#34;brk&#34;,&#34;imm&#34;],[&#34;ora&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpg&#34;],[&#34;asl&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 00
+        [&#34;php&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;imm&#34;],[&#34;asl&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abs&#34;],[&#34;asl&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 08
+        [&#34;bpl&#34;,&#34;rel&#34;],[&#34;ora&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpx&#34;],[&#34;asl&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 10
+        [&#34;clc&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abx&#34;],[&#34;asl&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 18
+        [&#34;jsr&#34;,&#34;abs&#34;],[&#34;and&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;bit&#34;,&#34;zpg&#34;],[&#34;and&#34;,&#34;zpg&#34;],[&#34;rol&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 20
+        [&#34;plp&#34;,&#34;imp&#34;],[&#34;and&#34;,&#34;imm&#34;],[&#34;rol&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;bit&#34;,&#34;abs&#34;],[&#34;and&#34;,&#34;abs&#34;],[&#34;rol&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 28
+        [&#34;bmi&#34;,&#34;rel&#34;],[&#34;and&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;and&#34;,&#34;zpx&#34;],[&#34;rol&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 30
+        [&#34;sec&#34;,&#34;imp&#34;],[&#34;and&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;and&#34;,&#34;abx&#34;],[&#34;rol&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 38
+        [&#34;rti&#34;,&#34;imp&#34;],[&#34;eor&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;eor&#34;,&#34;zpg&#34;],[&#34;lsr&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 40
+        [&#34;pha&#34;,&#34;imp&#34;],[&#34;eor&#34;,&#34;imm&#34;],[&#34;lsr&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;jmp&#34;,&#34;abs&#34;],[&#34;eor&#34;,&#34;abs&#34;],[&#34;lsr&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 48
+        [&#34;bvc&#34;,&#34;rel&#34;],[&#34;eor&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;eor&#34;,&#34;zpx&#34;],[&#34;lsr&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 50
+        [&#34;cli&#34;,&#34;imp&#34;],[&#34;eor&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;eor&#34;,&#34;abx&#34;],[&#34;lsr&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 58
+        [&#34;rts&#34;,&#34;imp&#34;],[&#34;adc&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;adc&#34;,&#34;zpg&#34;],[&#34;ror&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 60
+        [&#34;pla&#34;,&#34;imp&#34;],[&#34;adc&#34;,&#34;imm&#34;],[&#34;ror&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;jmp&#34;,&#34;ind&#34;],[&#34;adc&#34;,&#34;abs&#34;],[&#34;ror&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 68
+        [&#34;bvs&#34;,&#34;rel&#34;],[&#34;adc&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;adc&#34;,&#34;zpx&#34;],[&#34;ror&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 70
+        [&#34;sei&#34;,&#34;imp&#34;],[&#34;adc&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;adc&#34;,&#34;abx&#34;],[&#34;ror&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 78
+        [&#34;___&#34;,&#34;___&#34;],[&#34;sta&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sty&#34;,&#34;zpg&#34;],[&#34;sta&#34;,&#34;zpg&#34;],[&#34;stx&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 80
+        [&#34;dey&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;txa&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sty&#34;,&#34;abs&#34;],[&#34;sta&#34;,&#34;abs&#34;],[&#34;stx&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 88
+        [&#34;bcc&#34;,&#34;rel&#34;],[&#34;sta&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sty&#34;,&#34;zpx&#34;],[&#34;sta&#34;,&#34;zpx&#34;],[&#34;stx&#34;,&#34;zpy&#34;],[&#34;___&#34;,&#34;___&#34;],  # 90
+        [&#34;tya&#34;,&#34;imp&#34;],[&#34;sta&#34;,&#34;aby&#34;],[&#34;txs&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sta&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],  # 98
+        [&#34;ldy&#34;,&#34;imm&#34;],[&#34;lda&#34;,&#34;iix&#34;],[&#34;ldx&#34;,&#34;imm&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;zpg&#34;],[&#34;lda&#34;,&#34;zpg&#34;],[&#34;ldx&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # A0
+        [&#34;tay&#34;,&#34;imp&#34;],[&#34;lda&#34;,&#34;imm&#34;],[&#34;tax&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;abs&#34;],[&#34;lda&#34;,&#34;abs&#34;],[&#34;ldx&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # A8
+        [&#34;bcs&#34;,&#34;rel&#34;],[&#34;lda&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;zpx&#34;],[&#34;lda&#34;,&#34;zpx&#34;],[&#34;ldx&#34;,&#34;zpy&#34;],[&#34;___&#34;,&#34;___&#34;],  # B0
+        [&#34;clv&#34;,&#34;imp&#34;],[&#34;lda&#34;,&#34;aby&#34;],[&#34;tsx&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;abx&#34;],[&#34;lda&#34;,&#34;abx&#34;],[&#34;ldx&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],  # B8
+        [&#34;cpy&#34;,&#34;imm&#34;],[&#34;cmp&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpy&#34;,&#34;zpg&#34;],[&#34;cmp&#34;,&#34;zpg&#34;],[&#34;dec&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # C0
+        [&#34;iny&#34;,&#34;imp&#34;],[&#34;cmp&#34;,&#34;imm&#34;],[&#34;dex&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpy&#34;,&#34;abs&#34;],[&#34;cmp&#34;,&#34;abs&#34;],[&#34;dec&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # C8
+        [&#34;bne&#34;,&#34;rel&#34;],[&#34;cmp&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cmp&#34;,&#34;zpx&#34;],[&#34;dec&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # D0
+        [&#34;cld&#34;,&#34;imp&#34;],[&#34;cmp&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cmp&#34;,&#34;abx&#34;],[&#34;dec&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # D8
+        [&#34;cpx&#34;,&#34;imm&#34;],[&#34;sbc&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpx&#34;,&#34;zpg&#34;],[&#34;sbc&#34;,&#34;zpg&#34;],[&#34;inc&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # E0
+        [&#34;inx&#34;,&#34;imp&#34;],[&#34;sbc&#34;,&#34;imm&#34;],[&#34;nop&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpx&#34;,&#34;abs&#34;],[&#34;sbc&#34;,&#34;abs&#34;],[&#34;inc&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # E8
+        [&#34;beq&#34;,&#34;rel&#34;],[&#34;sbc&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sbc&#34;,&#34;zpx&#34;],[&#34;inc&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # F0
+        [&#34;sed&#34;,&#34;imp&#34;],[&#34;sbc&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sbc&#34;,&#34;abx&#34;],[&#34;inc&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;]   # F8
+    ]
+
+    operand_sizes = {
+        &#39;imp&#39;: 0,
+        &#39;imm&#39;: 1,
+        &#39;zpg&#39;: 1,
+        &#39;zpx&#39;: 1,
+        &#39;zpy&#39;: 1,
+        &#39;iix&#39;: 1,
+        &#39;iiy&#39;: 1,
+        &#39;abs&#39;: 2,
+        &#39;abx&#39;: 2,
+        &#39;aby&#39;: 2,
+        &#39;ind&#39;: 2,
+        &#39;rel&#39;: 1,
+        &#39;acc&#39;: 1,
+    }
+
+
+    addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
+    instructions = list(set([opcode[0] for opcode in opcodes]))
+
+    def __init__(self, instruction_name, mode, value: int = None, label: str = None, use_upper: bool = False, use_hex: bool = False):
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            instruction_name ([type]): [description]
+            mode ([type]): [description]
+            value (int, optional): [description]. Defaults to None.
+            label (str, optional): [description]. Defaults to None.
+            use_upper (bool, optional): [description]. Defaults to False.
+            use_hex (bool, optional): [description]. Defaults to False.
+
+        Raises:
+            RuntimeError: [description]
+            ValueError: [description]
+            ValueError: [description]
+        &#34;&#34;&#34;
+        self.logger = logging.getLogger(&#34;shazzam&#34;)
+        self.instruction_name = instruction_name
+        self.mode = mode
+        self.opcode = None
+        self.use_upper = use_upper
+        self.use_hex = use_hex
+
+        try:
+            Instruction.opcodes.index([instruction_name, mode])
+        except ValueError:
+            raise RuntimeError(f&#34;Opcode {instruction_name} cannot be used with mode {mode}&#34;)
+
+        for idx, opcode in enumerate(Instruction.opcodes):
+            if opcode[0] == instruction_name and opcode[1] == mode:
+                self.opcode = idx
+
+        if self.mode not in Instruction.addressing_modes:
+            raise ValueError(f&#34;Unknwon addressing {mode} for instruction {instruction_name}&#34;)
+
+        if self.opcode is None:
+            raise ValueError(f&#34;Unknwon instruction {instruction_name} with addressing mode {mode}&#34;)
+
+        self.label = label
+        self.value = value
+        self.end_address = None
+
+        self.logger.debug(f&#34;instruction created: {self.instruction_name} / {self.opcode} / {self.mode}&#34;)
+
+    def check_constraints(self) -&gt; None:
+        &#34;&#34;&#34;[summary]
+
+        Raises:
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+        &#34;&#34;&#34;
+        if self.mode in [&#39;imm&#39;] and self.value and self.value &gt; 0xff:
+            raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.value}&#34;)
+
+        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.value and self.value &gt; 0xff:
+            raise ValueError(f&#34;Absolute zp address cannot be bigger then a byte! Got: {self.value:04X}&#34;)
+
+        elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.value and self.value &gt; 0xffff:
+            raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
+
+        elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
+            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.value:04X} to {instruction_address:04X}&#34;)
+
+
+    def get_instruction_name(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return self.instruction_name.upper() if self.use_upper else self.instruction_name
+
+    def hash(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return hashlib.md5(str(self).encode()).hexdigest()
+
+    def get_cycle_count(self) -&gt; int:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            int: [description]
+        &#34;&#34;&#34;
+        return Instruction.cycle_counts[self.opcode]
+
+    def get_size(self) -&gt; int:
+        return Instruction.operand_sizes[self.mode] + 1
+
+    def get_opcode(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return self.opcode
+
+    def get_operand(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        val = self.value if self.value is not None else 0
+        self.logger.debug(f&#34;val: {val} - {self.mode}&#34;)
+
+        if self.mode in [&#39;imp&#39;]:
+            return None
+        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;, &#39;acc&#39;]:
+            return (val &amp; 0xff)
+        elif self.mode in [&#39;rel&#39;]:
+            self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
+            return (val &amp; 0xff)
+        else:
+            return (val &amp; 0xffff)
+
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Raises:
+            NotImplementedError: [description]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        if self.mode == &#39;imp&#39;:
+            val = &#34;&#34;
+        elif self.mode == &#39;imm&#39;:
+            if self.use_hex:
+                val = f&#34;#${self.value:02X}&#34; if self.use_upper else f&#34;#${self.value:02x}&#34;
+            else:
+                val = f&#34;#{self.value}&#34;
+
+        elif self.mode == &#39;abs&#39;:
+            if self.value:
+                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+            else:
+                val = self.label
+
+        elif self.mode == &#39;ind&#39;:
+            if self.value:
+                val = f&#34;(${self.value:04X})&#34; if self.use_upper else f&#34;(${self.value:04x})&#34;
+            else:
+                val = f&#34;({self.label})&#34;
+
+        elif self.mode == &#39;zpg&#39;:
+            val = f&#34;${self.value:02X}&#34; if self.use_upper else f&#34;${self.value:02x}&#34;
+
+        elif self.mode == &#39;zpx&#39;:
+            val = f&#34;${self.value:02X},X&#34; if self.use_upper else f&#34;${self.value:02x},x&#34;
+
+        elif self.mode == &#39;zpy&#39;:
+            val = f&#34;${self.value:02X},Y&#34; if self.use_upper else f&#34;${self.value:02x},y&#34;
+
+        elif self.mode == &#39;abx&#39;:
+            if self.value:
+                val = f&#34;${self.value:04X},X&#34; if self.use_upper else f&#34;${self.value:04x},x&#34;
+            else:
+                val = f&#34;{self.label},X&#34; if self.use_upper else f&#34;{self.label},x&#34;
+
+        elif self.mode == &#39;aby&#39;:
+            if self.value:
+                val = f&#34;${self.value:04X},Y&#34; if self.use_upper else f&#34;${self.value:04x},y&#34;
+            else:
+                val = f&#34;{self.label},Y&#34; if self.use_upper else f&#34;{self.label},y&#34;
+
+        elif self.mode == &#39;rel&#39;:
+            if self.label:
+                val = self.label
+            else:
+                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+
+        elif self.mode == &#39;iiy&#39;:
+            if self.value:
+                val = f&#34;(${self.value:04X}),Y&#34; if self.use_upper else f&#34;(${self.value:04x}),y&#34;
+            else:
+                val = f&#34;({self.label}),Y&#34; if self.use_upper else f&#34;({self.label}),y&#34;
+
+        elif self.mode == &#39;iix&#39;:
+            if self.value:
+                val = f&#34;(${self.value:04X},X)&#34; if self.use_upper else f&#34;(${self.value:04x},x)&#34;
+            else:
+                val = f&#34;({self.label},X)&#34; if self.use_upper else f&#34;({self.label},x)&#34;
+
+        else:
+            raise NotImplementedError(f&#34;Model {self.mode}&#34;)
+
+        return f&#34;{self.get_instruction_name()} {val}&#34;</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="shazzam.Instruction.Instruction"><code class="flex name class">
+<span>class <span class="ident">Instruction</span></span>
+<span>(</span><span>instruction_name, mode, value: int = None, label: str = None, use_upper: bool = False, use_hex: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>6502 Instruction class</p>
+<p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>instruction_name</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>mode</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>value</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>[description]. Defaults to None.</dd>
+<dt><strong><code>label</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>[description]. Defaults to None.</dd>
+<dt><strong><code>use_upper</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>[description]. Defaults to False.</dd>
+<dt><strong><code>use_hex</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>[description]. Defaults to False.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>RuntimeError</code></dt>
+<dd>[description]</dd>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Instruction():
+    &#34;&#34;&#34;6502 Instruction class&#34;&#34;&#34;
+    cycle_counts = [
+       # 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+         7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6, # 0
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 1
+         6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6, # 2
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 3
+         6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6, # 4
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 5
+         6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6, # 6
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 7
+         2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, # 8
+         2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5, # 9
+         2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, # A
+         2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4, # B
+         2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, # C
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # D
+         2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, # E
+         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7  # F
+      ]
+
+    opcodes = [
+        #     0,8           1,9           2,A           3,B           4,C           5,D           6,E           7,F  */
+        [&#34;brk&#34;,&#34;imm&#34;],[&#34;ora&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpg&#34;],[&#34;asl&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 00
+        [&#34;php&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;imm&#34;],[&#34;asl&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abs&#34;],[&#34;asl&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 08
+        [&#34;bpl&#34;,&#34;rel&#34;],[&#34;ora&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpx&#34;],[&#34;asl&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 10
+        [&#34;clc&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abx&#34;],[&#34;asl&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 18
+        [&#34;jsr&#34;,&#34;abs&#34;],[&#34;and&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;bit&#34;,&#34;zpg&#34;],[&#34;and&#34;,&#34;zpg&#34;],[&#34;rol&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 20
+        [&#34;plp&#34;,&#34;imp&#34;],[&#34;and&#34;,&#34;imm&#34;],[&#34;rol&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;bit&#34;,&#34;abs&#34;],[&#34;and&#34;,&#34;abs&#34;],[&#34;rol&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 28
+        [&#34;bmi&#34;,&#34;rel&#34;],[&#34;and&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;and&#34;,&#34;zpx&#34;],[&#34;rol&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 30
+        [&#34;sec&#34;,&#34;imp&#34;],[&#34;and&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;and&#34;,&#34;abx&#34;],[&#34;rol&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 38
+        [&#34;rti&#34;,&#34;imp&#34;],[&#34;eor&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;eor&#34;,&#34;zpg&#34;],[&#34;lsr&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 40
+        [&#34;pha&#34;,&#34;imp&#34;],[&#34;eor&#34;,&#34;imm&#34;],[&#34;lsr&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;jmp&#34;,&#34;abs&#34;],[&#34;eor&#34;,&#34;abs&#34;],[&#34;lsr&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 48
+        [&#34;bvc&#34;,&#34;rel&#34;],[&#34;eor&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;eor&#34;,&#34;zpx&#34;],[&#34;lsr&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 50
+        [&#34;cli&#34;,&#34;imp&#34;],[&#34;eor&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;eor&#34;,&#34;abx&#34;],[&#34;lsr&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 58
+        [&#34;rts&#34;,&#34;imp&#34;],[&#34;adc&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;adc&#34;,&#34;zpg&#34;],[&#34;ror&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 60
+        [&#34;pla&#34;,&#34;imp&#34;],[&#34;adc&#34;,&#34;imm&#34;],[&#34;ror&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;jmp&#34;,&#34;ind&#34;],[&#34;adc&#34;,&#34;abs&#34;],[&#34;ror&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 68
+        [&#34;bvs&#34;,&#34;rel&#34;],[&#34;adc&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;adc&#34;,&#34;zpx&#34;],[&#34;ror&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 70
+        [&#34;sei&#34;,&#34;imp&#34;],[&#34;adc&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;adc&#34;,&#34;abx&#34;],[&#34;ror&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 78
+        [&#34;___&#34;,&#34;___&#34;],[&#34;sta&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sty&#34;,&#34;zpg&#34;],[&#34;sta&#34;,&#34;zpg&#34;],[&#34;stx&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 80
+        [&#34;dey&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;txa&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sty&#34;,&#34;abs&#34;],[&#34;sta&#34;,&#34;abs&#34;],[&#34;stx&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 88
+        [&#34;bcc&#34;,&#34;rel&#34;],[&#34;sta&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sty&#34;,&#34;zpx&#34;],[&#34;sta&#34;,&#34;zpx&#34;],[&#34;stx&#34;,&#34;zpy&#34;],[&#34;___&#34;,&#34;___&#34;],  # 90
+        [&#34;tya&#34;,&#34;imp&#34;],[&#34;sta&#34;,&#34;aby&#34;],[&#34;txs&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sta&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],  # 98
+        [&#34;ldy&#34;,&#34;imm&#34;],[&#34;lda&#34;,&#34;iix&#34;],[&#34;ldx&#34;,&#34;imm&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;zpg&#34;],[&#34;lda&#34;,&#34;zpg&#34;],[&#34;ldx&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # A0
+        [&#34;tay&#34;,&#34;imp&#34;],[&#34;lda&#34;,&#34;imm&#34;],[&#34;tax&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;abs&#34;],[&#34;lda&#34;,&#34;abs&#34;],[&#34;ldx&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # A8
+        [&#34;bcs&#34;,&#34;rel&#34;],[&#34;lda&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;zpx&#34;],[&#34;lda&#34;,&#34;zpx&#34;],[&#34;ldx&#34;,&#34;zpy&#34;],[&#34;___&#34;,&#34;___&#34;],  # B0
+        [&#34;clv&#34;,&#34;imp&#34;],[&#34;lda&#34;,&#34;aby&#34;],[&#34;tsx&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ldy&#34;,&#34;abx&#34;],[&#34;lda&#34;,&#34;abx&#34;],[&#34;ldx&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],  # B8
+        [&#34;cpy&#34;,&#34;imm&#34;],[&#34;cmp&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpy&#34;,&#34;zpg&#34;],[&#34;cmp&#34;,&#34;zpg&#34;],[&#34;dec&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # C0
+        [&#34;iny&#34;,&#34;imp&#34;],[&#34;cmp&#34;,&#34;imm&#34;],[&#34;dex&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpy&#34;,&#34;abs&#34;],[&#34;cmp&#34;,&#34;abs&#34;],[&#34;dec&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # C8
+        [&#34;bne&#34;,&#34;rel&#34;],[&#34;cmp&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cmp&#34;,&#34;zpx&#34;],[&#34;dec&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # D0
+        [&#34;cld&#34;,&#34;imp&#34;],[&#34;cmp&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cmp&#34;,&#34;abx&#34;],[&#34;dec&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # D8
+        [&#34;cpx&#34;,&#34;imm&#34;],[&#34;sbc&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpx&#34;,&#34;zpg&#34;],[&#34;sbc&#34;,&#34;zpg&#34;],[&#34;inc&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # E0
+        [&#34;inx&#34;,&#34;imp&#34;],[&#34;sbc&#34;,&#34;imm&#34;],[&#34;nop&#34;,&#34;imp&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;cpx&#34;,&#34;abs&#34;],[&#34;sbc&#34;,&#34;abs&#34;],[&#34;inc&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # E8
+        [&#34;beq&#34;,&#34;rel&#34;],[&#34;sbc&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sbc&#34;,&#34;zpx&#34;],[&#34;inc&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # F0
+        [&#34;sed&#34;,&#34;imp&#34;],[&#34;sbc&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;sbc&#34;,&#34;abx&#34;],[&#34;inc&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;]   # F8
+    ]
+
+    operand_sizes = {
+        &#39;imp&#39;: 0,
+        &#39;imm&#39;: 1,
+        &#39;zpg&#39;: 1,
+        &#39;zpx&#39;: 1,
+        &#39;zpy&#39;: 1,
+        &#39;iix&#39;: 1,
+        &#39;iiy&#39;: 1,
+        &#39;abs&#39;: 2,
+        &#39;abx&#39;: 2,
+        &#39;aby&#39;: 2,
+        &#39;ind&#39;: 2,
+        &#39;rel&#39;: 1,
+        &#39;acc&#39;: 1,
+    }
+
+
+    addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
+    instructions = list(set([opcode[0] for opcode in opcodes]))
+
+    def __init__(self, instruction_name, mode, value: int = None, label: str = None, use_upper: bool = False, use_hex: bool = False):
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            instruction_name ([type]): [description]
+            mode ([type]): [description]
+            value (int, optional): [description]. Defaults to None.
+            label (str, optional): [description]. Defaults to None.
+            use_upper (bool, optional): [description]. Defaults to False.
+            use_hex (bool, optional): [description]. Defaults to False.
+
+        Raises:
+            RuntimeError: [description]
+            ValueError: [description]
+            ValueError: [description]
+        &#34;&#34;&#34;
+        self.logger = logging.getLogger(&#34;shazzam&#34;)
+        self.instruction_name = instruction_name
+        self.mode = mode
+        self.opcode = None
+        self.use_upper = use_upper
+        self.use_hex = use_hex
+
+        try:
+            Instruction.opcodes.index([instruction_name, mode])
+        except ValueError:
+            raise RuntimeError(f&#34;Opcode {instruction_name} cannot be used with mode {mode}&#34;)
+
+        for idx, opcode in enumerate(Instruction.opcodes):
+            if opcode[0] == instruction_name and opcode[1] == mode:
+                self.opcode = idx
+
+        if self.mode not in Instruction.addressing_modes:
+            raise ValueError(f&#34;Unknwon addressing {mode} for instruction {instruction_name}&#34;)
+
+        if self.opcode is None:
+            raise ValueError(f&#34;Unknwon instruction {instruction_name} with addressing mode {mode}&#34;)
+
+        self.label = label
+        self.value = value
+        self.end_address = None
+
+        self.logger.debug(f&#34;instruction created: {self.instruction_name} / {self.opcode} / {self.mode}&#34;)
+
+    def check_constraints(self) -&gt; None:
+        &#34;&#34;&#34;[summary]
+
+        Raises:
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+            ValueError: [description]
+        &#34;&#34;&#34;
+        if self.mode in [&#39;imm&#39;] and self.value and self.value &gt; 0xff:
+            raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.value}&#34;)
+
+        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.value and self.value &gt; 0xff:
+            raise ValueError(f&#34;Absolute zp address cannot be bigger then a byte! Got: {self.value:04X}&#34;)
+
+        elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.value and self.value &gt; 0xffff:
+            raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
+
+        elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
+            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.value:04X} to {instruction_address:04X}&#34;)
+
+
+    def get_instruction_name(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return self.instruction_name.upper() if self.use_upper else self.instruction_name
+
+    def hash(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return hashlib.md5(str(self).encode()).hexdigest()
+
+    def get_cycle_count(self) -&gt; int:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            int: [description]
+        &#34;&#34;&#34;
+        return Instruction.cycle_counts[self.opcode]
+
+    def get_size(self) -&gt; int:
+        return Instruction.operand_sizes[self.mode] + 1
+
+    def get_opcode(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return self.opcode
+
+    def get_operand(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        val = self.value if self.value is not None else 0
+        self.logger.debug(f&#34;val: {val} - {self.mode}&#34;)
+
+        if self.mode in [&#39;imp&#39;]:
+            return None
+        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;, &#39;acc&#39;]:
+            return (val &amp; 0xff)
+        elif self.mode in [&#39;rel&#39;]:
+            self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
+            return (val &amp; 0xff)
+        else:
+            return (val &amp; 0xffff)
+
+    def __str__(self) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Raises:
+            NotImplementedError: [description]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        if self.mode == &#39;imp&#39;:
+            val = &#34;&#34;
+        elif self.mode == &#39;imm&#39;:
+            if self.use_hex:
+                val = f&#34;#${self.value:02X}&#34; if self.use_upper else f&#34;#${self.value:02x}&#34;
+            else:
+                val = f&#34;#{self.value}&#34;
+
+        elif self.mode == &#39;abs&#39;:
+            if self.value:
+                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+            else:
+                val = self.label
+
+        elif self.mode == &#39;ind&#39;:
+            if self.value:
+                val = f&#34;(${self.value:04X})&#34; if self.use_upper else f&#34;(${self.value:04x})&#34;
+            else:
+                val = f&#34;({self.label})&#34;
+
+        elif self.mode == &#39;zpg&#39;:
+            val = f&#34;${self.value:02X}&#34; if self.use_upper else f&#34;${self.value:02x}&#34;
+
+        elif self.mode == &#39;zpx&#39;:
+            val = f&#34;${self.value:02X},X&#34; if self.use_upper else f&#34;${self.value:02x},x&#34;
+
+        elif self.mode == &#39;zpy&#39;:
+            val = f&#34;${self.value:02X},Y&#34; if self.use_upper else f&#34;${self.value:02x},y&#34;
+
+        elif self.mode == &#39;abx&#39;:
+            if self.value:
+                val = f&#34;${self.value:04X},X&#34; if self.use_upper else f&#34;${self.value:04x},x&#34;
+            else:
+                val = f&#34;{self.label},X&#34; if self.use_upper else f&#34;{self.label},x&#34;
+
+        elif self.mode == &#39;aby&#39;:
+            if self.value:
+                val = f&#34;${self.value:04X},Y&#34; if self.use_upper else f&#34;${self.value:04x},y&#34;
+            else:
+                val = f&#34;{self.label},Y&#34; if self.use_upper else f&#34;{self.label},y&#34;
+
+        elif self.mode == &#39;rel&#39;:
+            if self.label:
+                val = self.label
+            else:
+                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+
+        elif self.mode == &#39;iiy&#39;:
+            if self.value:
+                val = f&#34;(${self.value:04X}),Y&#34; if self.use_upper else f&#34;(${self.value:04x}),y&#34;
+            else:
+                val = f&#34;({self.label}),Y&#34; if self.use_upper else f&#34;({self.label}),y&#34;
+
+        elif self.mode == &#39;iix&#39;:
+            if self.value:
+                val = f&#34;(${self.value:04X},X)&#34; if self.use_upper else f&#34;(${self.value:04x},x)&#34;
+            else:
+                val = f&#34;({self.label},X)&#34; if self.use_upper else f&#34;({self.label},x)&#34;
+
+        else:
+            raise NotImplementedError(f&#34;Model {self.mode}&#34;)
+
+        return f&#34;{self.get_instruction_name()} {val}&#34;</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="shazzam.ByteData.ByteData" href="ByteData.html#shazzam.ByteData.ByteData">ByteData</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="shazzam.Instruction.Instruction.addressing_modes"><code class="name">var <span class="ident">addressing_modes</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Instruction.Instruction.cycle_counts"><code class="name">var <span class="ident">cycle_counts</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Instruction.Instruction.instructions"><code class="name">var <span class="ident">instructions</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Instruction.Instruction.opcodes"><code class="name">var <span class="ident">opcodes</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Instruction.Instruction.operand_sizes"><code class="name">var <span class="ident">operand_sizes</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="shazzam.Instruction.Instruction.check_constraints"><code class="name flex">
+<span>def <span class="ident">check_constraints</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def check_constraints(self) -&gt; None:
+    &#34;&#34;&#34;[summary]
+
+    Raises:
+        ValueError: [description]
+        ValueError: [description]
+        ValueError: [description]
+        ValueError: [description]
+    &#34;&#34;&#34;
+    if self.mode in [&#39;imm&#39;] and self.value and self.value &gt; 0xff:
+        raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.value}&#34;)
+
+    elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.value and self.value &gt; 0xff:
+        raise ValueError(f&#34;Absolute zp address cannot be bigger then a byte! Got: {self.value:04X}&#34;)
+
+    elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.value and self.value &gt; 0xffff:
+        raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
+
+    elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
+        raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.value:04X} to {instruction_address:04X}&#34;)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Instruction.Instruction.get_cycle_count"><code class="name flex">
+<span>def <span class="ident">get_cycle_count</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_cycle_count(self) -&gt; int:
+    &#34;&#34;&#34;[summary]
+
+    Returns:
+        int: [description]
+    &#34;&#34;&#34;
+    return Instruction.cycle_counts[self.opcode]</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Instruction.Instruction.get_instruction_name"><code class="name flex">
+<span>def <span class="ident">get_instruction_name</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_instruction_name(self) -&gt; str:
+    &#34;&#34;&#34;[summary]
+
+    Returns:
+        str: [description]
+    &#34;&#34;&#34;
+    return self.instruction_name.upper() if self.use_upper else self.instruction_name</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Instruction.Instruction.get_opcode"><code class="name flex">
+<span>def <span class="ident">get_opcode</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_opcode(self) -&gt; str:
+    &#34;&#34;&#34;[summary]
+
+    Returns:
+        str: [description]
+    &#34;&#34;&#34;
+    return self.opcode</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Instruction.Instruction.get_operand"><code class="name flex">
+<span>def <span class="ident">get_operand</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_operand(self) -&gt; str:
+    &#34;&#34;&#34;[summary]
+
+    Returns:
+        str: [description]
+    &#34;&#34;&#34;
+    val = self.value if self.value is not None else 0
+    self.logger.debug(f&#34;val: {val} - {self.mode}&#34;)
+
+    if self.mode in [&#39;imp&#39;]:
+        return None
+    elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;, &#39;acc&#39;]:
+        return (val &amp; 0xff)
+    elif self.mode in [&#39;rel&#39;]:
+        self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
+        return (val &amp; 0xff)
+    else:
+        return (val &amp; 0xffff)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Instruction.Instruction.get_size"><code class="name flex">
+<span>def <span class="ident">get_size</span></span>(<span>self) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_size(self) -&gt; int:
+    return Instruction.operand_sizes[self.mode] + 1</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Instruction.Instruction.hash"><code class="name flex">
+<span>def <span class="ident">hash</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def hash(self) -&gt; str:
+    &#34;&#34;&#34;[summary]
+
+    Returns:
+        str: [description]
+    &#34;&#34;&#34;
+    return hashlib.md5(str(self).encode()).hexdigest()</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="shazzam" href="index.html">shazzam</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="shazzam.Instruction.Instruction" href="#shazzam.Instruction.Instruction">Instruction</a></code></h4>
+<ul class="">
+<li><code><a title="shazzam.Instruction.Instruction.addressing_modes" href="#shazzam.Instruction.Instruction.addressing_modes">addressing_modes</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.check_constraints" href="#shazzam.Instruction.Instruction.check_constraints">check_constraints</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.cycle_counts" href="#shazzam.Instruction.Instruction.cycle_counts">cycle_counts</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.get_cycle_count" href="#shazzam.Instruction.Instruction.get_cycle_count">get_cycle_count</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.get_instruction_name" href="#shazzam.Instruction.Instruction.get_instruction_name">get_instruction_name</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.get_opcode" href="#shazzam.Instruction.Instruction.get_opcode">get_opcode</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.get_operand" href="#shazzam.Instruction.Instruction.get_operand">get_operand</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.get_size" href="#shazzam.Instruction.Instruction.get_size">get_size</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.hash" href="#shazzam.Instruction.Instruction.hash">hash</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.instructions" href="#shazzam.Instruction.Instruction.instructions">instructions</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.opcodes" href="#shazzam.Instruction.Instruction.opcodes">opcodes</a></code></li>
+<li><code><a title="shazzam.Instruction.Instruction.operand_sizes" href="#shazzam.Instruction.Instruction.operand_sizes">operand_sizes</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

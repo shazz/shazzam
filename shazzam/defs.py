@@ -1,0 +1,41 @@
+from enum import Enum, auto
+
+class Alias(dict):
+    """dot.notation access to dictionary attributes"""
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+class Register(Enum):
+    A = 0
+    X = 1
+    Y = 2
+
+class CodeFormat(Enum):
+    BYTECODE = auto()
+    ADDRESS = auto()
+    CYCLES = auto()
+    UPPERCASE = auto()
+    USE_HEX = auto()
+
+class CommentsFormat(Enum):
+    USE_SEMICOLON = auto()
+    USE_SLASH = auto()
+    USE_SHARP = auto()
+
+class DirectiveFormat(Enum):
+    NO_PREFIX = auto()
+    USE_DOT = auto()
+    USE_EXCLAMATION = auto()
+
+class LabelFormat(Enum):
+    NO_PREFIX = auto()
+    USE_DOT = auto()
+
+class DetectMode(Enum):
+    AUTO = 0
+    MANUAL = 1
+
+class System(Enum):
+    PAL = 63
+    NTSC = 65

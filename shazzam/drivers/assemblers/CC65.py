@@ -36,6 +36,8 @@ class CC65(Assembler):
     LOADADDR: load = LOADADDR, type = ro;
     EXEHDR:   load = MAIN,     type = ro,  optional = yes;
     CODE:     load = MAIN,     type = rw;
+    DATA:     load = MAIN,     type = rw,  optional = yes;
+    BSS:      load = MAIN,     type = bss, optional = yes, define = yes;
 %%
 }
 """
@@ -53,6 +55,22 @@ class CC65(Assembler):
         """
         return "CODE"
 
+    def get_data_segment(self) -> str:
+        """get_data_segment
+
+        Returns:
+            str: [description]
+        """
+        return "DATA"
+
+    def get_bss_segment(self) -> str:
+        """get_bss_segment
+
+        Returns:
+            str: [description]
+        """
+        return "BSS"
+
     def get_code_format(self):
         """get_code_format
 
@@ -60,8 +78,7 @@ class CC65(Assembler):
             [type]: [description]
         """
         return Alias( {
-            "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
-            # "code": [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
+            "code": [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
             "comments": CommentsFormat.USE_SEMICOLON,
             "directive": DirectiveFormat.USE_DOT
         })
@@ -131,11 +148,11 @@ class CC65(Assembler):
         # gen memory
         entry_point_found = False
         for i, segment in enumerate(program.segments):
-            if segment.name == "CODE":
+            if segment.name in ["CODE", "DATA", "BSS"]:
                 entry_point_found = True
 
         if entry_point_found is False:
-            raise RuntimeError(f"Entry point in CODE segment not found!")
+            raise RuntimeError(f"Entry point in CODE, DATA or BSS segment not found!")
 
         # find segment next to BASIC header
         sorted_segments_adr = sorted([segment.start_adr for segment in program.segments])
@@ -148,7 +165,7 @@ class CC65(Assembler):
 
         mem_lines = ""
         for i, segment in enumerate(program.segments):
-            if segment.name != "CODE":
+            if segment.name not in ["CODE", "DATA", "BSS"]:
                 if i < len(program.segments)-1:
                     seg_size = program.segments[i+1].start_adr - segment.start_adr
                 else:
@@ -162,7 +179,7 @@ class CC65(Assembler):
         # gen segments
         seg_lines = ""
         for segment in program.segments:
-            if segment.name != "CODE":
+            if segment.name not in ["CODE", "DATA", "BSS"]:
                 seg_lines += f"\t{segment.name}:\tload = {segment.name},\ttype = rw, optional = no, define = yes;\n"
 
         self.logger.debug(f"Adding lines: {seg_lines}")

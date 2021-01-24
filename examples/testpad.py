@@ -34,13 +34,20 @@ def code():
         sta(at("test"))
         sta(at("test"),x)
         sta(at("test"),y)
+
+    with segment(0x0801, assembler.get_data_segment()) as s:
         label("test")
         for i in range(10):
+            byte(i)
+        nop()
+        label("test2")
+        for i in range(3):
             byte(i)
 
 
     # generate listing
-    gen_code("helloworld")
+    gen_code("testpad", prefs=prefs)
+    gen_listing("testpad")
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)

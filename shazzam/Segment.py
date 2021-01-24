@@ -90,6 +90,21 @@ class Segment():
         self.rasterlines = {}
         self.anonymous_labels = {}
 
+    def change_format(self):
+
+        code_format = g._CODE_FORMAT
+        comments_format = g._COMMENTS_FORMAT
+        directive_prefix = g._DIRECTIVE_PREFIX
+
+        self.logger.debug(f"Reset Prefs: {code_format} / {comments_format} / {directive_prefix}")
+
+        self.show_address = True if CodeFormat.ADDRESS in code_format else False
+        self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
+        self.show_cycles = True if CodeFormat.CYCLES in code_format else False
+        self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
+        self.use_hex = True if CodeFormat.USE_HEX in code_format else False
+        self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
+
     def close(self) -> None:
         """[summary]
         """
@@ -338,7 +353,7 @@ class Segment():
 
                         for row in range(nb_rows):
 
-                            r_label = [k for k,v in self.labels.items() if v == adr+(row*8)]
+                            r_label = [k for k,v in self.labels.items() if v.value == adr+(row*8)]
                             s_label = f"{r_label[0]}:" if r_label else ""
 
                             s_address = f"{adr+(row*8)-address_offset:04X}:" if self.show_address else ""
@@ -367,7 +382,10 @@ class Segment():
                             code.append(line)
                     else:
                         s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
-                        s_label = f"{label[0]}:" if label else ""
+
+                        r_label = [k for k,v in self.labels.items() if v.value == adr]
+                        s_label = f"{r_label[0]}:" if r_label else ""
+
                         bcode = ""
                         for b in range(nb_bytes):
                             bytedata = self.instructions[adr+b]

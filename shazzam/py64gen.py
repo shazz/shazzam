@@ -16,7 +16,7 @@ from shazzam.Immediate import Immediate
 from shazzam.Cruncher import Cruncher
 from shazzam.Assembler import Assembler
 
-from typing import List, Any
+from typing import List, Any, Dict
 
 
 # ---------------------------------------------------------------------
@@ -96,7 +96,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER.close()
     g._CURRENT_RASTER = None
 
-def gen_code(prg_name: str, header: str = None) -> None:
+def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -> None:
     """[summary]
 
     Args:
@@ -112,13 +112,52 @@ def gen_code(prg_name: str, header: str = None) -> None:
         header += "; \n"
         header += "; https://github.com/shazz/shazzam\n\n"
 
+    if prefs:
+        g.logger.debug(f"Setting assembler pref: {prefs}")
+        set_prefs(code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+
     for segment in g._PROGRAM.segments:
 
+        segment.change_format()
         code = segment.gen_code()
 
         if code:
             os.makedirs(f"generated/{g._PROGRAM.name}", exist_ok = True)
             with open(f"generated/{g._PROGRAM.name}/{segment.name}.asm", "w") as f:
+                f.writelines(header)
+                f.writelines(code)
+
+def gen_listing(prg_name: str, header: str = None) -> None:
+    """[summary] gen_listing
+
+    Args:
+        header (str, optional): [description]. Defaults to None.
+    """
+    global _PROGRAM
+
+    g._PROGRAM.set_name(prg_name)
+
+    if header is None:
+        header  = "; Generated listing using Shazzam py64gen\n"
+        header += "; Copyright (C) 2021 TRSi\n"
+        header += "; \n"
+        header += "; https://github.com/shazz/shazzam\n\n"
+
+    prefs = Alias( {
+            "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
+            "comments": CommentsFormat.USE_SEMICOLON,
+            "directive": DirectiveFormat.USE_DOT
+        })
+    set_prefs(code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+
+    for segment in g._PROGRAM.segments:
+
+        segment.change_format()
+        code = segment.gen_code()
+
+        if code:
+            os.makedirs(f"generated/{g._PROGRAM.name}", exist_ok = True)
+            with open(f"generated/{g._PROGRAM.name}/{segment.name}.lst", "w") as f:
                 f.writelines(header)
                 f.writelines(code)
 

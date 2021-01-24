@@ -229,20 +229,20 @@ def gen_sparkle_script():
 # Assembler directives
 # ---------------------------------------------------------------------
 def at(value: Any) -> Address:
-    if isinstance(value, str):
+    if isinstance(value, str) and value != "":
         return Address(name=value)
     elif isinstance(value, int):
         return Address(value=value)
     else:
-        raise ValueError("Address must be an int or a string")
+        raise ValueError("Address must be an int or a non empty string")
 
 def ind_at(value: Any) -> Address:
-    if isinstance(value, str):
+    if isinstance(value, str) and value != "":
         return Address(name=value, indirect=True)
     elif isinstance(value, int):
         return Address(value=value, indirect=True)
     else:
-        raise ValueError("Address must be an int or a string")
+        raise ValueError("Address must be an int or a non empty string")
 
 def imm(value: Any) -> Immediate:
     if isinstance(value, str):
@@ -454,7 +454,7 @@ def _create_a_function(*args, **kwargs):
         #            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', abs_adr))
 
         if 'abx' in modes and index is RegisterX and not address.indirect:
-            if address.value:
+            if address.value is not None:
                 if 'zpx' in modes and address.value < 0x100:
                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
                 elif address.value > 0x100:
@@ -464,7 +464,7 @@ def _create_a_function(*args, **kwargs):
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', address=address))
 
         if 'aby' in modes and index is RegisterY and not address.indirect:
-            if address.value:
+            if address.value is not None:
                 if 'zpy' in modes and address.value < 0x100:
                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', address=address))
                 elif address.value > 0x100:
@@ -474,10 +474,10 @@ def _create_a_function(*args, **kwargs):
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', address=address))
 
         if 'abs' in modes and index is None and address and not address.indirect:
-            if address.value:
+            if address.value is not None:
                 if 'zpg' in modes and address.value < 0x100:
                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpg', address=address))
-                elif address.value > 0x100:
+                elif address.value >= 0x100:
                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
             else:
                 adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -505,16 +505,15 @@ def _create_a_function(*args, **kwargs):
             if address.value and address.value <= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iiy', address=address))
 
-
         if 'acc' in modes and index is Register.A:
              return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'acc'))
 
         if 'ind' in modes:
-            if label:
-                adr = g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', label=label))
-            elif ind_adr is not None:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', value=ind_adr))
+            if address.value :
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', address=address))
+            else:
+                adr = g._CURRENT_CONTEXT.need_label(address.name)
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', address=address))
 
         raise NotImplementedError(f"No condition for {mnemonic} and args: {args}. Possible modes: {modes}")
 

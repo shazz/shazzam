@@ -3,7 +3,7 @@
 import sys
 sys.path.append(".")
 from shazzam.py64gen import *
-from shazzam.py64gen import Register as r
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
 import pytest
 from pytest_cases import parametrize_with_cases
@@ -24,31 +24,31 @@ def test_lda():
 
     with segment(0x0, "lda_imm") as s:
         for i in range(255+1):
-            assert lda(imm=i) == bytearray([Instruction.opcodes.index(["lda","imm"]), i])
+            assert lda(imm(i)) == bytearray([Instruction.opcodes.index(["lda","imm"]), i]), f"error for i = {i}"
 
         with pytest.raises(ValueError):
-            lda(imm=256)
+            lda(imm(256))
         with pytest.raises(ValueError):
-            lda(imm=1000)
+            lda(imm(1000))
 
-    with segment(0x0, "lda_abs_zpg") as s:
+    with segment(0x1000, "lda_abs_zpg") as s:
         for i in range(0x100):
-            assert lda(abs_adr=i) == bytearray([Instruction.opcodes.index(["lda","zpg"]), i & 0xff])
+            assert lda(at(i)) == bytearray([Instruction.opcodes.index(["lda","zpg"]), i & 0xff]), f"error for i = {i}"
 
         for i in range(0x100, 0xffff+1):
-            assert lda(abs_adr=i) == bytearray([Instruction.opcodes.index(["lda","abs"]), i & 0xff, (i >>8) & 0xff])
+            assert lda(at(i)) == bytearray([Instruction.opcodes.index(["lda","abs"]), i & 0xff, (i >>8) & 0xff]), f"error for i = {i}"
 
         with pytest.raises(ValueError):
-            lda(abs_adr=0x10000)
+            lda(at(0x10000))
 
-    with segment(0x0, "lda_abs_label") as s:
+    with segment(0x2000, "lda_abs_label") as s:
         label("label1")
-        lda(label="label1")
+        lda(at("label1"))
 
-        # with pytest.raises(ValueError):
-        #     lda(label="")
+        with pytest.raises(ValueError):
+            lda(at(""))
 
     # with pytest.raises(ValueError):
-    #     with segment(0x0, "lda_abs_label") as s:
-    #         lda(label="label2")
+    #     with segment(0x3000, "lda_abs_label") as s:
+    #         lda(at("label2"))
 

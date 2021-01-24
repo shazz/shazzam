@@ -1,7 +1,10 @@
+import logging
 
 class Address():
 
     def __init__(self, name: str = None, value: int = None, indirect: bool = False):
+
+        self.logger = logging.getLogger("shazzam")
 
         if name is None and value is None:
             raise ValueError("Address is void")
@@ -21,10 +24,11 @@ class Address():
             return None
 
         if self._add_modifier:
-            self._value += self._add_modifier
+            self.logger.debug(f"Adding {self._add_modifier} to {self._value} = {self._value + self._add_modifier}")
+            return self._value + self._add_modifier
 
         if self._sub_modifier:
-            self._value -= self._sub_modifier
+            return self._value - self._sub_modifier
 
         return self._value
 
@@ -36,10 +40,14 @@ class Address():
          self._value = val
 
     def __add__(self, adder):
+        self.logger.debug(f"Adding {adder} to {self.name}")
         self._add_modifier = adder
+        return self
 
     def __sub__(self, subber):
+        self.logger.debug(f"Substracting {subber} to {self.name}")
         self._sub_modifier = subber
+        return self
 
     def __str__(self):
         if self._value and self.name:

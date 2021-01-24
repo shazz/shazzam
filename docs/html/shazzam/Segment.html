@@ -29,9 +29,11 @@
 <pre><code class="python">import shazzam.globals as g
 from shazzam.defs import *
 from shazzam.Instruction import Instruction
+from shazzam.Address import Address
 from shazzam.ByteData import ByteData
 from shazzam.Rasterline import Rasterline
 from shazzam.Emu6502 import Emu6502
+from shazzam.Immediate import Immediate
 
 import binascii
 from typing import List
@@ -107,12 +109,32 @@ class Segment():
         self.show_cycles = True if CodeFormat.CYCLES in code_format else False
         self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
         self.use_hex = True if CodeFormat.USE_HEX in code_format else False
+        self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
 
         self.comment_char = Segment.comments_chars[comments_format]
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
 
         self.rasterlines = {}
         self.anonymous_labels = {}
+
+    @property
+    def size(self):
+        return self.end_adr - self.start_adr
+
+    def change_format(self):
+
+        code_format = g._CODE_FORMAT
+        comments_format = g._COMMENTS_FORMAT
+        directive_prefix = g._DIRECTIVE_PREFIX
+
+        self.logger.debug(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
+
+        self.show_address = True if CodeFormat.ADDRESS in code_format else False
+        self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
+        self.show_cycles = True if CodeFormat.CYCLES in code_format else False
+        self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
+        self.use_hex = True if CodeFormat.USE_HEX in code_format else False
+        self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
 
     def close(self) -&gt; None:
         &#34;&#34;&#34;[summary]
@@ -140,25 +162,31 @@ class Segment():
             self.logger.debug(f&#34;Adding {instr} to rasterline&#34;)
             g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
-        return self.get_bytecode(instr)
+        bcode, resolved = self.get_bytecode(instr)
 
-    def add_byte(self, value: int, label: str = None) -&gt; None:
+        if not resolved:
+            g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later!&#34;)
+            return None
+
+        return bcode
+
+    def add_byte(self, immediate: Immediate) -&gt; None:
         &#34;&#34;&#34;[summary]
 
         Args:
-            value (int): [description]
-            label (str, optional): [description]. Defaults to None.
+            immediate (Immediate): [description]
 
         Returns:
             [type]: [description]
         &#34;&#34;&#34;
-        data = ByteData(value, label)
+        data = ByteData(immediate)
         self.instructions[self.next_position] = data
         self.next_position += 1
+        self.logger.debug(f&#34;dded byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
 
         return self.get_bytecode(data)
 
-    def add_label(self, name: str) -&gt; int:
+    def add_label(self, name: str) -&gt; Address:
         &#34;&#34;&#34;Add segment label
 
         Args:
@@ -168,40 +196,31 @@ class Segment():
             ValueError: [description]
 
         Returns:
-            int: [description]
+            Address: [description]
         &#34;&#34;&#34;
         if name in self.labels:
             raise ValueError(f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
 
-        self.labels[name] = self.next_position
+        self.labels[name] = Address(name=name, value=self.next_position)
 
         return self.labels[name]
 
-    def get_address(self, label: str) -&gt; int:
-        &#34;&#34;&#34;[summary]
+    def get_label(self, name: str) -&gt; Address:
 
-        Args:
-            label (str): [description]
+        if name not in self.labels:
+            self.logger.warning(f&#34;label &#39;{name}&#39; cannot be found in segment&#34;)
+            raise ValueError(f&#34;Cannot find label &#39;{name}&#39; in segment&#34;)
 
-        Raises:
-            ValueError: [description]
+        return self.labels[name]
 
-        Returns:
-            int: [description]
-        &#34;&#34;&#34;
-        if label not in self.labels:
-            raise ValueError(f&#34;Cannot find label {label}&#34;)
-
-        return self.labels[label]
-
-    def need_label(self, label: str, relative: bool = False) -&gt; None:
+    def need_label(self, name: str, relative: bool = False) -&gt; None:
         &#34;&#34;&#34;[summary]
 
         Args:
             label (str): [description]
             relative (bool, optional): [description]. Defaults to False.
         &#34;&#34;&#34;
-        self.required_labels[label] = {
+        self.required_labels[name] = {
             &#34;from&#34;: self.next_position,
             &#34;relative&#34;: relative
         }
@@ -212,7 +231,10 @@ class Segment():
 
         bytecode = bytearray([])
         for adr, instr in self.instructions.items():
-            bytecode += self.get_bytecode(instr)
+            bcode, resolved = self.get_bytecode(instr)
+            if not resolved:
+                raise ValueError(&#34;Bytecodecannot be generated yet&#34;)
+            bytecode += bcode
 
         return bytecode
 
@@ -225,7 +247,8 @@ class Segment():
         Returns:
             bytearray: [description]
         &#34;&#34;&#34;
-        ope = instr.get_operand()
+        # print(instr.get_operand())
+        ope, resolved = instr.get_operand()
         op = instr.get_opcode()
 
         if ope is not None:
@@ -241,7 +264,7 @@ class Segment():
 
         self.logger.debug(f&#34;Got bytecode for {instr}: {data}&#34;)
 
-        return bytearray(data)
+        return bytearray(data), resolved
 
     def resolve_labels(self) -&gt; None:
         &#34;&#34;&#34;Replace all instructions with their absolute address.
@@ -251,33 +274,55 @@ class Segment():
             ValueError: [description]
         &#34;&#34;&#34;
         # check labels
+        self.logger.debug(f&#34;Required labels: {self.required_labels}&#34;)
         for label, params in self.required_labels.items():
+
             if (label not in self.labels) and (label not in g._PROGRAM.global_labels):
                 print(&#34;global:&#34;, g._PROGRAM.global_labels)
                 raise ValueError(f&#34;Label {label} is used but not defined locally or globally!&#34;)
 
-            if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label]) &gt; 255:
+            if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label].address) &gt; 255:
                 raise ValueError(f&#34;Label {label} branch at {params[&#39;from&#39;]} is more than 1 bytes!&#34;)
 
         # resolve labels now!
         for adr, instr in self.instructions.items():
-            if instr.label:
-                if instr.label in self.labels:
+            self.logger.debug(f&#34;Checking label for {instr} at {adr:04X}&#34;)
 
+            if instr.immediate and instr.immediate.name:
+                self.logger.debug(f&#34;-&gt; immediate label name: {instr.immediate.name}&#34;)
+
+                if instr.immediate.name in self.labels:
                     if self.use_relative_addressing:
-
-                        instr.value = self.labels[instr.label] - adr - instr.get_size() if adr &lt; self.labels[instr.label] else adr - self.labels[instr.label] - instr.get_size()
-                        self.logger.info(f&#34;Use relative addressing to label {instr.label} at {self.labels[instr.label]:04X} from {adr:04X} will be: {instr.value}&#34;)
+                        instr.immediate.value = self.labels[instr.label.name].address - adr - instr.get_size() if adr &lt; self.labels[instr.label] else adr - self.labels[instr.label] - instr.get_size()
+                        self.logger.info(f&#34;Use relative addressing to label {instr.label} at {self.labels[instr.label.address]:04X} from {adr:04X} will be: {instr.value}&#34;)
 
                     else:
-                        instr.value = self.labels[instr.label]
+                        val = self.labels[instr.immediate.name].value &amp; 0xff if not instr.immediate.high_byte else (self.labels[instr.immediate.name].value &gt;&gt; 8) &amp; 0xff
 
-                elif instr.label in g._PROGRAM.global_labels:
-                    instr.value = g._PROGRAM.global_labels[instr.label]
+                        instr.immediate.value = val
+                        instr.immediate.name = self.labels[instr.immediate.name].name
+
+                elif instr.immediate.name in g._PROGRAM.global_labels:
+                    val = g._PROGRAM.global_labels[instr.immediate.name].value &amp; 0xff if not instr.immediate.high_byte else (g._PROGRAM.global_labels[instr.immediate.name].value &gt;&gt; 8) &amp; 0xff
+
+                    instr.immediate.value = val
+                    instr.immediate.name = g._PROGRAM.global_labels[instr.immediate.name].name
                 else:
                     raise ValueError(f&#34;Label {label} cannot be resolved locally or globally!&#34;)
 
-                self.logger.debug(f&#34;Label {instr.label} replaced by absolute address {instr.value:04X}&#34;)
+            elif instr.address and instr.address.name:
+                self.logger.debug(f&#34;-&gt; address label name: {instr.address.name}&#34;)
+                if instr.address.name in self.labels:
+                    instr.address.value = self.labels[instr.address.name].value
+                    instr.address.name = self.labels[instr.address.name].name
+
+                elif instr.address.name in g._PROGRAM.global_labels:
+                    instr.address.value = g._PROGRAM.global_labels[instr.address.name].value
+                    instr.address.name = g._PROGRAM.global_labels[instr.address.name].name
+                else:
+                    raise ValueError(f&#34;Label {label} cannot be resolved locally or globally!&#34;)
+
+                self.logger.debug(f&#34;Label {instr.address.name} replaced by absolute address {instr.address.value:04X}&#34;)
 
     def gen_code(self) -&gt; None:
         &#34;&#34;&#34;Generates assembly code.
@@ -308,7 +353,7 @@ class Segment():
             if self.use_hex:
                 instr.use_hex = True
 
-            label = [k for k,v in self.labels.items() if v == adr]
+            label = [k for k,v in self.labels.items() if v.value == adr]
 
             # substract start address if relative addressing
             address_offset = self.start_adr if self.use_relative_addressing else 0
@@ -339,14 +384,18 @@ class Segment():
 
                         for row in range(nb_rows):
 
-                            r_label = [k for k,v in self.labels.items() if v == adr+(row*8)]
+                            r_label = [k for k,v in self.labels.items() if v.value == adr+(row*8)]
                             s_label = f&#34;{r_label[0]}:&#34; if r_label else &#34;&#34;
 
                             s_address = f&#34;{adr+(row*8)-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
                             bcode = &#34;&#34;
                             for b in range(min(8, nb_bytes-(8*row))):
                                 bytedata = self.instructions[adr+(row*8)+b]
-                                bcode += str(binascii.hexlify(self.get_bytecode(bytedata)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
+                                g_bcode, resolved = self.get_bytecode(bytedata)
+                                if not resolved:
+                                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                                bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
                             bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                             bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -364,11 +413,18 @@ class Segment():
                             code.append(line)
                     else:
                         s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
-                        s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
+
+                        r_label = [k for k,v in self.labels.items() if v.value == adr]
+                        s_label = f&#34;{r_label[0]}:&#34; if r_label else &#34;&#34;
+
                         bcode = &#34;&#34;
                         for b in range(nb_bytes):
                             bytedata = self.instructions[adr+b]
-                            bcode += str(binascii.hexlify(self.get_bytecode(bytedata)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
+                            g_bcode, resolved = self.get_bytecode(bytedata)
+                            if not resolved:
+                                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                            bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
                         bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                         bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -389,7 +445,10 @@ class Segment():
                 s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
                 s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
 
-                bcode = str(binascii.hexlify(self.get_bytecode(instr)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
+                g_bcode, resolved = self.get_bytecode(instr)
+                if not resolved:
+                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
                 bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
                 s_bytecode = f&#34;{bcode}&#34; if self.show_bytecode else &#34;&#34;
@@ -429,9 +488,9 @@ class Segment():
 
         self.logger.info(f&#34;Emulating from {self.start_adr:04X}, to {self.next_position:04X} starting at {start_address:04X}&#34;)
 
-        cpu_state = emu.load_and_run(ram, self.start_adr, self.next_position, start_address)
+        cpu_state, mmu_state = emu.load_and_run(ram, self.start_adr, self.next_position, start_address)
 
-        return cpu_state
+        return cpu_state, mmu_state
 
     def get_last_instruction(self) -&gt; Instruction:
         &#34;&#34;&#34;[summary]
@@ -577,12 +636,32 @@ class Segment():
         self.show_cycles = True if CodeFormat.CYCLES in code_format else False
         self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
         self.use_hex = True if CodeFormat.USE_HEX in code_format else False
+        self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
 
         self.comment_char = Segment.comments_chars[comments_format]
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
 
         self.rasterlines = {}
         self.anonymous_labels = {}
+
+    @property
+    def size(self):
+        return self.end_adr - self.start_adr
+
+    def change_format(self):
+
+        code_format = g._CODE_FORMAT
+        comments_format = g._COMMENTS_FORMAT
+        directive_prefix = g._DIRECTIVE_PREFIX
+
+        self.logger.debug(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
+
+        self.show_address = True if CodeFormat.ADDRESS in code_format else False
+        self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
+        self.show_cycles = True if CodeFormat.CYCLES in code_format else False
+        self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
+        self.use_hex = True if CodeFormat.USE_HEX in code_format else False
+        self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
 
     def close(self) -&gt; None:
         &#34;&#34;&#34;[summary]
@@ -610,25 +689,31 @@ class Segment():
             self.logger.debug(f&#34;Adding {instr} to rasterline&#34;)
             g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
-        return self.get_bytecode(instr)
+        bcode, resolved = self.get_bytecode(instr)
 
-    def add_byte(self, value: int, label: str = None) -&gt; None:
+        if not resolved:
+            g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later!&#34;)
+            return None
+
+        return bcode
+
+    def add_byte(self, immediate: Immediate) -&gt; None:
         &#34;&#34;&#34;[summary]
 
         Args:
-            value (int): [description]
-            label (str, optional): [description]. Defaults to None.
+            immediate (Immediate): [description]
 
         Returns:
             [type]: [description]
         &#34;&#34;&#34;
-        data = ByteData(value, label)
+        data = ByteData(immediate)
         self.instructions[self.next_position] = data
         self.next_position += 1
+        self.logger.debug(f&#34;dded byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
 
         return self.get_bytecode(data)
 
-    def add_label(self, name: str) -&gt; int:
+    def add_label(self, name: str) -&gt; Address:
         &#34;&#34;&#34;Add segment label
 
         Args:
@@ -638,40 +723,31 @@ class Segment():
             ValueError: [description]
 
         Returns:
-            int: [description]
+            Address: [description]
         &#34;&#34;&#34;
         if name in self.labels:
             raise ValueError(f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
 
-        self.labels[name] = self.next_position
+        self.labels[name] = Address(name=name, value=self.next_position)
 
         return self.labels[name]
 
-    def get_address(self, label: str) -&gt; int:
-        &#34;&#34;&#34;[summary]
+    def get_label(self, name: str) -&gt; Address:
 
-        Args:
-            label (str): [description]
+        if name not in self.labels:
+            self.logger.warning(f&#34;label &#39;{name}&#39; cannot be found in segment&#34;)
+            raise ValueError(f&#34;Cannot find label &#39;{name}&#39; in segment&#34;)
 
-        Raises:
-            ValueError: [description]
+        return self.labels[name]
 
-        Returns:
-            int: [description]
-        &#34;&#34;&#34;
-        if label not in self.labels:
-            raise ValueError(f&#34;Cannot find label {label}&#34;)
-
-        return self.labels[label]
-
-    def need_label(self, label: str, relative: bool = False) -&gt; None:
+    def need_label(self, name: str, relative: bool = False) -&gt; None:
         &#34;&#34;&#34;[summary]
 
         Args:
             label (str): [description]
             relative (bool, optional): [description]. Defaults to False.
         &#34;&#34;&#34;
-        self.required_labels[label] = {
+        self.required_labels[name] = {
             &#34;from&#34;: self.next_position,
             &#34;relative&#34;: relative
         }
@@ -682,7 +758,10 @@ class Segment():
 
         bytecode = bytearray([])
         for adr, instr in self.instructions.items():
-            bytecode += self.get_bytecode(instr)
+            bcode, resolved = self.get_bytecode(instr)
+            if not resolved:
+                raise ValueError(&#34;Bytecodecannot be generated yet&#34;)
+            bytecode += bcode
 
         return bytecode
 
@@ -695,7 +774,8 @@ class Segment():
         Returns:
             bytearray: [description]
         &#34;&#34;&#34;
-        ope = instr.get_operand()
+        # print(instr.get_operand())
+        ope, resolved = instr.get_operand()
         op = instr.get_opcode()
 
         if ope is not None:
@@ -711,7 +791,7 @@ class Segment():
 
         self.logger.debug(f&#34;Got bytecode for {instr}: {data}&#34;)
 
-        return bytearray(data)
+        return bytearray(data), resolved
 
     def resolve_labels(self) -&gt; None:
         &#34;&#34;&#34;Replace all instructions with their absolute address.
@@ -721,33 +801,55 @@ class Segment():
             ValueError: [description]
         &#34;&#34;&#34;
         # check labels
+        self.logger.debug(f&#34;Required labels: {self.required_labels}&#34;)
         for label, params in self.required_labels.items():
+
             if (label not in self.labels) and (label not in g._PROGRAM.global_labels):
                 print(&#34;global:&#34;, g._PROGRAM.global_labels)
                 raise ValueError(f&#34;Label {label} is used but not defined locally or globally!&#34;)
 
-            if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label]) &gt; 255:
+            if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label].address) &gt; 255:
                 raise ValueError(f&#34;Label {label} branch at {params[&#39;from&#39;]} is more than 1 bytes!&#34;)
 
         # resolve labels now!
         for adr, instr in self.instructions.items():
-            if instr.label:
-                if instr.label in self.labels:
+            self.logger.debug(f&#34;Checking label for {instr} at {adr:04X}&#34;)
 
+            if instr.immediate and instr.immediate.name:
+                self.logger.debug(f&#34;-&gt; immediate label name: {instr.immediate.name}&#34;)
+
+                if instr.immediate.name in self.labels:
                     if self.use_relative_addressing:
-
-                        instr.value = self.labels[instr.label] - adr - instr.get_size() if adr &lt; self.labels[instr.label] else adr - self.labels[instr.label] - instr.get_size()
-                        self.logger.info(f&#34;Use relative addressing to label {instr.label} at {self.labels[instr.label]:04X} from {adr:04X} will be: {instr.value}&#34;)
+                        instr.immediate.value = self.labels[instr.label.name].address - adr - instr.get_size() if adr &lt; self.labels[instr.label] else adr - self.labels[instr.label] - instr.get_size()
+                        self.logger.info(f&#34;Use relative addressing to label {instr.label} at {self.labels[instr.label.address]:04X} from {adr:04X} will be: {instr.value}&#34;)
 
                     else:
-                        instr.value = self.labels[instr.label]
+                        val = self.labels[instr.immediate.name].value &amp; 0xff if not instr.immediate.high_byte else (self.labels[instr.immediate.name].value &gt;&gt; 8) &amp; 0xff
 
-                elif instr.label in g._PROGRAM.global_labels:
-                    instr.value = g._PROGRAM.global_labels[instr.label]
+                        instr.immediate.value = val
+                        instr.immediate.name = self.labels[instr.immediate.name].name
+
+                elif instr.immediate.name in g._PROGRAM.global_labels:
+                    val = g._PROGRAM.global_labels[instr.immediate.name].value &amp; 0xff if not instr.immediate.high_byte else (g._PROGRAM.global_labels[instr.immediate.name].value &gt;&gt; 8) &amp; 0xff
+
+                    instr.immediate.value = val
+                    instr.immediate.name = g._PROGRAM.global_labels[instr.immediate.name].name
                 else:
                     raise ValueError(f&#34;Label {label} cannot be resolved locally or globally!&#34;)
 
-                self.logger.debug(f&#34;Label {instr.label} replaced by absolute address {instr.value:04X}&#34;)
+            elif instr.address and instr.address.name:
+                self.logger.debug(f&#34;-&gt; address label name: {instr.address.name}&#34;)
+                if instr.address.name in self.labels:
+                    instr.address.value = self.labels[instr.address.name].value
+                    instr.address.name = self.labels[instr.address.name].name
+
+                elif instr.address.name in g._PROGRAM.global_labels:
+                    instr.address.value = g._PROGRAM.global_labels[instr.address.name].value
+                    instr.address.name = g._PROGRAM.global_labels[instr.address.name].name
+                else:
+                    raise ValueError(f&#34;Label {label} cannot be resolved locally or globally!&#34;)
+
+                self.logger.debug(f&#34;Label {instr.address.name} replaced by absolute address {instr.address.value:04X}&#34;)
 
     def gen_code(self) -&gt; None:
         &#34;&#34;&#34;Generates assembly code.
@@ -778,7 +880,7 @@ class Segment():
             if self.use_hex:
                 instr.use_hex = True
 
-            label = [k for k,v in self.labels.items() if v == adr]
+            label = [k for k,v in self.labels.items() if v.value == adr]
 
             # substract start address if relative addressing
             address_offset = self.start_adr if self.use_relative_addressing else 0
@@ -809,14 +911,18 @@ class Segment():
 
                         for row in range(nb_rows):
 
-                            r_label = [k for k,v in self.labels.items() if v == adr+(row*8)]
+                            r_label = [k for k,v in self.labels.items() if v.value == adr+(row*8)]
                             s_label = f&#34;{r_label[0]}:&#34; if r_label else &#34;&#34;
 
                             s_address = f&#34;{adr+(row*8)-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
                             bcode = &#34;&#34;
                             for b in range(min(8, nb_bytes-(8*row))):
                                 bytedata = self.instructions[adr+(row*8)+b]
-                                bcode += str(binascii.hexlify(self.get_bytecode(bytedata)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
+                                g_bcode, resolved = self.get_bytecode(bytedata)
+                                if not resolved:
+                                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                                bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
                             bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                             bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -834,11 +940,18 @@ class Segment():
                             code.append(line)
                     else:
                         s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
-                        s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
+
+                        r_label = [k for k,v in self.labels.items() if v.value == adr]
+                        s_label = f&#34;{r_label[0]}:&#34; if r_label else &#34;&#34;
+
                         bcode = &#34;&#34;
                         for b in range(nb_bytes):
                             bytedata = self.instructions[adr+b]
-                            bcode += str(binascii.hexlify(self.get_bytecode(bytedata)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
+                            g_bcode, resolved = self.get_bytecode(bytedata)
+                            if not resolved:
+                                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                            bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
                         bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                         bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -859,7 +972,10 @@ class Segment():
                 s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
                 s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
 
-                bcode = str(binascii.hexlify(self.get_bytecode(instr)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
+                g_bcode, resolved = self.get_bytecode(instr)
+                if not resolved:
+                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
                 bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
                 s_bytecode = f&#34;{bcode}&#34; if self.show_bytecode else &#34;&#34;
@@ -899,9 +1015,9 @@ class Segment():
 
         self.logger.info(f&#34;Emulating from {self.start_adr:04X}, to {self.next_position:04X} starting at {start_address:04X}&#34;)
 
-        cpu_state = emu.load_and_run(ram, self.start_adr, self.next_position, start_address)
+        cpu_state, mmu_state = emu.load_and_run(ram, self.start_adr, self.next_position, start_address)
 
-        return cpu_state
+        return cpu_state, mmu_state
 
     def get_last_instruction(self) -&gt; Instruction:
         &#34;&#34;&#34;[summary]
@@ -975,19 +1091,32 @@ class Segment():
 <div class="desc"></div>
 </dd>
 </dl>
+<h3>Instance variables</h3>
+<dl>
+<dt id="shazzam.Segment.Segment.size"><code class="name">var <span class="ident">size</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def size(self):
+    return self.end_adr - self.start_adr</code></pre>
+</details>
+</dd>
+</dl>
 <h3>Methods</h3>
 <dl>
 <dt id="shazzam.Segment.Segment.add_byte"><code class="name flex">
-<span>def <span class="ident">add_byte</span></span>(<span>self, value: int, label: str = None) ‑> NoneType</span>
+<span>def <span class="ident">add_byte</span></span>(<span>self, immediate: <a title="shazzam.Immediate.Immediate" href="Immediate.html#shazzam.Immediate.Immediate">Immediate</a>) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>value</code></strong> :&ensp;<code>int</code></dt>
+<dt><strong><code>immediate</code></strong> :&ensp;<code>Immediate</code></dt>
 <dd>[description]</dd>
-<dt><strong><code>label</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>[description]. Defaults to None.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -998,19 +1127,19 @@ class Segment():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def add_byte(self, value: int, label: str = None) -&gt; None:
+<pre><code class="python">def add_byte(self, immediate: Immediate) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
-        value (int): [description]
-        label (str, optional): [description]. Defaults to None.
+        immediate (Immediate): [description]
 
     Returns:
         [type]: [description]
     &#34;&#34;&#34;
-    data = ByteData(value, label)
+    data = ByteData(immediate)
     self.instructions[self.next_position] = data
     self.next_position += 1
+    self.logger.debug(f&#34;dded byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
 
     return self.get_bytecode(data)</code></pre>
 </details>
@@ -1055,11 +1184,17 @@ class Segment():
         self.logger.debug(f&#34;Adding {instr} to rasterline&#34;)
         g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
-    return self.get_bytecode(instr)</code></pre>
+    bcode, resolved = self.get_bytecode(instr)
+
+    if not resolved:
+        g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later!&#34;)
+        return None
+
+    return bcode</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.add_label"><code class="name flex">
-<span>def <span class="ident">add_label</span></span>(<span>self, name: str) ‑> int</span>
+<span>def <span class="ident">add_label</span></span>(<span>self, name: str) ‑> <a title="shazzam.Address.Address" href="Address.html#shazzam.Address.Address">Address</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>Add segment label</p>
@@ -1075,14 +1210,14 @@ class Segment():
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>int</code></dt>
+<dt><code>Address</code></dt>
 <dd>[description]</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def add_label(self, name: str) -&gt; int:
+<pre><code class="python">def add_label(self, name: str) -&gt; Address:
     &#34;&#34;&#34;Add segment label
 
     Args:
@@ -1092,12 +1227,12 @@ class Segment():
         ValueError: [description]
 
     Returns:
-        int: [description]
+        Address: [description]
     &#34;&#34;&#34;
     if name in self.labels:
         raise ValueError(f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
 
-    self.labels[name] = self.next_position
+    self.labels[name] = Address(name=name, value=self.next_position)
 
     return self.labels[name]</code></pre>
 </details>
@@ -1126,6 +1261,31 @@ class Segment():
         rasterline (Rasterline): [description]
     &#34;&#34;&#34;
     self.rasterlines[index] = rasterline</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Segment.Segment.change_format"><code class="name flex">
+<span>def <span class="ident">change_format</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def change_format(self):
+
+    code_format = g._CODE_FORMAT
+    comments_format = g._COMMENTS_FORMAT
+    directive_prefix = g._DIRECTIVE_PREFIX
+
+    self.logger.debug(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
+
+    self.show_address = True if CodeFormat.ADDRESS in code_format else False
+    self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
+    self.show_cycles = True if CodeFormat.CYCLES in code_format else False
+    self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
+    self.use_hex = True if CodeFormat.USE_HEX in code_format else False
+    self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.close"><code class="name flex">
@@ -1179,9 +1339,9 @@ class Segment():
 
     self.logger.info(f&#34;Emulating from {self.start_adr:04X}, to {self.next_position:04X} starting at {start_address:04X}&#34;)
 
-    cpu_state = emu.load_and_run(ram, self.start_adr, self.next_position, start_address)
+    cpu_state, mmu_state = emu.load_and_run(ram, self.start_adr, self.next_position, start_address)
 
-    return cpu_state</code></pre>
+    return cpu_state, mmu_state</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.gen_code"><code class="name flex">
@@ -1227,7 +1387,7 @@ class Segment():
         if self.use_hex:
             instr.use_hex = True
 
-        label = [k for k,v in self.labels.items() if v == adr]
+        label = [k for k,v in self.labels.items() if v.value == adr]
 
         # substract start address if relative addressing
         address_offset = self.start_adr if self.use_relative_addressing else 0
@@ -1258,14 +1418,18 @@ class Segment():
 
                     for row in range(nb_rows):
 
-                        r_label = [k for k,v in self.labels.items() if v == adr+(row*8)]
+                        r_label = [k for k,v in self.labels.items() if v.value == adr+(row*8)]
                         s_label = f&#34;{r_label[0]}:&#34; if r_label else &#34;&#34;
 
                         s_address = f&#34;{adr+(row*8)-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
                         bcode = &#34;&#34;
                         for b in range(min(8, nb_bytes-(8*row))):
                             bytedata = self.instructions[adr+(row*8)+b]
-                            bcode += str(binascii.hexlify(self.get_bytecode(bytedata)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
+                            g_bcode, resolved = self.get_bytecode(bytedata)
+                            if not resolved:
+                                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                            bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
                         bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                         bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1283,11 +1447,18 @@ class Segment():
                         code.append(line)
                 else:
                     s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
-                    s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
+
+                    r_label = [k for k,v in self.labels.items() if v.value == adr]
+                    s_label = f&#34;{r_label[0]}:&#34; if r_label else &#34;&#34;
+
                     bcode = &#34;&#34;
                     for b in range(nb_bytes):
                         bytedata = self.instructions[adr+b]
-                        bcode += str(binascii.hexlify(self.get_bytecode(bytedata)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
+                        g_bcode, resolved = self.get_bytecode(bytedata)
+                        if not resolved:
+                            raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                        bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
                     bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                     bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1308,7 +1479,10 @@ class Segment():
             s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
             s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
 
-            bcode = str(binascii.hexlify(self.get_bytecode(instr)))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
+            g_bcode, resolved = self.get_bytecode(instr)
+            if not resolved:
+                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+            bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
             bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
             s_bytecode = f&#34;{bcode}&#34; if self.show_bytecode else &#34;&#34;
@@ -1330,48 +1504,6 @@ class Segment():
             code.append(line)
 
     return code</code></pre>
-</details>
-</dd>
-<dt id="shazzam.Segment.Segment.get_address"><code class="name flex">
-<span>def <span class="ident">get_address</span></span>(<span>self, label: str) ‑> int</span>
-</code></dt>
-<dd>
-<div class="desc"><p>[summary]</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>label</code></strong> :&ensp;<code>str</code></dt>
-<dd>[description]</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>ValueError</code></dt>
-<dd>[description]</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>int</code></dt>
-<dd>[description]</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_address(self, label: str) -&gt; int:
-    &#34;&#34;&#34;[summary]
-
-    Args:
-        label (str): [description]
-
-    Raises:
-        ValueError: [description]
-
-    Returns:
-        int: [description]
-    &#34;&#34;&#34;
-    if label not in self.labels:
-        raise ValueError(f&#34;Cannot find label {label}&#34;)
-
-    return self.labels[label]</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.get_anonymous_label"><code class="name flex">
@@ -1438,7 +1570,8 @@ class Segment():
     Returns:
         bytearray: [description]
     &#34;&#34;&#34;
-    ope = instr.get_operand()
+    # print(instr.get_operand())
+    ope, resolved = instr.get_operand()
     op = instr.get_opcode()
 
     if ope is not None:
@@ -1454,7 +1587,25 @@ class Segment():
 
     self.logger.debug(f&#34;Got bytecode for {instr}: {data}&#34;)
 
-    return bytearray(data)</code></pre>
+    return bytearray(data), resolved</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Segment.Segment.get_label"><code class="name flex">
+<span>def <span class="ident">get_label</span></span>(<span>self, name: str) ‑> <a title="shazzam.Address.Address" href="Address.html#shazzam.Address.Address">Address</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_label(self, name: str) -&gt; Address:
+
+    if name not in self.labels:
+        self.logger.warning(f&#34;label &#39;{name}&#39; cannot be found in segment&#34;)
+        raise ValueError(f&#34;Cannot find label &#39;{name}&#39; in segment&#34;)
+
+    return self.labels[name]</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.get_last_instruction"><code class="name flex">
@@ -1496,7 +1647,10 @@ class Segment():
 
     bytecode = bytearray([])
     for adr, instr in self.instructions.items():
-        bytecode += self.get_bytecode(instr)
+        bcode, resolved = self.get_bytecode(instr)
+        if not resolved:
+            raise ValueError(&#34;Bytecodecannot be generated yet&#34;)
+        bytecode += bcode
 
     return bytecode</code></pre>
 </details>
@@ -1540,7 +1694,7 @@ class Segment():
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.need_label"><code class="name flex">
-<span>def <span class="ident">need_label</span></span>(<span>self, label: str, relative: bool = False) ‑> NoneType</span>
+<span>def <span class="ident">need_label</span></span>(<span>self, name: str, relative: bool = False) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -1555,14 +1709,14 @@ class Segment():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def need_label(self, label: str, relative: bool = False) -&gt; None:
+<pre><code class="python">def need_label(self, name: str, relative: bool = False) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
         label (str): [description]
         relative (bool, optional): [description]. Defaults to False.
     &#34;&#34;&#34;
-    self.required_labels[label] = {
+    self.required_labels[name] = {
         &#34;from&#34;: self.next_position,
         &#34;relative&#34;: relative
     }</code></pre>
@@ -1592,33 +1746,55 @@ class Segment():
         ValueError: [description]
     &#34;&#34;&#34;
     # check labels
+    self.logger.debug(f&#34;Required labels: {self.required_labels}&#34;)
     for label, params in self.required_labels.items():
+
         if (label not in self.labels) and (label not in g._PROGRAM.global_labels):
             print(&#34;global:&#34;, g._PROGRAM.global_labels)
             raise ValueError(f&#34;Label {label} is used but not defined locally or globally!&#34;)
 
-        if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label]) &gt; 255:
+        if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label].address) &gt; 255:
             raise ValueError(f&#34;Label {label} branch at {params[&#39;from&#39;]} is more than 1 bytes!&#34;)
 
     # resolve labels now!
     for adr, instr in self.instructions.items():
-        if instr.label:
-            if instr.label in self.labels:
+        self.logger.debug(f&#34;Checking label for {instr} at {adr:04X}&#34;)
 
+        if instr.immediate and instr.immediate.name:
+            self.logger.debug(f&#34;-&gt; immediate label name: {instr.immediate.name}&#34;)
+
+            if instr.immediate.name in self.labels:
                 if self.use_relative_addressing:
-
-                    instr.value = self.labels[instr.label] - adr - instr.get_size() if adr &lt; self.labels[instr.label] else adr - self.labels[instr.label] - instr.get_size()
-                    self.logger.info(f&#34;Use relative addressing to label {instr.label} at {self.labels[instr.label]:04X} from {adr:04X} will be: {instr.value}&#34;)
+                    instr.immediate.value = self.labels[instr.label.name].address - adr - instr.get_size() if adr &lt; self.labels[instr.label] else adr - self.labels[instr.label] - instr.get_size()
+                    self.logger.info(f&#34;Use relative addressing to label {instr.label} at {self.labels[instr.label.address]:04X} from {adr:04X} will be: {instr.value}&#34;)
 
                 else:
-                    instr.value = self.labels[instr.label]
+                    val = self.labels[instr.immediate.name].value &amp; 0xff if not instr.immediate.high_byte else (self.labels[instr.immediate.name].value &gt;&gt; 8) &amp; 0xff
 
-            elif instr.label in g._PROGRAM.global_labels:
-                instr.value = g._PROGRAM.global_labels[instr.label]
+                    instr.immediate.value = val
+                    instr.immediate.name = self.labels[instr.immediate.name].name
+
+            elif instr.immediate.name in g._PROGRAM.global_labels:
+                val = g._PROGRAM.global_labels[instr.immediate.name].value &amp; 0xff if not instr.immediate.high_byte else (g._PROGRAM.global_labels[instr.immediate.name].value &gt;&gt; 8) &amp; 0xff
+
+                instr.immediate.value = val
+                instr.immediate.name = g._PROGRAM.global_labels[instr.immediate.name].name
             else:
                 raise ValueError(f&#34;Label {label} cannot be resolved locally or globally!&#34;)
 
-            self.logger.debug(f&#34;Label {instr.label} replaced by absolute address {instr.value:04X}&#34;)</code></pre>
+        elif instr.address and instr.address.name:
+            self.logger.debug(f&#34;-&gt; address label name: {instr.address.name}&#34;)
+            if instr.address.name in self.labels:
+                instr.address.value = self.labels[instr.address.name].value
+                instr.address.name = self.labels[instr.address.name].name
+
+            elif instr.address.name in g._PROGRAM.global_labels:
+                instr.address.value = g._PROGRAM.global_labels[instr.address.name].value
+                instr.address.name = g._PROGRAM.global_labels[instr.address.name].name
+            else:
+                raise ValueError(f&#34;Label {label} cannot be resolved locally or globally!&#34;)
+
+            self.logger.debug(f&#34;Label {instr.address.name} replaced by absolute address {instr.address.value:04X}&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1646,19 +1822,21 @@ class Segment():
 <li><code><a title="shazzam.Segment.Segment.add_instruction" href="#shazzam.Segment.Segment.add_instruction">add_instruction</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.add_label" href="#shazzam.Segment.Segment.add_label">add_label</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.add_rasterline" href="#shazzam.Segment.Segment.add_rasterline">add_rasterline</a></code></li>
+<li><code><a title="shazzam.Segment.Segment.change_format" href="#shazzam.Segment.Segment.change_format">change_format</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.close" href="#shazzam.Segment.Segment.close">close</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.comments_chars" href="#shazzam.Segment.Segment.comments_chars">comments_chars</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.directive_prefix" href="#shazzam.Segment.Segment.directive_prefix">directive_prefix</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.emulate" href="#shazzam.Segment.Segment.emulate">emulate</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.gen_code" href="#shazzam.Segment.Segment.gen_code">gen_code</a></code></li>
-<li><code><a title="shazzam.Segment.Segment.get_address" href="#shazzam.Segment.Segment.get_address">get_address</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.get_anonymous_label" href="#shazzam.Segment.Segment.get_anonymous_label">get_anonymous_label</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.get_bytecode" href="#shazzam.Segment.Segment.get_bytecode">get_bytecode</a></code></li>
+<li><code><a title="shazzam.Segment.Segment.get_label" href="#shazzam.Segment.Segment.get_label">get_label</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.get_last_instruction" href="#shazzam.Segment.Segment.get_last_instruction">get_last_instruction</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.get_segment_bytecode" href="#shazzam.Segment.Segment.get_segment_bytecode">get_segment_bytecode</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.get_stats" href="#shazzam.Segment.Segment.get_stats">get_stats</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.need_label" href="#shazzam.Segment.Segment.need_label">need_label</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.resolve_labels" href="#shazzam.Segment.Segment.resolve_labels">resolve_labels</a></code></li>
+<li><code><a title="shazzam.Segment.Segment.size" href="#shazzam.Segment.Segment.size">size</a></code></li>
 </ul>
 </li>
 </ul>

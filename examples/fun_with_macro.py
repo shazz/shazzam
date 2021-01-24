@@ -4,7 +4,7 @@ sys.path.append(".")
 
 from reloading import reloading
 from shazzam.py64gen import *
-from shazzam.py64gen import Register as r
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 import shazzam.macros.macros as m
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65

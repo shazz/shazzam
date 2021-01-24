@@ -28,6 +28,8 @@
 </summary>
 <pre><code class="python">import hashlib
 import logging
+from shazzam.Address import Address
+from shazzam.Immediate import Immediate
 
 class Instruction():
     &#34;&#34;&#34;6502 Instruction class&#34;&#34;&#34;
@@ -53,7 +55,7 @@ class Instruction():
 
     opcodes = [
         #     0,8           1,9           2,A           3,B           4,C           5,D           6,E           7,F  */
-        [&#34;brk&#34;,&#34;imm&#34;],[&#34;ora&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpg&#34;],[&#34;asl&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 00
+        [&#34;brk&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpg&#34;],[&#34;asl&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 00
         [&#34;php&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;imm&#34;],[&#34;asl&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abs&#34;],[&#34;asl&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 08
         [&#34;bpl&#34;,&#34;rel&#34;],[&#34;ora&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpx&#34;],[&#34;asl&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 10
         [&#34;clc&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abx&#34;],[&#34;asl&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 18
@@ -107,28 +109,15 @@ class Instruction():
     addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
     instructions = list(set([opcode[0] for opcode in opcodes]))
 
-    def __init__(self, instruction_name, mode, value: int = None, label: str = None, use_upper: bool = False, use_hex: bool = False):
-        &#34;&#34;&#34;[summary]
+    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = False):
 
-        Args:
-            instruction_name ([type]): [description]
-            mode ([type]): [description]
-            value (int, optional): [description]. Defaults to None.
-            label (str, optional): [description]. Defaults to None.
-            use_upper (bool, optional): [description]. Defaults to False.
-            use_hex (bool, optional): [description]. Defaults to False.
-
-        Raises:
-            RuntimeError: [description]
-            ValueError: [description]
-            ValueError: [description]
-        &#34;&#34;&#34;
         self.logger = logging.getLogger(&#34;shazzam&#34;)
         self.instruction_name = instruction_name
         self.mode = mode
         self.opcode = None
         self.use_upper = use_upper
         self.use_hex = use_hex
+        self.show_labels = show_labels
 
         try:
             Instruction.opcodes.index([instruction_name, mode])
@@ -145,8 +134,15 @@ class Instruction():
         if self.opcode is None:
             raise ValueError(f&#34;Unknwon instruction {instruction_name} with addressing mode {mode}&#34;)
 
-        self.label = label
-        self.value = value
+        if immediate and not isinstance(immediate, Immediate):
+            raise ValueError(&#34;immediate has to be a Immediate object&#34;
+                             )
+        if address and not isinstance(address, Address):
+            raise ValueError(&#34;address has to be a Address object&#34;)
+
+        self.address = address
+        self.immediate = immediate
+
         self.end_address = None
 
         self.logger.debug(f&#34;instruction created: {self.instruction_name} / {self.opcode} / {self.mode}&#34;)
@@ -160,13 +156,13 @@ class Instruction():
             ValueError: [description]
             ValueError: [description]
         &#34;&#34;&#34;
-        if self.mode in [&#39;imm&#39;] and self.value and self.value &gt; 0xff:
-            raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.value}&#34;)
+        if self.mode in [&#39;imm&#39;] and self.immediate.value and self.immediate.value &gt; 0xff:
+            raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.immediate.value}&#34;)
 
-        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.value and self.value &gt; 0xff:
+        elif self.mode in [&#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.address.value and self.address.value &gt; 0xff:
             raise ValueError(f&#34;Absolute zp address cannot be bigger then a byte! Got: {self.value:04X}&#34;)
 
-        elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.value and self.value &gt; 0xffff:
+        elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
             raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
         elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
@@ -208,24 +204,39 @@ class Instruction():
         &#34;&#34;&#34;
         return self.opcode
 
-    def get_operand(self) -&gt; str:
+    def get_operand(self) -&gt; (str, bool):
         &#34;&#34;&#34;[summary]
 
         Returns:
             str: [description]
         &#34;&#34;&#34;
-        val = self.value if self.value is not None else 0
-        self.logger.debug(f&#34;val: {val} - {self.mode}&#34;)
+        resolved = True
+        if self.address and self.address.value is None:
+            resolved = False
+
+        if self.immediate and self.immediate.value is None:
+            resolved = False
+
+        def_address_value = self.address.value if self.address and self.address.value is not None else 0
+        def_immediate_value = self.immediate.value if self.immediate and self.immediate.value is not None else 0
+
+        self.logger.debug(f&#34;Get operand for mode {self.mode}&#34;)
 
         if self.mode in [&#39;imp&#39;]:
-            return None
-        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;, &#39;acc&#39;]:
-            return (val &amp; 0xff)
+            return None, resolved
+
+        elif self.mode in [&#39;imm&#39;, &#39;acc&#39;]:
+            return (def_immediate_value &amp; 0xff), resolved
+
+        elif self.mode in [&#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;]:
+            return (def_address_value &amp; 0xff), resolved
+
         elif self.mode in [&#39;rel&#39;]:
             self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-            return (val &amp; 0xff)
+            return (def_immediate_value&amp; 0xff), resolved
+
         else:
-            return (val &amp; 0xffff)
+            return (def_address_value &amp; 0xffff), resolved
 
     def __str__(self) -&gt; str:
         &#34;&#34;&#34;[summary]
@@ -236,66 +247,78 @@ class Instruction():
         Returns:
             str: [description]
         &#34;&#34;&#34;
+        val = None
         if self.mode == &#39;imp&#39;:
             val = &#34;&#34;
         elif self.mode == &#39;imm&#39;:
-            if self.use_hex:
-                val = f&#34;#${self.value:02X}&#34; if self.use_upper else f&#34;#${self.value:02x}&#34;
+            if self.immediate.name and self.show_labels:
+                if self.immediate.high_byte:
+                    val = f&#34;#&gt;{self.immediate.name}&#34;
+                else:
+                    val = f&#34;#&lt;{self.immediate.name}&#34;
             else:
-                val = f&#34;#{self.value}&#34;
+                if self.use_hex:
+                    val = f&#34;#${self.immediate.value:02X}&#34; if self.use_upper else f&#34;#${self.immediate.value:02x}&#34;
+                else:
+                    val = f&#34;#{self.immediate.value}&#34;
 
         elif self.mode == &#39;abs&#39;:
-            if self.value:
-                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+            if (self.address.name and self.show_labels) or self.address.value is None:
+                val = self.address.name
             else:
-                val = self.label
+                val = f&#34;${self.address.value:04X}&#34; if self.use_upper else f&#34;${self.address.value:04x}&#34;
 
         elif self.mode == &#39;ind&#39;:
-            if self.value:
-                val = f&#34;(${self.value:04X})&#34; if self.use_upper else f&#34;(${self.value:04x})&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;({self.address.name})&#34;
             else:
-                val = f&#34;({self.label})&#34;
+                val = f&#34;(${self.address.value:04X})&#34; if self.use_upper else f&#34;(${self.address.value:04x})&#34;
 
         elif self.mode == &#39;zpg&#39;:
-            val = f&#34;${self.value:02X}&#34; if self.use_upper else f&#34;${self.value:02x}&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name}&#34;
+            else:
+                val = f&#34;${self.address.value:02X}&#34; if self.use_upper else f&#34;${self.address.value:02x}&#34;
 
         elif self.mode == &#39;zpx&#39;:
-            val = f&#34;${self.value:02X},X&#34; if self.use_upper else f&#34;${self.value:02x},x&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},X&#34; if self.use_upper else f&#34;{self.address.name},x&#34;
+            else:
+                val = f&#34;${self.address.value:02X},X&#34; if self.use_upper else f&#34;${self.address.value:02x},x&#34;
 
         elif self.mode == &#39;zpy&#39;:
-            val = f&#34;${self.value:02X},Y&#34; if self.use_upper else f&#34;${self.value:02x},y&#34;
-
-        elif self.mode == &#39;abx&#39;:
-            if self.value:
-                val = f&#34;${self.value:04X},X&#34; if self.use_upper else f&#34;${self.value:04x},x&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},Y&#34; if self.use_upper else f&#34;{self.address.name},y&#34;
             else:
-                val = f&#34;{self.label},X&#34; if self.use_upper else f&#34;{self.label},x&#34;
+                val = f&#34;${self.address.value:02X},Y&#34; if self.use_upper else f&#34;${self.address.value:02x},y&#34;
+        elif self.mode == &#39;abx&#39;:
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},X&#34; if self.use_upper else f&#34;{self.address.name},x&#34;
+            else:
+                val = f&#34;${self.address.value:04X},X&#34; if self.use_upper else f&#34;${self.address.value:04x},x&#34;
 
         elif self.mode == &#39;aby&#39;:
-            if self.value:
-                val = f&#34;${self.value:04X},Y&#34; if self.use_upper else f&#34;${self.value:04x},y&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},Y&#34; if self.use_upper else f&#34;{self.address.name},y&#34;
             else:
-                val = f&#34;{self.label},Y&#34; if self.use_upper else f&#34;{self.label},y&#34;
+                val = f&#34;${self.address.value:04X},Y&#34; if self.use_upper else f&#34;${self.address.value:04x},y&#34;
 
         elif self.mode == &#39;rel&#39;:
-            if self.label:
-                val = self.label
+            if self.immediate.name and self.show_label:
+                val = self.immediate.name
             else:
-                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+                val = f&#34;${self.immediate.value:04X}&#34; if self.use_upper else f&#34;${self.immediate.value:04x}&#34;
 
         elif self.mode == &#39;iiy&#39;:
-            if self.value:
-                val = f&#34;(${self.value:04X}),Y&#34; if self.use_upper else f&#34;(${self.value:04x}),y&#34;
-            else:
-                val = f&#34;({self.label}),Y&#34; if self.use_upper else f&#34;({self.label}),y&#34;
+            val = f&#34;(${self.address.value:02X}),Y&#34; if self.use_upper else f&#34;(${self.address.value:02x}),y&#34;
 
         elif self.mode == &#39;iix&#39;:
-            if self.value:
-                val = f&#34;(${self.value:04X},X)&#34; if self.use_upper else f&#34;(${self.value:04x},x)&#34;
-            else:
-                val = f&#34;({self.label},X)&#34; if self.use_upper else f&#34;({self.label},x)&#34;
+            val = f&#34;(${self.address.value:02X},X)&#34; if self.use_upper else f&#34;(${self.address.value:02x},x)&#34;
 
         else:
+            raise NotImplementedError(f&#34;Model {self.mode}&#34;)
+
+        if val is None:
             raise NotImplementedError(f&#34;Model {self.mode}&#34;)
 
         return f&#34;{self.get_instruction_name()} {val}&#34;</code></pre>
@@ -312,35 +335,10 @@ class Instruction():
 <dl>
 <dt id="shazzam.Instruction.Instruction"><code class="flex name class">
 <span>class <span class="ident">Instruction</span></span>
-<span>(</span><span>instruction_name, mode, value: int = None, label: str = None, use_upper: bool = False, use_hex: bool = False)</span>
+<span>(</span><span>instruction_name, mode, immediate: <a title="shazzam.Immediate.Immediate" href="Immediate.html#shazzam.Immediate.Immediate">Immediate</a> = None, address: <a title="shazzam.Address.Address" href="Address.html#shazzam.Address.Address">Address</a> = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>6502 Instruction class</p>
-<p>[summary]</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>instruction_name</code></strong> :&ensp;<code>[type]</code></dt>
-<dd>[description]</dd>
-<dt><strong><code>mode</code></strong> :&ensp;<code>[type]</code></dt>
-<dd>[description]</dd>
-<dt><strong><code>value</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>[description]. Defaults to None.</dd>
-<dt><strong><code>label</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>[description]. Defaults to None.</dd>
-<dt><strong><code>use_upper</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>[description]. Defaults to False.</dd>
-<dt><strong><code>use_hex</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>[description]. Defaults to False.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>RuntimeError</code></dt>
-<dd>[description]</dd>
-<dt><code>ValueError</code></dt>
-<dd>[description]</dd>
-<dt><code>ValueError</code></dt>
-<dd>[description]</dd>
-</dl></div>
+<div class="desc"><p>6502 Instruction class</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -369,7 +367,7 @@ class Instruction():
 
     opcodes = [
         #     0,8           1,9           2,A           3,B           4,C           5,D           6,E           7,F  */
-        [&#34;brk&#34;,&#34;imm&#34;],[&#34;ora&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpg&#34;],[&#34;asl&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 00
+        [&#34;brk&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;iix&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpg&#34;],[&#34;asl&#34;,&#34;zpg&#34;],[&#34;___&#34;,&#34;___&#34;],  # 00
         [&#34;php&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;imm&#34;],[&#34;asl&#34;,&#34;acc&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abs&#34;],[&#34;asl&#34;,&#34;abs&#34;],[&#34;___&#34;,&#34;___&#34;],  # 08
         [&#34;bpl&#34;,&#34;rel&#34;],[&#34;ora&#34;,&#34;iiy&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;zpx&#34;],[&#34;asl&#34;,&#34;zpx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 10
         [&#34;clc&#34;,&#34;imp&#34;],[&#34;ora&#34;,&#34;aby&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;___&#34;,&#34;___&#34;],[&#34;ora&#34;,&#34;abx&#34;],[&#34;asl&#34;,&#34;abx&#34;],[&#34;___&#34;,&#34;___&#34;],  # 18
@@ -423,28 +421,15 @@ class Instruction():
     addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
     instructions = list(set([opcode[0] for opcode in opcodes]))
 
-    def __init__(self, instruction_name, mode, value: int = None, label: str = None, use_upper: bool = False, use_hex: bool = False):
-        &#34;&#34;&#34;[summary]
+    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = False):
 
-        Args:
-            instruction_name ([type]): [description]
-            mode ([type]): [description]
-            value (int, optional): [description]. Defaults to None.
-            label (str, optional): [description]. Defaults to None.
-            use_upper (bool, optional): [description]. Defaults to False.
-            use_hex (bool, optional): [description]. Defaults to False.
-
-        Raises:
-            RuntimeError: [description]
-            ValueError: [description]
-            ValueError: [description]
-        &#34;&#34;&#34;
         self.logger = logging.getLogger(&#34;shazzam&#34;)
         self.instruction_name = instruction_name
         self.mode = mode
         self.opcode = None
         self.use_upper = use_upper
         self.use_hex = use_hex
+        self.show_labels = show_labels
 
         try:
             Instruction.opcodes.index([instruction_name, mode])
@@ -461,8 +446,15 @@ class Instruction():
         if self.opcode is None:
             raise ValueError(f&#34;Unknwon instruction {instruction_name} with addressing mode {mode}&#34;)
 
-        self.label = label
-        self.value = value
+        if immediate and not isinstance(immediate, Immediate):
+            raise ValueError(&#34;immediate has to be a Immediate object&#34;
+                             )
+        if address and not isinstance(address, Address):
+            raise ValueError(&#34;address has to be a Address object&#34;)
+
+        self.address = address
+        self.immediate = immediate
+
         self.end_address = None
 
         self.logger.debug(f&#34;instruction created: {self.instruction_name} / {self.opcode} / {self.mode}&#34;)
@@ -476,13 +468,13 @@ class Instruction():
             ValueError: [description]
             ValueError: [description]
         &#34;&#34;&#34;
-        if self.mode in [&#39;imm&#39;] and self.value and self.value &gt; 0xff:
-            raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.value}&#34;)
+        if self.mode in [&#39;imm&#39;] and self.immediate.value and self.immediate.value &gt; 0xff:
+            raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.immediate.value}&#34;)
 
-        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.value and self.value &gt; 0xff:
+        elif self.mode in [&#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.address.value and self.address.value &gt; 0xff:
             raise ValueError(f&#34;Absolute zp address cannot be bigger then a byte! Got: {self.value:04X}&#34;)
 
-        elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.value and self.value &gt; 0xffff:
+        elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
             raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
         elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
@@ -524,24 +516,39 @@ class Instruction():
         &#34;&#34;&#34;
         return self.opcode
 
-    def get_operand(self) -&gt; str:
+    def get_operand(self) -&gt; (str, bool):
         &#34;&#34;&#34;[summary]
 
         Returns:
             str: [description]
         &#34;&#34;&#34;
-        val = self.value if self.value is not None else 0
-        self.logger.debug(f&#34;val: {val} - {self.mode}&#34;)
+        resolved = True
+        if self.address and self.address.value is None:
+            resolved = False
+
+        if self.immediate and self.immediate.value is None:
+            resolved = False
+
+        def_address_value = self.address.value if self.address and self.address.value is not None else 0
+        def_immediate_value = self.immediate.value if self.immediate and self.immediate.value is not None else 0
+
+        self.logger.debug(f&#34;Get operand for mode {self.mode}&#34;)
 
         if self.mode in [&#39;imp&#39;]:
-            return None
-        elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;, &#39;acc&#39;]:
-            return (val &amp; 0xff)
+            return None, resolved
+
+        elif self.mode in [&#39;imm&#39;, &#39;acc&#39;]:
+            return (def_immediate_value &amp; 0xff), resolved
+
+        elif self.mode in [&#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;]:
+            return (def_address_value &amp; 0xff), resolved
+
         elif self.mode in [&#39;rel&#39;]:
             self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-            return (val &amp; 0xff)
+            return (def_immediate_value&amp; 0xff), resolved
+
         else:
-            return (val &amp; 0xffff)
+            return (def_address_value &amp; 0xffff), resolved
 
     def __str__(self) -&gt; str:
         &#34;&#34;&#34;[summary]
@@ -552,66 +559,78 @@ class Instruction():
         Returns:
             str: [description]
         &#34;&#34;&#34;
+        val = None
         if self.mode == &#39;imp&#39;:
             val = &#34;&#34;
         elif self.mode == &#39;imm&#39;:
-            if self.use_hex:
-                val = f&#34;#${self.value:02X}&#34; if self.use_upper else f&#34;#${self.value:02x}&#34;
+            if self.immediate.name and self.show_labels:
+                if self.immediate.high_byte:
+                    val = f&#34;#&gt;{self.immediate.name}&#34;
+                else:
+                    val = f&#34;#&lt;{self.immediate.name}&#34;
             else:
-                val = f&#34;#{self.value}&#34;
+                if self.use_hex:
+                    val = f&#34;#${self.immediate.value:02X}&#34; if self.use_upper else f&#34;#${self.immediate.value:02x}&#34;
+                else:
+                    val = f&#34;#{self.immediate.value}&#34;
 
         elif self.mode == &#39;abs&#39;:
-            if self.value:
-                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+            if (self.address.name and self.show_labels) or self.address.value is None:
+                val = self.address.name
             else:
-                val = self.label
+                val = f&#34;${self.address.value:04X}&#34; if self.use_upper else f&#34;${self.address.value:04x}&#34;
 
         elif self.mode == &#39;ind&#39;:
-            if self.value:
-                val = f&#34;(${self.value:04X})&#34; if self.use_upper else f&#34;(${self.value:04x})&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;({self.address.name})&#34;
             else:
-                val = f&#34;({self.label})&#34;
+                val = f&#34;(${self.address.value:04X})&#34; if self.use_upper else f&#34;(${self.address.value:04x})&#34;
 
         elif self.mode == &#39;zpg&#39;:
-            val = f&#34;${self.value:02X}&#34; if self.use_upper else f&#34;${self.value:02x}&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name}&#34;
+            else:
+                val = f&#34;${self.address.value:02X}&#34; if self.use_upper else f&#34;${self.address.value:02x}&#34;
 
         elif self.mode == &#39;zpx&#39;:
-            val = f&#34;${self.value:02X},X&#34; if self.use_upper else f&#34;${self.value:02x},x&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},X&#34; if self.use_upper else f&#34;{self.address.name},x&#34;
+            else:
+                val = f&#34;${self.address.value:02X},X&#34; if self.use_upper else f&#34;${self.address.value:02x},x&#34;
 
         elif self.mode == &#39;zpy&#39;:
-            val = f&#34;${self.value:02X},Y&#34; if self.use_upper else f&#34;${self.value:02x},y&#34;
-
-        elif self.mode == &#39;abx&#39;:
-            if self.value:
-                val = f&#34;${self.value:04X},X&#34; if self.use_upper else f&#34;${self.value:04x},x&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},Y&#34; if self.use_upper else f&#34;{self.address.name},y&#34;
             else:
-                val = f&#34;{self.label},X&#34; if self.use_upper else f&#34;{self.label},x&#34;
+                val = f&#34;${self.address.value:02X},Y&#34; if self.use_upper else f&#34;${self.address.value:02x},y&#34;
+        elif self.mode == &#39;abx&#39;:
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},X&#34; if self.use_upper else f&#34;{self.address.name},x&#34;
+            else:
+                val = f&#34;${self.address.value:04X},X&#34; if self.use_upper else f&#34;${self.address.value:04x},x&#34;
 
         elif self.mode == &#39;aby&#39;:
-            if self.value:
-                val = f&#34;${self.value:04X},Y&#34; if self.use_upper else f&#34;${self.value:04x},y&#34;
+            if self.address.name and self.show_labels:
+                val = f&#34;{self.address.name},Y&#34; if self.use_upper else f&#34;{self.address.name},y&#34;
             else:
-                val = f&#34;{self.label},Y&#34; if self.use_upper else f&#34;{self.label},y&#34;
+                val = f&#34;${self.address.value:04X},Y&#34; if self.use_upper else f&#34;${self.address.value:04x},y&#34;
 
         elif self.mode == &#39;rel&#39;:
-            if self.label:
-                val = self.label
+            if self.immediate.name and self.show_label:
+                val = self.immediate.name
             else:
-                val = f&#34;${self.value:04X}&#34; if self.use_upper else f&#34;${self.value:04x}&#34;
+                val = f&#34;${self.immediate.value:04X}&#34; if self.use_upper else f&#34;${self.immediate.value:04x}&#34;
 
         elif self.mode == &#39;iiy&#39;:
-            if self.value:
-                val = f&#34;(${self.value:04X}),Y&#34; if self.use_upper else f&#34;(${self.value:04x}),y&#34;
-            else:
-                val = f&#34;({self.label}),Y&#34; if self.use_upper else f&#34;({self.label}),y&#34;
+            val = f&#34;(${self.address.value:02X}),Y&#34; if self.use_upper else f&#34;(${self.address.value:02x}),y&#34;
 
         elif self.mode == &#39;iix&#39;:
-            if self.value:
-                val = f&#34;(${self.value:04X},X)&#34; if self.use_upper else f&#34;(${self.value:04x},x)&#34;
-            else:
-                val = f&#34;({self.label},X)&#34; if self.use_upper else f&#34;({self.label},x)&#34;
+            val = f&#34;(${self.address.value:02X},X)&#34; if self.use_upper else f&#34;(${self.address.value:02x},x)&#34;
 
         else:
+            raise NotImplementedError(f&#34;Model {self.mode}&#34;)
+
+        if val is None:
             raise NotImplementedError(f&#34;Model {self.mode}&#34;)
 
         return f&#34;{self.get_instruction_name()} {val}&#34;</code></pre>
@@ -674,13 +693,13 @@ class Instruction():
         ValueError: [description]
         ValueError: [description]
     &#34;&#34;&#34;
-    if self.mode in [&#39;imm&#39;] and self.value and self.value &gt; 0xff:
-        raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.value}&#34;)
+    if self.mode in [&#39;imm&#39;] and self.immediate.value and self.immediate.value &gt; 0xff:
+        raise ValueError(f&#34;Immediate value cannot be bigger then a byte! Got: {self.immediate.value}&#34;)
 
-    elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.value and self.value &gt; 0xff:
+    elif self.mode in [&#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;] and self.address.value and self.address.value &gt; 0xff:
         raise ValueError(f&#34;Absolute zp address cannot be bigger then a byte! Got: {self.value:04X}&#34;)
 
-    elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.value and self.value &gt; 0xffff:
+    elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
         raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
     elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
@@ -757,7 +776,7 @@ class Instruction():
 </details>
 </dd>
 <dt id="shazzam.Instruction.Instruction.get_operand"><code class="name flex">
-<span>def <span class="ident">get_operand</span></span>(<span>self) ‑> str</span>
+<span>def <span class="ident">get_operand</span></span>(<span>self) ‑> (<class 'str'>, <class 'bool'>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -770,24 +789,39 @@ class Instruction():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_operand(self) -&gt; str:
+<pre><code class="python">def get_operand(self) -&gt; (str, bool):
     &#34;&#34;&#34;[summary]
 
     Returns:
         str: [description]
     &#34;&#34;&#34;
-    val = self.value if self.value is not None else 0
-    self.logger.debug(f&#34;val: {val} - {self.mode}&#34;)
+    resolved = True
+    if self.address and self.address.value is None:
+        resolved = False
+
+    if self.immediate and self.immediate.value is None:
+        resolved = False
+
+    def_address_value = self.address.value if self.address and self.address.value is not None else 0
+    def_immediate_value = self.immediate.value if self.immediate and self.immediate.value is not None else 0
+
+    self.logger.debug(f&#34;Get operand for mode {self.mode}&#34;)
 
     if self.mode in [&#39;imp&#39;]:
-        return None
-    elif self.mode in [&#39;imm&#39;, &#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;, &#39;acc&#39;]:
-        return (val &amp; 0xff)
+        return None, resolved
+
+    elif self.mode in [&#39;imm&#39;, &#39;acc&#39;]:
+        return (def_immediate_value &amp; 0xff), resolved
+
+    elif self.mode in [&#39;zpg&#39;, &#39;zpx&#39;, &#39;zpy&#39;]:
+        return (def_address_value &amp; 0xff), resolved
+
     elif self.mode in [&#39;rel&#39;]:
         self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-        return (val &amp; 0xff)
+        return (def_immediate_value&amp; 0xff), resolved
+
     else:
-        return (val &amp; 0xffff)</code></pre>
+        return (def_address_value &amp; 0xffff), resolved</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Instruction.Instruction.get_size"><code class="name flex">

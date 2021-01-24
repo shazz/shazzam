@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>shazzam.ByteData API documentation</title>
+<title>shazzam.Address API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,68 +19,73 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>shazzam.ByteData</code></h1>
+<h1 class="title">Module <code>shazzam.Address</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from shazzam.Instruction import Instruction
-from shazzam.Immediate import Immediate
+<pre><code class="python">import logging
 
-class ByteData(Instruction):
-    &#34;&#34;&#34;ByteData class&#34;&#34;&#34;
-    def __init__(self, immediate: Immediate):
-        &#34;&#34;&#34;[summary]
+class Address():
 
-        Args:
-            value ([type]): [description]
-            label ([type]): [description]
-        &#34;&#34;&#34;
-        self.immediate = immediate
-        self.use_upper = True
-        self.address = None
+    def __init__(self, name: str = None, value: int = None, indirect: bool = False):
 
-    def get_operand(self) -&gt; str:
-        &#34;&#34;&#34;[summary]
+        self.logger = logging.getLogger(&#34;shazzam&#34;)
 
-        Returns:
-            str: [description]
-        &#34;&#34;&#34;
-        return None, True
+        if name is None and value is None:
+            raise ValueError(&#34;Address is void&#34;)
 
-    def get_opcode(self) -&gt; str:
-        &#34;&#34;&#34;[summary]
+        if value and value &gt; 0xffff:
+            raise ValueError(f&#34;Address value {value} exceeds 1 word&#34;)
 
-        Returns:
-            str: [description]
-        &#34;&#34;&#34;
-        return self.immediate.value
+        self.name = name
+        self._value = value
+        self.indirect = indirect
+        self._add_modifier = None
+        self._sub_modifier = None
 
-    def __str__(self) -&gt; str:
-        &#34;&#34;&#34;[summary]
+    @property
+    def value(self):
+        if self._value is None:
+            return None
 
-        Returns:
-            str: [description]
-        &#34;&#34;&#34;
-        return f&#34;byte ${self.immediate.value:02X}&#34; if self.use_upper else f&#34;${self.immediate.value:02x}&#34;
+        if self._add_modifier:
+            self.logger.debug(f&#34;Adding {self._add_modifier} to {self._value} = {self._value + self._add_modifier}&#34;)
+            return self._value + self._add_modifier
 
-    def get_cycle_count(self) -&gt; int:
-        &#34;&#34;&#34;[summary]
+        if self._sub_modifier:
+            return self._value - self._sub_modifier
 
-        Returns:
-            int: [description]
-        &#34;&#34;&#34;
-        return 0
+        return self._value
 
-    def get_size(self) -&gt; int:
-        &#34;&#34;&#34;[summary]
+    @value.setter
+    def value(self, val):
+         if(val &gt; 0xffff):
+            raise ValueError(f&#34;Address value {val} exceeds 1 word&#34;)
 
-        Returns:
-            int: [description]
-        &#34;&#34;&#34;
-        return 1</code></pre>
+         self._value = val
+
+    def __add__(self, adder):
+        self.logger.debug(f&#34;Adding {adder} to {self.name}&#34;)
+        self._add_modifier = adder
+        return self
+
+    def __sub__(self, subber):
+        self.logger.debug(f&#34;Substracting {subber} to {self.name}&#34;)
+        self._sub_modifier = subber
+        return self
+
+    def __str__(self):
+        if self._value and self.name:
+            return f&#34;{self.name}@{self._value:04X}&#34;
+        elif self._value:
+            return f&#34;{self._value:04X}&#34;
+        elif self.name:
+            return f&#34;{self.name}@unknown&#34;
+        else:
+            raise RuntimeError(&#34;Address is void&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -92,120 +97,100 @@ class ByteData(Instruction):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
-<dt id="shazzam.ByteData.ByteData"><code class="flex name class">
-<span>class <span class="ident">ByteData</span></span>
-<span>(</span><span>immediate: <a title="shazzam.Immediate.Immediate" href="Immediate.html#shazzam.Immediate.Immediate">Immediate</a>)</span>
+<dt id="shazzam.Address.Address"><code class="flex name class">
+<span>class <span class="ident">Address</span></span>
+<span>(</span><span>name: str = None, value: int = None, indirect: bool = False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>ByteData class</p>
-<p>[summary]</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>value</code></strong> :&ensp;<code>[type]</code></dt>
-<dd>[description]</dd>
-<dt><strong><code>label</code></strong> :&ensp;<code>[type]</code></dt>
-<dd>[description]</dd>
-</dl></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class ByteData(Instruction):
-    &#34;&#34;&#34;ByteData class&#34;&#34;&#34;
-    def __init__(self, immediate: Immediate):
-        &#34;&#34;&#34;[summary]
+<pre><code class="python">class Address():
 
-        Args:
-            value ([type]): [description]
-            label ([type]): [description]
-        &#34;&#34;&#34;
-        self.immediate = immediate
-        self.use_upper = True
-        self.address = None
+    def __init__(self, name: str = None, value: int = None, indirect: bool = False):
 
-    def get_operand(self) -&gt; str:
-        &#34;&#34;&#34;[summary]
+        self.logger = logging.getLogger(&#34;shazzam&#34;)
 
-        Returns:
-            str: [description]
-        &#34;&#34;&#34;
-        return None, True
+        if name is None and value is None:
+            raise ValueError(&#34;Address is void&#34;)
 
-    def get_opcode(self) -&gt; str:
-        &#34;&#34;&#34;[summary]
+        if value and value &gt; 0xffff:
+            raise ValueError(f&#34;Address value {value} exceeds 1 word&#34;)
 
-        Returns:
-            str: [description]
-        &#34;&#34;&#34;
-        return self.immediate.value
+        self.name = name
+        self._value = value
+        self.indirect = indirect
+        self._add_modifier = None
+        self._sub_modifier = None
 
-    def __str__(self) -&gt; str:
-        &#34;&#34;&#34;[summary]
+    @property
+    def value(self):
+        if self._value is None:
+            return None
 
-        Returns:
-            str: [description]
-        &#34;&#34;&#34;
-        return f&#34;byte ${self.immediate.value:02X}&#34; if self.use_upper else f&#34;${self.immediate.value:02x}&#34;
+        if self._add_modifier:
+            self.logger.debug(f&#34;Adding {self._add_modifier} to {self._value} = {self._value + self._add_modifier}&#34;)
+            return self._value + self._add_modifier
 
-    def get_cycle_count(self) -&gt; int:
-        &#34;&#34;&#34;[summary]
+        if self._sub_modifier:
+            return self._value - self._sub_modifier
 
-        Returns:
-            int: [description]
-        &#34;&#34;&#34;
-        return 0
+        return self._value
 
-    def get_size(self) -&gt; int:
-        &#34;&#34;&#34;[summary]
+    @value.setter
+    def value(self, val):
+         if(val &gt; 0xffff):
+            raise ValueError(f&#34;Address value {val} exceeds 1 word&#34;)
 
-        Returns:
-            int: [description]
-        &#34;&#34;&#34;
-        return 1</code></pre>
+         self._value = val
+
+    def __add__(self, adder):
+        self.logger.debug(f&#34;Adding {adder} to {self.name}&#34;)
+        self._add_modifier = adder
+        return self
+
+    def __sub__(self, subber):
+        self.logger.debug(f&#34;Substracting {subber} to {self.name}&#34;)
+        self._sub_modifier = subber
+        return self
+
+    def __str__(self):
+        if self._value and self.name:
+            return f&#34;{self.name}@{self._value:04X}&#34;
+        elif self._value:
+            return f&#34;{self._value:04X}&#34;
+        elif self.name:
+            return f&#34;{self.name}@unknown&#34;
+        else:
+            raise RuntimeError(&#34;Address is void&#34;)</code></pre>
 </details>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li><a title="shazzam.Instruction.Instruction" href="Instruction.html#shazzam.Instruction.Instruction">Instruction</a></li>
-</ul>
-<h3>Methods</h3>
+<h3>Instance variables</h3>
 <dl>
-<dt id="shazzam.ByteData.ByteData.get_size"><code class="name flex">
-<span>def <span class="ident">get_size</span></span>(<span>self) ‑> int</span>
-</code></dt>
+<dt id="shazzam.Address.Address.value"><code class="name">var <span class="ident">value</span></code></dt>
 <dd>
-<div class="desc"><p>[summary]</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>int</code></dt>
-<dd>[description]</dd>
-</dl></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_size(self) -&gt; int:
-    &#34;&#34;&#34;[summary]
+<pre><code class="python">@property
+def value(self):
+    if self._value is None:
+        return None
 
-    Returns:
-        int: [description]
-    &#34;&#34;&#34;
-    return 1</code></pre>
+    if self._add_modifier:
+        self.logger.debug(f&#34;Adding {self._add_modifier} to {self._value} = {self._value + self._add_modifier}&#34;)
+        return self._value + self._add_modifier
+
+    if self._sub_modifier:
+        return self._value - self._sub_modifier
+
+    return self._value</code></pre>
 </details>
 </dd>
 </dl>
-<h3>Inherited members</h3>
-<ul class="hlist">
-<li><code><b><a title="shazzam.Instruction.Instruction" href="Instruction.html#shazzam.Instruction.Instruction">Instruction</a></b></code>:
-<ul class="hlist">
-<li><code><a title="shazzam.Instruction.Instruction.check_constraints" href="Instruction.html#shazzam.Instruction.Instruction.check_constraints">check_constraints</a></code></li>
-<li><code><a title="shazzam.Instruction.Instruction.get_cycle_count" href="Instruction.html#shazzam.Instruction.Instruction.get_cycle_count">get_cycle_count</a></code></li>
-<li><code><a title="shazzam.Instruction.Instruction.get_instruction_name" href="Instruction.html#shazzam.Instruction.Instruction.get_instruction_name">get_instruction_name</a></code></li>
-<li><code><a title="shazzam.Instruction.Instruction.get_opcode" href="Instruction.html#shazzam.Instruction.Instruction.get_opcode">get_opcode</a></code></li>
-<li><code><a title="shazzam.Instruction.Instruction.get_operand" href="Instruction.html#shazzam.Instruction.Instruction.get_operand">get_operand</a></code></li>
-<li><code><a title="shazzam.Instruction.Instruction.hash" href="Instruction.html#shazzam.Instruction.Instruction.hash">hash</a></code></li>
-</ul>
-</li>
-</ul>
 </dd>
 </dl>
 </section>
@@ -224,9 +209,9 @@ class ByteData(Instruction):
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
-<h4><code><a title="shazzam.ByteData.ByteData" href="#shazzam.ByteData.ByteData">ByteData</a></code></h4>
+<h4><code><a title="shazzam.Address.Address" href="#shazzam.Address.Address">Address</a></code></h4>
 <ul class="">
-<li><code><a title="shazzam.ByteData.ByteData.get_size" href="#shazzam.ByteData.ByteData.get_size">get_size</a></code></li>
+<li><code><a title="shazzam.Address.Address.value" href="#shazzam.Address.Address.value">value</a></code></li>
 </ul>
 </li>
 </ul>

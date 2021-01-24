@@ -18,13 +18,14 @@ def initialize():
     _CURRENT_CONTEXT = None
     _CURRENT_RASTER = None
 
-    _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS ]
+    # _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS ]
+    _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX ]
     _COMMENTS_FORMAT = CommentsFormat.USE_SEMICOLON
     _DIRECTIVE_PREFIX = DirectiveFormat.NO_PREFIX
 
 
     logger = logging.getLogger("shazzam")
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # formatter = logging.Formatter('%(levelname)s : %(funcName)s : %(message)s')
     formatter = logging.Formatter('%(levelname)s :%(message)s')

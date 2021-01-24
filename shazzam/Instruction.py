@@ -27,7 +27,7 @@ class Instruction():
 
     opcodes = [
         #     0,8           1,9           2,A           3,B           4,C           5,D           6,E           7,F  */
-        ["brk","imm"],["ora","iix"],["___","___"],["___","___"],["___","___"],["ora","zpg"],["asl","zpg"],["___","___"],  # 00
+        ["brk","imp"],["ora","iix"],["___","___"],["___","___"],["___","___"],["ora","zpg"],["asl","zpg"],["___","___"],  # 00
         ["php","imp"],["ora","imm"],["asl","acc"],["___","___"],["___","___"],["ora","abs"],["asl","abs"],["___","___"],  # 08
         ["bpl","rel"],["ora","iiy"],["___","___"],["___","___"],["___","___"],["ora","zpx"],["asl","zpx"],["___","___"],  # 10
         ["clc","imp"],["ora","aby"],["___","___"],["___","___"],["___","___"],["ora","abx"],["asl","abx"],["___","___"],  # 18
@@ -81,7 +81,7 @@ class Instruction():
     addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
     instructions = list(set([opcode[0] for opcode in opcodes]))
 
-    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = True):
+    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = False):
 
         self.logger = logging.getLogger("shazzam")
         self.instruction_name = instruction_name
@@ -235,7 +235,7 @@ class Instruction():
                     val = f"#{self.immediate.value}"
 
         elif self.mode == 'abs':
-            if self.address.name and self.show_labels:
+            if (self.address.name and self.show_labels) or self.address.value is None:
                 val = self.address.name
             else:
                 val = f"${self.address.value:04X}" if self.use_upper else f"${self.address.value:04x}"
@@ -276,7 +276,7 @@ class Instruction():
                 val = f"${self.address.value:04X},Y" if self.use_upper else f"${self.address.value:04x},y"
 
         elif self.mode == 'rel':
-            if self.immediate.name and self.show_labels:
+            if self.immediate.name and self.show_label:
                 val = self.immediate.name
             else:
                 val = f"${self.immediate.value:04X}" if self.use_upper else f"${self.immediate.value:04x}"

@@ -29,22 +29,22 @@
 <pre><code class="python">import math
 import logging
 from shazzam.py64gen import *
-from shazzam.py64gen import Register as r
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
 logger = logging.getLogger(&#34;shazzam&#34;)
 
 # ------------------------------------------------------------------------
-# add16(res, n1, n2)
+# add16(n1, n2, res)
 # 16 bits addition
 # ------------------------------------------------------------------------
-def add16(res, n1, n2):
+def add16(n1, n2, res):
     clc()
-    lda(abs_adr=n1)
-    adc(abs_adr=n2)
-    sta(abs_adr=res+0)
-    lda(abs_adr=n1+1)
-    adc(abs_adr=n2+1)
-    sta(abs_adr=res+1)
+    lda(at(n1))
+    adc(at(n2))
+    sta(at(res)+0)
+    lda(at(n1)+1)
+    adc(at(n2)+1)
+    sta(at(res)+1)
 
 # ------------------------------------------------------------------------
 # add8_to_16(n, val)
@@ -260,7 +260,7 @@ def generate_d018(charmem, bitmap, screenmem):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="shazzam.macros.macros.add16"><code class="name flex">
-<span>def <span class="ident">add16</span></span>(<span>res, n1, n2)</span>
+<span>def <span class="ident">add16</span></span>(<span>n1, n2, res)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -268,14 +268,14 @@ def generate_d018(charmem, bitmap, screenmem):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def add16(res, n1, n2):
+<pre><code class="python">def add16(n1, n2, res):
     clc()
-    lda(abs_adr=n1)
-    adc(abs_adr=n2)
-    sta(abs_adr=res+0)
-    lda(abs_adr=n1+1)
-    adc(abs_adr=n2+1)
-    sta(abs_adr=res+1)</code></pre>
+    lda(at(n1))
+    adc(at(n2))
+    sta(at(res)+0)
+    lda(at(n1)+1)
+    adc(at(n2)+1)
+    sta(at(res)+1)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.macros.macros.add8_to_16"><code class="name flex">

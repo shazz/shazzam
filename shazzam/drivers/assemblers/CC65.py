@@ -78,7 +78,8 @@ class CC65(Assembler):
             [type]: [description]
         """
         return Alias( {
-            "code": [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
+            # "code": [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
+            "code": [CodeFormat.USE_HEX],
             "comments": CommentsFormat.USE_SEMICOLON,
             "directive": DirectiveFormat.USE_DOT
         })
@@ -161,7 +162,9 @@ class CC65(Assembler):
             first_segment_address = sorted_segments_adr[sorted_segments_adr.index(start_address)+1]
             CC65.memory = CC65.memory.replace("%%%", f"${first_segment_address:04X}")
         else:
-            CC65.memory = CC65.memory.replace("%%%", f"${0x0801+CC65.basic_header_size+(program.segments[0].end_adr - program.segments[0].start_adr):04X}")
+            main_size = start_address + CC65.basic_header_size + (program.segments[0].size)
+            self.logger.info(f"Only one CODE segment of size: {program.segments[0].size} + {CC65.basic_header_size} + 0x{start_address:04X} = {main_size:04X}")
+            CC65.memory = CC65.memory.replace("%%%", f"${main_size:04X}")
 
         mem_lines = ""
         for i, segment in enumerate(program.segments):

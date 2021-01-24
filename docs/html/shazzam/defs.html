@@ -34,10 +34,14 @@ class Alias(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-class Register(Enum):
-    A = 0
-    X = 1
-    Y = 2
+class RegisterX(Enum):
+    foo = 0
+
+class RegisterY(Enum):
+    foo = 0
+
+class RegisterACC(Enum):
+    foo = 0
 
 class CodeFormat(Enum):
     BYTECODE = auto()
@@ -45,6 +49,7 @@ class CodeFormat(Enum):
     CYCLES = auto()
     UPPERCASE = auto()
     USE_HEX = auto()
+    SHOW_LABELS = auto()
 
 class CommentsFormat(Enum):
     USE_SEMICOLON = auto()
@@ -114,7 +119,8 @@ class System(Enum):
     ADDRESS = auto()
     CYCLES = auto()
     UPPERCASE = auto()
-    USE_HEX = auto()</code></pre>
+    USE_HEX = auto()
+    SHOW_LABELS = auto()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -131,6 +137,10 @@ class System(Enum):
 <div class="desc"></div>
 </dd>
 <dt id="shazzam.defs.CodeFormat.CYCLES"><code class="name">var <span class="ident">CYCLES</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.defs.CodeFormat.SHOW_LABELS"><code class="name">var <span class="ident">SHOW_LABELS</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -274,8 +284,8 @@ class System(Enum):
 </dd>
 </dl>
 </dd>
-<dt id="shazzam.defs.Register"><code class="flex name class">
-<span>class <span class="ident">Register</span></span>
+<dt id="shazzam.defs.RegisterACC"><code class="flex name class">
+<span>class <span class="ident">RegisterACC</span></span>
 <span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
 </code></dt>
 <dd>
@@ -284,10 +294,8 @@ class System(Enum):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class Register(Enum):
-    A = 0
-    X = 1
-    Y = 2</code></pre>
+<pre><code class="python">class RegisterACC(Enum):
+    foo = 0</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -295,15 +303,57 @@ class System(Enum):
 </ul>
 <h3>Class variables</h3>
 <dl>
-<dt id="shazzam.defs.Register.A"><code class="name">var <span class="ident">A</span></code></dt>
+<dt id="shazzam.defs.RegisterACC.foo"><code class="name">var <span class="ident">foo</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="shazzam.defs.Register.X"><code class="name">var <span class="ident">X</span></code></dt>
+</dl>
+</dd>
+<dt id="shazzam.defs.RegisterX"><code class="flex name class">
+<span>class <span class="ident">RegisterX</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RegisterX(Enum):
+    foo = 0</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="shazzam.defs.RegisterX.foo"><code class="name">var <span class="ident">foo</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
-<dt id="shazzam.defs.Register.Y"><code class="name">var <span class="ident">Y</span></code></dt>
+</dl>
+</dd>
+<dt id="shazzam.defs.RegisterY"><code class="flex name class">
+<span>class <span class="ident">RegisterY</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class RegisterY(Enum):
+    foo = 0</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="shazzam.defs.RegisterY.foo"><code class="name">var <span class="ident">foo</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -360,10 +410,11 @@ class System(Enum):
 </li>
 <li>
 <h4><code><a title="shazzam.defs.CodeFormat" href="#shazzam.defs.CodeFormat">CodeFormat</a></code></h4>
-<ul class="">
+<ul class="two-column">
 <li><code><a title="shazzam.defs.CodeFormat.ADDRESS" href="#shazzam.defs.CodeFormat.ADDRESS">ADDRESS</a></code></li>
 <li><code><a title="shazzam.defs.CodeFormat.BYTECODE" href="#shazzam.defs.CodeFormat.BYTECODE">BYTECODE</a></code></li>
 <li><code><a title="shazzam.defs.CodeFormat.CYCLES" href="#shazzam.defs.CodeFormat.CYCLES">CYCLES</a></code></li>
+<li><code><a title="shazzam.defs.CodeFormat.SHOW_LABELS" href="#shazzam.defs.CodeFormat.SHOW_LABELS">SHOW_LABELS</a></code></li>
 <li><code><a title="shazzam.defs.CodeFormat.UPPERCASE" href="#shazzam.defs.CodeFormat.UPPERCASE">UPPERCASE</a></code></li>
 <li><code><a title="shazzam.defs.CodeFormat.USE_HEX" href="#shazzam.defs.CodeFormat.USE_HEX">USE_HEX</a></code></li>
 </ul>
@@ -399,11 +450,21 @@ class System(Enum):
 </ul>
 </li>
 <li>
-<h4><code><a title="shazzam.defs.Register" href="#shazzam.defs.Register">Register</a></code></h4>
+<h4><code><a title="shazzam.defs.RegisterACC" href="#shazzam.defs.RegisterACC">RegisterACC</a></code></h4>
 <ul class="">
-<li><code><a title="shazzam.defs.Register.A" href="#shazzam.defs.Register.A">A</a></code></li>
-<li><code><a title="shazzam.defs.Register.X" href="#shazzam.defs.Register.X">X</a></code></li>
-<li><code><a title="shazzam.defs.Register.Y" href="#shazzam.defs.Register.Y">Y</a></code></li>
+<li><code><a title="shazzam.defs.RegisterACC.foo" href="#shazzam.defs.RegisterACC.foo">foo</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="shazzam.defs.RegisterX" href="#shazzam.defs.RegisterX">RegisterX</a></code></h4>
+<ul class="">
+<li><code><a title="shazzam.defs.RegisterX.foo" href="#shazzam.defs.RegisterX.foo">foo</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="shazzam.defs.RegisterY" href="#shazzam.defs.RegisterY">RegisterY</a></code></h4>
+<ul class="">
+<li><code><a title="shazzam.defs.RegisterY.foo" href="#shazzam.defs.RegisterY.foo">foo</a></code></li>
 </ul>
 </li>
 <li>

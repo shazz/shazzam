@@ -53,15 +53,27 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False) ->
 
     found = False
     for segment in g._PROGRAM.segments:
-        if segment.start_adr == start_adr:
+
+        # check segments with same base address
+        if segment.start_adr == start_adr and segment.name != seg.name:
+            raise ValueError(f"Multiple segments have the same start address {start_adr:04X}: {segment.name} and {seg.name}")
+
+        # TODO: check overlap
+
+        # else
+        if segment.start_adr == start_adr and segment.name == seg.name:
             found = True
 
+            g.logger.info(f"Removing segment {segment.name} to PROGRAM")
             g._PROGRAM.segments.remove(segment)
+
+            g.logger.info(f"Adding segment {segment.name} to PROGRAM")
             g._PROGRAM.segments.append(seg)
 
             break
 
     if not found:
+        g.logger.info(f"Adding new segment {seg.name} to PROGRAM")
         g._PROGRAM.segments.append(seg)
 
     g._CURRENT_CONTEXT.close()
@@ -118,6 +130,7 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -> None:
 
     for segment in g._PROGRAM.segments:
 
+        g.logger.info(f"generating code for segment {segment.name} from {g._PROGRAM.segments}")
         segment.change_format()
         code = segment.gen_code()
 
@@ -266,7 +279,7 @@ def label(name: str, is_global: bool = False) -> Address:
 
     if is_global:
         g._PROGRAM.add_label(label)
-        print(g._PROGRAM.global_labels)
+        # TODO: generate include file? with globals addresses ?
 
     return label
 

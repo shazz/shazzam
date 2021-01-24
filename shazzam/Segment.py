@@ -90,6 +90,10 @@ class Segment():
         self.rasterlines = {}
         self.anonymous_labels = {}
 
+    @property
+    def size(self):
+        return self.end_adr - self.start_adr
+
     def change_format(self):
 
         code_format = g._CODE_FORMAT
@@ -134,7 +138,7 @@ class Segment():
         bcode, resolved = self.get_bytecode(instr)
 
         if not resolved:
-            g.logger.warning("bytecade cannot be generated yet")
+            g.logger.warning("bytecode cannot be generated yet, will be resolve later!")
             return None
 
         return bcode
@@ -151,7 +155,7 @@ class Segment():
         data = ByteData(immediate)
         self.instructions[self.next_position] = data
         self.next_position += 1
-        self.logger.debug(f"Added byte, next pos is not {self.next_position:04X}")
+        self.logger.debug(f"dded byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}")
 
         return self.get_bytecode(data)
 

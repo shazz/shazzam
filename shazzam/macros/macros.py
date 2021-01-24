@@ -1,7 +1,7 @@
 import math
 import logging
 from shazzam.py64gen import *
-from shazzam.py64gen import Register as r
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
 logger = logging.getLogger("shazzam")
 
@@ -11,12 +11,12 @@ logger = logging.getLogger("shazzam")
 # ------------------------------------------------------------------------
 def add16(n1, n2, res):
     clc()
-    lda(abs_adr=n1.address if is_label(n1) else n1)
-    adc(abs_adr=n2.address if is_label(n2) else n2)
-    sta(abs_adr=res.address+0 if is_label(res) else res+0)
-    lda(abs_adr=n1.address+1 if is_label(n1) else n1+1)
-    adc(abs_adr=n2.address+1 if is_label(n2) else n12+1)
-    sta(abs_adr=res.address+1 if is_label(res) else res+1)
+    lda(at(n1))
+    adc(at(n2))
+    sta(at(res)+0)
+    lda(at(n1)+1)
+    adc(at(n2)+1)
+    sta(at(res)+1)
 
 # ------------------------------------------------------------------------
 # add8_to_16(n, val)

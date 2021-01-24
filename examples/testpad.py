@@ -7,6 +7,7 @@ from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
+import shazzam.macros.macros as m
 
 # define your cross assembler
 assembler = CC65("cc65", "/home/shazz/projects/c64/bin/cl65")
@@ -21,28 +22,50 @@ def code():
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
+        m.add16("n1", "n2", "res")
 
+        brk()
         nop()
-        sta(at(0x12))
-        sta(at(0x12),x)
-        sta(at(0x1212))
-        sta(at(0x1212),x)
-        sta(at(0x1212),y)
-        sta(ind_at(0x12),x)
-        sta(ind_at(0x12),y)
-        nop()
-        sta(at("test"))
-        sta(at("test"),x)
-        sta(at("test"),y)
 
-    with segment(0x0801, assembler.get_data_segment()) as s:
-        label("test")
-        for i in range(10):
-            byte(i)
+        label("n1")
+        byte(100)
+        byte(0)
         nop()
-        label("test2")
-        for i in range(3):
-            byte(i)
+        label("n2")
+        byte(200)
+        byte(0)
+        nop()
+        label("res")
+        byte(0)
+        byte(0)
+
+        cpu, mmu = s.emulate()
+        print(f"Address: {get_current_address():04X}")
+        assert ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2)) == 300
+        print(s.get_stats())
+
+        # nop()
+        # sta(at(0x12))
+        # sta(at(0x12),x)
+        # sta(at(0x1212))
+        # sta(at(0x1212),x)
+        # sta(at(0x1212),y)
+        # sta(ind_at(0x12),x)
+        # sta(ind_at(0x12),y)
+
+        # nop()
+        # sta(at("test"))
+        # sta(at("test"),x)
+        # sta(at("test"),y)
+
+    # with segment(0x0900, assembler.get_data_segment()) as s:
+    #     label("test", is_global=True)
+    #     for i in range(10):
+    #         byte(i)
+    #     nop()   # else label won't be seen... to fixed
+    #     label("test2")
+    #     for i in range(3):
+    #         byte(i)
 
 
     # generate listing

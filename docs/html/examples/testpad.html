@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>examples.music_please API documentation</title>
+<title>examples.testpad API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>examples.music_please</code></h1>
+<h1 class="title">Module <code>examples.testpad</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
@@ -33,10 +33,9 @@ sys.path.append(&#34;.&#34;)
 from reloading import reloading
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
-import shazzam.macros.macros as m
 from shazzam.macros.aliases import color, vic
-import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
+import shazzam.macros.macros as m
 
 # define your cross assembler
 assembler = CC65(&#34;cc65&#34;, &#34;/home/shazz/projects/c64/bin/cl65&#34;)
@@ -47,15 +46,59 @@ set_prefs(code_format=prefs.code, comments_format=prefs.comments, directive_pref
 def code():
 
     # define here or anywhere, doesn&#39;t matter, your variables
-    sid = p.read_sid(&#34;resources/Meetro.sid&#34;)
+
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
+        m.add16(&#34;n1&#34;, &#34;n2&#34;, &#34;res&#34;)
 
-        print(f&#34;{s.get_stats()}&#34;)
+        brk()
+        nop()
+
+        label(&#34;n1&#34;)
+        byte(100)
+        byte(0)
+        nop()
+        label(&#34;n2&#34;)
+        byte(200)
+        byte(0)
+        nop()
+        label(&#34;res&#34;)
+        byte(0)
+        byte(0)
+
+        cpu, mmu = s.emulate()
+        print(f&#34;Address: {get_current_address():04X}&#34;)
+        assert ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2)) == 300
+        print(s.get_stats())
+
+        # nop()
+        # sta(at(0x12))
+        # sta(at(0x12),x)
+        # sta(at(0x1212))
+        # sta(at(0x1212),x)
+        # sta(at(0x1212),y)
+        # sta(ind_at(0x12),x)
+        # sta(ind_at(0x12),y)
+
+        # nop()
+        # sta(at(&#34;test&#34;))
+        # sta(at(&#34;test&#34;),x)
+        # sta(at(&#34;test&#34;),y)
+
+    # with segment(0x0900, assembler.get_data_segment()) as s:
+    #     label(&#34;test&#34;, is_global=True)
+    #     for i in range(10):
+    #         byte(i)
+    #     nop()   # else label won&#39;t be seen... to fixed
+    #     label(&#34;test2&#34;)
+    #     for i in range(3):
+    #         byte(i)
+
 
     # generate listing
-    gen_code()
+    gen_code(&#34;testpad&#34;, prefs=prefs)
+    gen_listing(&#34;testpad&#34;)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)

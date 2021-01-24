@@ -6,17 +6,17 @@ from shazzam.py64gen import Register as r
 logger = logging.getLogger("shazzam")
 
 # ------------------------------------------------------------------------
-# add16(res, n1, n2)
+# add16(n1, n2, res)
 # 16 bits addition
 # ------------------------------------------------------------------------
-def add16(res, n1, n2):
+def add16(n1, n2, res):
     clc()
-    lda(abs_adr=n1)
-    adc(abs_adr=n2)
-    sta(abs_adr=res+0)
-    lda(abs_adr=n1+1)
-    adc(abs_adr=n2+1)
-    sta(abs_adr=res+1)
+    lda(abs_adr=n1.address if is_label(n1) else n1)
+    adc(abs_adr=n2.address if is_label(n2) else n2)
+    sta(abs_adr=res.address+0 if is_label(res) else res+0)
+    lda(abs_adr=n1.address+1 if is_label(n1) else n1+1)
+    adc(abs_adr=n2.address+1 if is_label(n2) else n12+1)
+    sta(abs_adr=res.address+1 if is_label(res) else res+1)
 
 # ------------------------------------------------------------------------
 # add8_to_16(n, val)

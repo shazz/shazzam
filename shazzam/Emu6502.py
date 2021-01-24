@@ -16,6 +16,9 @@ class Emu6502():
         self.logger.info(f"Loading code from {seg_start_address:04X} to {seg_stop_address:04X}")
         self.logger.info(f"Set PC at {seg_entry_address:04X}")
 
+        # for i in range(seg_stop_address - seg_start_address):
+        #     self.logger.debug(hex(int.from_bytes(bytecode.read(1), "big")))
+
         low_ram = (0x00, seg_start_address-1)
         hi_ram = (seg_stop_address, 0xffff)
 
@@ -36,18 +39,21 @@ class Emu6502():
         cpu = CPU(mmu, seg_entry_address)
 
         # for i in range(seg_stop_address - seg_start_address):
-        #     logger.debug(f"{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}")
+        #     self.logger.debug(f"{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}")
+
+        self.logger.debug(f"Emulating from {cpu.r.pc:04X} to {seg_stop_address:04X}")
 
         while(cpu.r.pc < seg_stop_address):
             try:
-                self.logger.debug(f"Next: {cpu.r.pc:04X} - {mmu.read(cpu.r.pc)}")
+                self.logger.debug(f"Emulating at: {cpu.r.pc:04X} the bytecode: {mmu.read(cpu.r.pc):02X}")
                 cpu.step()
+                input()
             except Exception as e:
                 self.logger.critical(f"Emulation crashed at {cpu.r.pc:04X} due to {e}")
                 self.logger.debug(traceback.format_exc())
-                # raise
+                raise
 
-        return cpu
+        return cpu, mmu
 
         # define your blocks of memory.  Each tuple is
         # (start_address, length, readOnly=True, value=None, valueOffset=0)

@@ -6,7 +6,6 @@ from shazzam.py64gen import *
 from shazzam.py64gen import Register as r
 
 import pytest
-from cases.parse_case import parse_case
 from pytest_cases import parametrize_with_cases
 from tests.cases_opcodes import OpCodesCases
 

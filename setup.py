@@ -4,7 +4,6 @@
 import os
 import sys
 
-
 try:
     from setuptools import setup
 except ImportError:
@@ -14,30 +13,30 @@ if sys.argv[-1] == 'publish':
     os.system('python setup.py sdist upload')
     sys.exit()
 
-# readme = open('README.rst').read()
-# history = open('HISTORY.rst').read().replace('.. :changelog:', '')
+# readme = open('README.md').read()
+# history = open('HISTORY.nd').read().replace('.. :changelog:', '')
 
 setup(
-    name='py64gen',
+    name='shazzam',
     version='0.0.1',
-    description='Assembler Code Generator for C64',
+    description='Python-based 6502 Assembly Code Generator for C64',
     long_description="",
-    author='',
-    author_email='',
-    url='',
+    author='Shazz / TRSi',
+    author_email='shazz@trsi.de',
+    url='https://github.com/shazz/shazzam',
     packages=[
-        'py64gen',
+        'shazzam',
     ],
-    package_dir={'py64gen': 'py64gen'},
+    package_dir={'shazzam': 'shazzam'},
     include_package_data=True,
     install_requires=[
     ],
-    license="WTFPL",
+    license="MIT",
     zip_safe=False,
-    keywords='py64gen',
+    keywords=['c64', 'cross-assembler', '6502', 'commodore'],
     classifiers=[
         'Intended Audience :: Developers',
-        'License :: WTFPL',
+        'License :: MIT',
         'Natural Language :: English',
         'Programming Language :: Python :: 3.8',
     ],

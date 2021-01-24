@@ -14,7 +14,7 @@ class Cruncher():
         self.incbin_cmd = incbin_cmd
         self.packer_name = packer_name
 
-    def crunch_prg(self, filename: str) -> None:
+    def crunch_prg(self, filename: str, extra_params: List = None) -> None:
         """Crunch program
 
         Args:
@@ -25,6 +25,9 @@ class Cruncher():
 
         self.prg_cmd[self.prg_cmd.index("FILENAME_TO_SET")] = filename
         self.prg_cmd[self.prg_cmd.index("OUTPUT_TO_SET")] = f"{os.path.splitext(filename)[0]}_packed.prg"
+        if extra_params and len(extra_params) > 0:
+            self.prg_cmd[1:1] = extra_params
+
 
         self.logger.info(f"Crunching {filename} with {self.packer_name} command: {self.prg_cmd }")
         print("---------------------------------------------------------------")
@@ -32,17 +35,19 @@ class Cruncher():
         output = data.communicate()
         print("---------------------------------------------------------------")
 
-    def crunch_incbin(self, payload: bytearray) -> None:
+    def crunch_incbin(self, payload: bytearray, extra_params: List = None) -> None:
         """crunch_incbin
 
         Args:
             payload (bytearray): [description]
         """
         if self.incbin_cmd is None:
-            raise RuntimeError("Packer command line for PRG is not set!")
+            raise RuntimeError("Packer command line for incbin is not set!")
 
         self.incbin_cmd[self.incbin_cmd.index("FILENAME_TO_SET")] = filename
         self.incbin_cmd[self.incbin_cmd.index("OUTPUT_TO_SET")] = f"{os.path.splitext(filename)[0]}.bin"
+        if extra_params and len(extra_params) > 0:
+            self.prg_cmd[1:1] = extra_params
 
         self.logger.info(f"Crunching {filename} with {self.packer_name} command: {self.incbin_cmd }")
         print("---------------------------------------------------------------")

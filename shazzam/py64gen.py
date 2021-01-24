@@ -11,10 +11,12 @@ from shazzam.Instruction import Instruction
 from shazzam.defs import *
 from shazzam.Rasterline import Rasterline
 from shazzam.Segment import Segment
+from shazzam.Address import Address
+from shazzam.Immediate import Immediate
 from shazzam.Cruncher import Cruncher
 from shazzam.Assembler import Assembler
 
-from typing import List
+from typing import List, Any
 
 
 # ---------------------------------------------------------------------
@@ -174,7 +176,37 @@ def gen_sparkle_script():
 # ---------------------------------------------------------------------
 # Assembler directives
 # ---------------------------------------------------------------------
-def label(name: str, is_global: bool = False):
+def at(value: Any) -> Address:
+    if isinstance(value, str):
+        return Address(name=value)
+    elif isinstance(value, int):
+        return Address(value=value)
+    else:
+        raise ValueError("Address must be an int or a string")
+
+def ind_at(value: Any) -> Address:
+    if isinstance(value, str):
+        return Address(name=value, indirect=True)
+    elif isinstance(value, int):
+        return Address(value=value, indirect=True)
+    else:
+        raise ValueError("Address must be an int or a string")
+
+def imm(value: Any) -> Immediate:
+    if isinstance(value, str):
+        if value.startswith('>'):
+            return Immediate(name=value[1:], high_byte=True)
+        elif value.startswith('<'):
+            return Immediate(name=value[1:], high_byte=False)
+        else:
+            raise ValueError(f"Low byte (<) or High byte (>) must be specified. Not {value}")
+
+    elif isinstance(value, int):
+        return Immediate(value=value)
+    else:
+        raise ValueError("Immediate must be an int or a string")
+
+def label(name: str, is_global: bool = False) -> Address:
     """[summary]
 
     Args:
@@ -191,11 +223,13 @@ def label(name: str, is_global: bool = False):
     if name == None or len(name) == 0:
         raise ValueError(f"Label cannot be empty")
 
-    seg_label_address = g._CURRENT_CONTEXT.add_label(name)
+    label: Address = g._CURRENT_CONTEXT.add_label(name)
 
     if is_global:
-        g._PROGRAM.add_label(name, seg_label_address)
+        g._PROGRAM.add_label(label)
         print(g._PROGRAM.global_labels)
+
+    return label
 
 def get_anonymous_label(name: str) -> str:
     """[summary]
@@ -215,37 +249,31 @@ def get_anonymous_label(name: str) -> str:
 
     return g._CURRENT_CONTEXT.get_anonymous_label(name)
 
-def byte(value: int = None, values: [] = None, label: str = None) -> bytearray:
-    """byte assembler directive
+def byte(value: Any) -> bytearray:
 
-    Args:
-        value (int, optional): [description]. Defaults to None.
-        values ([type], optional): [description]. Defaults to None.
-        label (str, optional): [description]. Defaults to None.
-
-    Raises:
-        RuntimeError: [description]
-        ValueError: [description]
-
-    Returns:
-        bytearray: [description]
-    """
     global _CURRENT_CONTEXT
     if g._CURRENT_CONTEXT is None:
         raise RuntimeError(f"No segment defined!")
 
-    if value and value > 0xff:
-        raise ValueError(f"Value exceed byte size: {value}")
-    else:
-        return g._CURRENT_CONTEXT.add_byte(value, label)
+    bcode = None
+    if isinstance(value, str):
+        if value.startswith('>'):
+            return g._CURRENT_CONTEXT.add_byte(Immediate(name=value[1:], high_byte=True))
+        elif value.startswith('<'):
+            return g._CURRENT_CONTEXT.add_byte(Immediate(name=value[1:], high_byte=False))
+        else:
+            raise ValueError(f"Low byte (<) or High byte (>) must be specified. Not {value}")
 
-    if values:
+    elif isinstance(value, int):
+        return g._CURRENT_CONTEXT.add_byte(Immediate(value=value))
+
+    elif isinstance(value, list):
         ret_array = []
-        for value in values:
-            if value > 0xff:
-                raise ValueError(f"Value exceed byte size: {value}")
-            ret_array.append(g._CURRENT_CONTEXT.add_byte(value, label))
+        for v in value:
+            ret_array.append(g._CURRENT_CONTEXT.add_byte(Immediate(value=v)))
         return bytearray(ret_array)
+    else:
+        raise ValueError("Immediate must be an int or a string")
 
 
 def word(value: int, label: str) -> None:
@@ -284,6 +312,13 @@ def incbin(data: bytearray) -> None:
     for b in data:
         g._CURRENT_CONTEXT.add_byte(b)
 
+def get_current_address() -> int:
+
+    global _CURRENT_CONTEXT
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError(f"No segment defined!")
+
+    return g._CURRENT_CONTEXT.next_position
 
 # ---------------------------------------------------------------------
 # Utils
@@ -335,63 +370,66 @@ def _create_a_function(*args, **kwargs):
         if g._CURRENT_CONTEXT is None:
             raise RuntimeError(f"No segment defined!")
 
-        label       = kwargs['label'] if 'label' in kwargs else None
-        imm         = kwargs['imm'] if 'imm' in kwargs else None
-        rel_adr     = kwargs['rel_adr'] if 'rel_adr' in kwargs else None
-        abs_adr     = kwargs['abs_adr'] if 'abs_adr' in kwargs else None
-        index       = kwargs['index'] if 'index' in kwargs else None
-        ind_adr     = kwargs['ind_adr'] if 'ind_adr' in kwargs else None
+        address = None
+        immediate = None
+        index = None
 
-        if label and label == "":
-            raise ValueError("Label cannot be empty")
+        if len(args) > 0:
+            if isinstance(args[0], Address):
+                address = args[0]
+            elif isinstance(args[0], Immediate):
+                immediate = args[0]
+
+        if len(args) == 2:
+            index = args[1]
+
+        if len(args) > 2:
+            raise ValueError(f"Too many arguments!")
 
         g.logger.debug(f"Adding conditions for modes: {modes}")
 
-        if 'zpx' in modes and index is Register.X:
-            if label:
-                adr = g.g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', label=label))
-            elif abs_adr is not None:
-                if abs_adr < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', abs_adr))
+        # if 'zpx' in modes and index is RegisterX and not address.indirect:
+        #     if address.value is None:
+        #         adr = g._CURRENT_CONTEXT.need_label(address.name)
+        #     return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
 
-        if 'zpy' in modes and index is Register.Y:
-            if label:
-                adr = g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', label=label))
-            elif abs_adr is not None:
-                if abs_adr < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', abs_adr))
+        # if 'zpy' in modes and index is RegisterY and not address.indirect:
+        #     if label:
+        #         adr = g._CURRENT_CONTEXT.need_label(label)
+        #         return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', label=label))
+        #     elif abs_adr is not None:
+        #         if abs_adr < 0x100:
+        #            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', abs_adr))
 
-        if 'abx' in modes and index is Register.X:
-            if label:
-                adr = g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', label=label))
-            elif abs_adr is not None:
-                if 'zpx' in modes and abs_adr < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', abs_adr))
-                else:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', abs_adr))
+        if 'abx' in modes and index is RegisterX and not address.indirect:
+            if address.value:
+                if 'zpx' in modes and address.value < 0x100:
+                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
+                elif address.value > 0x100:
+                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', address=address))
+            else:
+                adr = g._CURRENT_CONTEXT.need_label(address.name)
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', address=address))
 
-        if 'aby' in modes and index is Register.Y:
-            if label:
-                adr = g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', label=label))
-            elif abs_adr is not None:
-                if 'zpy' in modes and abs_adr < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', abs_adr))
-                else:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', abs_adr))
+        if 'aby' in modes and index is RegisterY and not address.indirect:
+            if address.value:
+                if 'zpy' in modes and address.value < 0x100:
+                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', address=address))
+                elif address.value > 0x100:
+                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', address=address))
+            else:
+                adr = g._CURRENT_CONTEXT.need_label(address.name)
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', address=address))
 
-        if 'abs' in modes and index is None:
-            if label:
-                adr = g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', label=label))
-            elif abs_adr is not None:
-                if 'zpg' in modes and abs_adr < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpg', value=abs_adr))
-                else:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', value=abs_adr))
+        if 'abs' in modes and index is None and address and not address.indirect:
+            if address.value:
+                if 'zpg' in modes and address.value < 0x100:
+                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpg', address=address))
+                elif address.value > 0x100:
+                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
+            else:
+                adr = g._CURRENT_CONTEXT.need_label(address.name)
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
 
         if 'rel' in modes:
             if rel_adr is not None:
@@ -399,25 +437,22 @@ def _create_a_function(*args, **kwargs):
             else:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', label=label))
 
-        if 'imm' in modes and imm is not None:
-             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imm', value=imm))
+        if 'imm' in modes and immediate is not None:
+            if immediate.value is None:
+                adr = g._CURRENT_CONTEXT.need_label(immediate.name)
+            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imm', immediate=immediate))
 
         if 'imp' in modes:
-             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imp'))
+            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imp'))
 
-        if 'iix' in modes and ind_adr is not None and index is Register.X:
-            if label:
-                adr = g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iix', label=label))
-            elif ind_adr is not None:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iix', value=ind_adr))
+        if 'iix' in modes and index is RegisterX and address and address.indirect:
+            if address.value and address.value <= 0x100:
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iix', address=address))
 
-        if 'iiy' in modes and ind_adr is not None and index is Register.Y:
-            if label:
-                adr = g._CURRENT_CONTEXT.need_label(label)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iiy', label=label))
-            elif ind_adr is not None:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iiy', value=ind_adr))
+        if 'iiy' in modes and index is RegisterY and address and address.indirect:
+            if address.value and address.value <= 0x100:
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iiy', address=address))
+
 
         if 'acc' in modes and index is Register.A:
              return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'acc'))
@@ -429,7 +464,7 @@ def _create_a_function(*args, **kwargs):
             elif ind_adr is not None:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', value=ind_adr))
 
-        raise NotImplementedError(f"No condition for {mnemonic} and args: {kwargs}. Possible modes: {modes}")
+        raise NotImplementedError(f"No condition for {mnemonic} and args: {args}. Possible modes: {modes}")
 
     return function_template
 

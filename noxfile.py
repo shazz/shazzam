@@ -3,9 +3,7 @@ import os
 from pathlib import Path
 import shutil
 
-module_name = "py64gen"
-
-# set the default acrivated sessions, minimal for CI
+module_name = "shazzam"
 nox.options.reuse_existing_virtualenvs = True
 
 version = os.getenv("version_number", "0.0.1")
@@ -14,14 +12,7 @@ version = os.getenv("version_number", "0.0.1")
 This session will run the unit tests.
 """
 @nox.session(python=["3.8"])
-def run(session):
-    """Run the component entry point. (not for CI)"""
-    session.install("-r", "deployments/requirements_run.txt")
-    session.chdir(".") # TODO: replace by the targeted path
-    session.run("my command line") # TODO: replace to run the code
-
-@nox.session(python=["3.8"])
-def test(session):
+def tests(session):
     """Launchs the tests and coverage."""
     session.install("-r", "deployments/requirements_run.txt")
     session.install("-r", "deployments/requirements_test.txt")

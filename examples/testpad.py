@@ -4,7 +4,7 @@ sys.path.append(".")
 
 from reloading import reloading
 from shazzam.py64gen import *
-from shazzam.py64gen import Register as r
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
 
@@ -21,8 +21,23 @@ def code():
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
-        label("hello")
+
         nop()
+        sta(at(0x12))
+        sta(at(0x12),x)
+        sta(at(0x1212))
+        sta(at(0x1212),x)
+        sta(at(0x1212),y)
+        sta(ind_at(0x12),x)
+        sta(ind_at(0x12),y)
+        nop()
+        sta(at("test"))
+        sta(at("test"),x)
+        sta(at("test"),y)
+        label("test")
+        for i in range(10):
+            byte(i)
+
 
     # generate listing
     gen_code("helloworld")

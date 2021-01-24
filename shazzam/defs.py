@@ -6,10 +6,14 @@ class Alias(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
-class Register(Enum):
-    A = 0
-    X = 1
-    Y = 2
+class RegisterX(Enum):
+    foo = 0
+
+class RegisterY(Enum):
+    foo = 0
+
+class RegisterACC(Enum):
+    foo = 0
 
 class CodeFormat(Enum):
     BYTECODE = auto()
@@ -17,6 +21,7 @@ class CodeFormat(Enum):
     CYCLES = auto()
     UPPERCASE = auto()
     USE_HEX = auto()
+    SHOW_LABELS = auto()
 
 class CommentsFormat(Enum):
     USE_SEMICOLON = auto()

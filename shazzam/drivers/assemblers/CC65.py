@@ -40,6 +40,8 @@ class CC65(Assembler):
 }
 """
 
+    basic_header_size = 13
+
     def __init__(self, name: str, exe_path: str):
         super().__init__(name, exe_path)
 
@@ -58,8 +60,8 @@ class CC65(Assembler):
             [type]: [description]
         """
         return Alias( {
-            # "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS],
-            "code": [CodeFormat.USE_HEX],
+            "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
+            # "code": [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
             "comments": CommentsFormat.USE_SEMICOLON,
             "directive": DirectiveFormat.USE_DOT
         })
@@ -142,7 +144,7 @@ class CC65(Assembler):
             first_segment_address = sorted_segments_adr[sorted_segments_adr.index(start_address)+1]
             CC65.memory = CC65.memory.replace("%%%", f"${first_segment_address:04X}")
         else:
-            CC65.memory = CC65.memory.replace("%%%", "")
+            CC65.memory = CC65.memory.replace("%%%", f"${0x0801+CC65.basic_header_size+(program.segments[0].end_adr - program.segments[0].start_adr):04X}")
 
         mem_lines = ""
         for i, segment in enumerate(program.segments):

@@ -15,7 +15,7 @@ a2
 test: LDY(imm(115))
 a0
 73
-test: STA(at(0x81)
+test: STA(at(0x81))
 85
 81
 test: LDA(imm(0x01))
@@ -35,41 +35,41 @@ test: LDA(at(0x0910))
 ad
 10
 09
-test: STA(at( 0x56, index=r.X))
+test: STA(at(0x56), X)
 95
 56
-test: LDA(at( 0x56, index=r.X))
+test: LDA(at(0x56), X)
 b5
 56
 test: STY(at(0x60))
 84
 60
-test: STA(ind_adr=0x60, index=r.Y))
+test: STA(ind_at(0x60), Y)
 91
 60
-test: LDA(ind_adr=0x60, index=r.Y))
+test: LDA(ind_at(0x60), Y)
 B1
 60
-test: STA(at(0x07ff, index=r.X))
+test: STA(at(0x07ff), X)
 9d
 ff
 07
-test: LDA(at(0x07ff, index=r.X))
+test: LDA(at(0x07ff), X)
 bd
 ff
 07
-test: STA(at(0x07ff, index=r.Y))
+test: STA(at(0x07ff), Y)
 99
 ff
 07
-test: LDA(at(0x07ff, index=r.Y))
+test: LDA(at(0x07ff), Y)
 b9
 ff
 07
-test: STA(ind_adr=0x36, index=r.X))
+test: STA(ind_at(0x36), X)
 81
 36
-test: LDA(ind_adr=0x36, index=r.X))
+test: LDA(ind_at(0x36), X)
 a1
 36
 test: STX(at(0x50))
@@ -97,27 +97,27 @@ test: LDY(at(0x0914))
 ac
 14
 09
-test: STY(at(0x2D, index=r.X))
+test: STY(at(0x2D), X)
 94
 2D
-test: STX(at(0x77, index=r.Y))
+test: STX(at(0x77), Y)
 96
 77
-test: LDY(at(0x2D, index=r.X))
+test: LDY(at(0x2D), X)
 b4
 2d
-test: LDX(at(0x77, index=r.Y))
+test: LDX(at(0x77), Y)
 b6
 77
-test: LDY(at(0x08A0, index=r.X))
+test: LDY(at(0x08A0), X)
 bc
 a0
 08
-test: LDX(at(0x08A1, index=r.Y))
+test: LDX(at(0x08A1), Y)
 be
 a1
 08
-test: STA(at(0x0200, index=r.X))
+test: STA(at(0x0200), X)
 9d
 00
 02

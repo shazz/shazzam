@@ -440,18 +440,11 @@ def _create_a_function(*args, **kwargs):
 
         g.logger.debug(f"Adding conditions for modes: {modes}")
 
-        # if 'zpx' in modes and index is RegisterX and not address.indirect:
-        #     if address.value is None:
-        #         adr = g._CURRENT_CONTEXT.need_label(address.name)
-        #     return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
+        if 'zpx' in modes and index is RegisterX and address and not address.indirect and address.value < 0x100:
+            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
 
-        # if 'zpy' in modes and index is RegisterY and not address.indirect:
-        #     if label:
-        #         adr = g._CURRENT_CONTEXT.need_label(label)
-        #         return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', label=label))
-        #     elif abs_adr is not None:
-        #         if abs_adr < 0x100:
-        #            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', abs_adr))
+        if 'zpy' in modes and index is RegisterY and address and not address.indirect and address.value < 0x100:
+            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', address=address))
 
         if 'abx' in modes and index is RegisterX and not address.indirect:
             if address.value is not None:

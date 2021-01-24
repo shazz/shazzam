@@ -3,7 +3,7 @@
 import sys
 sys.path.append(".")
 from shazzam.py64gen import *
-from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+from shazzam.py64gen import RegisterX as X, RegisterY as Y, RegisterACC as A
 
 import pytest
 from pytest_cases import parametrize_with_cases

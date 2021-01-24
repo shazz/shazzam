@@ -58,3 +58,6 @@ class Address():
             return f"{self.name}@unknown"
         else:
             raise RuntimeError("Address is void")
+
+    def __repr__(self):
+        return self.__str__()

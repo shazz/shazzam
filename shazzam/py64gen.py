@@ -30,7 +30,7 @@ def set_prefs(code_format: List[CodeFormat], comments_format: CommentsFormat, di
     g._DIRECTIVE_PREFIX = directive_prefix
 
 @contextmanager
-def segment(start_adr: int, name: str, use_relative_addressing: bool = False) -> Segment:
+def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True) -> Segment:
     """[summary]
 
     Args:
@@ -55,7 +55,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False) ->
     for segment in g._PROGRAM.segments:
 
         # check segments with same base address
-        if segment.start_adr == start_adr and segment.name != seg.name:
+        if segment.start_adr == start_adr and segment.name != seg.name and check_address_dups:
             raise ValueError(f"Multiple segments have the same start address {start_adr:04X}: {segment.name} and {seg.name}")
 
         # TODO: check overlap
@@ -221,7 +221,6 @@ def gen_sparkle_script():
 
     for segment in _PROGRAM:
 
-        code = segment.gen_code()
         if code:
             raise NotImplementedError()
 
@@ -477,10 +476,11 @@ def _create_a_function(*args, **kwargs):
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
 
         if 'rel' in modes:
-            if rel_adr is not None:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', value=rel_adr))
+            if address.value is not None:
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
             else:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', label=label))
+                adr = g._CURRENT_CONTEXT.need_label(address.name)
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
 
         if 'imm' in modes and immediate is not None:
             if immediate.value is None:

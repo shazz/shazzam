@@ -2,7 +2,7 @@ import logging
 
 class Address():
 
-    def __init__(self, name: str = None, value: int = None, indirect: bool = False):
+    def __init__(self, name: str = None, value: int = None, indirect: int = 0):
 
         self.logger = logging.getLogger("shazzam")
 

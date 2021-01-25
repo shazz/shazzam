@@ -30,7 +30,7 @@
 
 class Address():
 
-    def __init__(self, name: str = None, value: int = None, indirect: bool = False):
+    def __init__(self, name: str = None, value: int = None, indirect: int = 0):
 
         self.logger = logging.getLogger(&#34;shazzam&#34;)
 
@@ -85,7 +85,10 @@ class Address():
         elif self.name:
             return f&#34;{self.name}@unknown&#34;
         else:
-            raise RuntimeError(&#34;Address is void&#34;)</code></pre>
+            raise RuntimeError(&#34;Address is void&#34;)
+
+    def __repr__(self):
+        return self.__str__()</code></pre>
 </details>
 </section>
 <section>
@@ -99,7 +102,7 @@ class Address():
 <dl>
 <dt id="shazzam.Address.Address"><code class="flex name class">
 <span>class <span class="ident">Address</span></span>
-<span>(</span><span>name: str = None, value: int = None, indirect: bool = False)</span>
+<span>(</span><span>name: str = None, value: int = None, indirect: int = 0)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -109,7 +112,7 @@ class Address():
 </summary>
 <pre><code class="python">class Address():
 
-    def __init__(self, name: str = None, value: int = None, indirect: bool = False):
+    def __init__(self, name: str = None, value: int = None, indirect: int = 0):
 
         self.logger = logging.getLogger(&#34;shazzam&#34;)
 
@@ -164,7 +167,10 @@ class Address():
         elif self.name:
             return f&#34;{self.name}@unknown&#34;
         else:
-            raise RuntimeError(&#34;Address is void&#34;)</code></pre>
+            raise RuntimeError(&#34;Address is void&#34;)
+
+    def __repr__(self):
+        return self.__str__()</code></pre>
 </details>
 <h3>Instance variables</h3>
 <dl>

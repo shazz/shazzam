@@ -109,7 +109,7 @@ class Instruction():
     addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
     instructions = list(set([opcode[0] for opcode in opcodes]))
 
-    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = False):
+    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = True):
 
         self.logger = logging.getLogger(&#34;shazzam&#34;)
         self.instruction_name = instruction_name
@@ -165,8 +165,8 @@ class Instruction():
         elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
             raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
-        elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
-            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.value:04X} to {instruction_address:04X}&#34;)
+        elif self.mode in [&#39;rel&#39;] and self.address.value and abs(self.address.value - self.end_address) &gt; 255:
+            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.value:04X} to {instruction_address:04X}&#34;)
 
 
     def get_instruction_name(self) -&gt; str:
@@ -232,8 +232,11 @@ class Instruction():
             return (def_address_value &amp; 0xff), resolved
 
         elif self.mode in [&#39;rel&#39;]:
-            self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-            return (def_immediate_value&amp; 0xff), resolved
+            if not resolved:
+                self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
+                return (def_address_value &amp; 0xff), resolved
+            else:
+                return (self.address.indirect &amp; 0xff), resolved
 
         else:
             return (def_address_value &amp; 0xffff), resolved
@@ -304,10 +307,10 @@ class Instruction():
                 val = f&#34;${self.address.value:04X},Y&#34; if self.use_upper else f&#34;${self.address.value:04x},y&#34;
 
         elif self.mode == &#39;rel&#39;:
-            if self.immediate.name and self.show_label:
-                val = self.immediate.name
+            if self.address.name and (self.show_labels or self.address.value is None):
+                val = self.address.name
             else:
-                val = f&#34;${self.immediate.value:04X}&#34; if self.use_upper else f&#34;${self.immediate.value:04x}&#34;
+                val = f&#34;${self.address.value:04X}&#34; if self.use_upper else f&#34;${self.address.value:04x}&#34;
 
         elif self.mode == &#39;iiy&#39;:
             val = f&#34;(${self.address.value:02X}),Y&#34; if self.use_upper else f&#34;(${self.address.value:02x}),y&#34;
@@ -335,7 +338,7 @@ class Instruction():
 <dl>
 <dt id="shazzam.Instruction.Instruction"><code class="flex name class">
 <span>class <span class="ident">Instruction</span></span>
-<span>(</span><span>instruction_name, mode, immediate: <a title="shazzam.Immediate.Immediate" href="Immediate.html#shazzam.Immediate.Immediate">Immediate</a> = None, address: <a title="shazzam.Address.Address" href="Address.html#shazzam.Address.Address">Address</a> = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = False)</span>
+<span>(</span><span>instruction_name, mode, immediate: <a title="shazzam.Immediate.Immediate" href="Immediate.html#shazzam.Immediate.Immediate">Immediate</a> = None, address: <a title="shazzam.Address.Address" href="Address.html#shazzam.Address.Address">Address</a> = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = True)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>6502 Instruction class</p></div>
@@ -421,7 +424,7 @@ class Instruction():
     addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
     instructions = list(set([opcode[0] for opcode in opcodes]))
 
-    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = False):
+    def __init__(self, instruction_name, mode, immediate: Immediate = None, address: Address = None, use_upper: bool = False, use_hex: bool = False, show_labels: bool = True):
 
         self.logger = logging.getLogger(&#34;shazzam&#34;)
         self.instruction_name = instruction_name
@@ -477,8 +480,8 @@ class Instruction():
         elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
             raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
-        elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
-            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.value:04X} to {instruction_address:04X}&#34;)
+        elif self.mode in [&#39;rel&#39;] and self.address.value and abs(self.address.value - self.end_address) &gt; 255:
+            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.value:04X} to {instruction_address:04X}&#34;)
 
 
     def get_instruction_name(self) -&gt; str:
@@ -544,8 +547,11 @@ class Instruction():
             return (def_address_value &amp; 0xff), resolved
 
         elif self.mode in [&#39;rel&#39;]:
-            self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-            return (def_immediate_value&amp; 0xff), resolved
+            if not resolved:
+                self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
+                return (def_address_value &amp; 0xff), resolved
+            else:
+                return (self.address.indirect &amp; 0xff), resolved
 
         else:
             return (def_address_value &amp; 0xffff), resolved
@@ -616,10 +622,10 @@ class Instruction():
                 val = f&#34;${self.address.value:04X},Y&#34; if self.use_upper else f&#34;${self.address.value:04x},y&#34;
 
         elif self.mode == &#39;rel&#39;:
-            if self.immediate.name and self.show_label:
-                val = self.immediate.name
+            if self.address.name and (self.show_labels or self.address.value is None):
+                val = self.address.name
             else:
-                val = f&#34;${self.immediate.value:04X}&#34; if self.use_upper else f&#34;${self.immediate.value:04x}&#34;
+                val = f&#34;${self.address.value:04X}&#34; if self.use_upper else f&#34;${self.address.value:04x}&#34;
 
         elif self.mode == &#39;iiy&#39;:
             val = f&#34;(${self.address.value:02X}),Y&#34; if self.use_upper else f&#34;(${self.address.value:02x}),y&#34;
@@ -702,8 +708,8 @@ class Instruction():
     elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
         raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
-    elif self.mode in [&#39;rel&#39;] and self.value and abs(self.value - self.end_address) &gt; 255:
-        raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.value:04X} to {instruction_address:04X}&#34;)</code></pre>
+    elif self.mode in [&#39;rel&#39;] and self.address.value and abs(self.address.value - self.end_address) &gt; 255:
+        raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.value:04X} to {instruction_address:04X}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Instruction.Instruction.get_cycle_count"><code class="name flex">
@@ -817,8 +823,11 @@ class Instruction():
         return (def_address_value &amp; 0xff), resolved
 
     elif self.mode in [&#39;rel&#39;]:
-        self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-        return (def_immediate_value&amp; 0xff), resolved
+        if not resolved:
+            self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
+            return (def_address_value &amp; 0xff), resolved
+        else:
+            return (self.address.indirect &amp; 0xff), resolved
 
     else:
         return (def_address_value &amp; 0xffff), resolved</code></pre>

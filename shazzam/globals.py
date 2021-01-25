@@ -25,7 +25,7 @@ def initialize():
 
 
     logger = logging.getLogger("shazzam")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # formatter = logging.Formatter('%(levelname)s : %(funcName)s : %(message)s')
     formatter = logging.Formatter('%(levelname)s :%(message)s')

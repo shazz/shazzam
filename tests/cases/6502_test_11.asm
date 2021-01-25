@@ -4,12 +4,10 @@
 # Assumes that loads & stores (all addressing modes).
 # Also assumes ADC (all addressing modes) and all flag instructions work.
 #
-# EXPECTED RESULTS: $30 = 0x29
-#
-test: LDA(imm=0x27)
+test: LDA(imm(0x27))
 a9
 27
-test: ADC(imm=0x01)
+test: ADC(imm(0x01))
 69
 01
 test: SEC()
@@ -20,16 +18,16 @@ test: CLC()
 18
 test: PLP()
 28
-test: ADC(imm=0x00)
+test: ADC(imm(0x00))
 69
 00
 test: PHA()
 48
-test: LDA(imm=0x00)
+test: LDA(imm(0x00))
 a9
 00
 test: PLA()
 68
-test: STA(abs_adr=0x30)
+test: STA(at(0x30))
 85
 30

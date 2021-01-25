@@ -61,7 +61,7 @@ class Emu6502():
         while(cpu.r.pc < seg_stop_address and current_instruction[0] != 'brk'):
             try:
                 cpu.step()
-                # input()
+                input()
 
                 current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
                 current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]

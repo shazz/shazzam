@@ -47,19 +47,19 @@ def add16(n1, n2, res):
     sta(at(res)+1)
 
 # ------------------------------------------------------------------------
-# add8_to_16(n, val)
+# add8_to_16(val, res)
 # add a 8bits value to a 16bits value
 # ------------------------------------------------------------------------
-def add8_to_16(n, val):
+def add8_to_16(val, res):
     mlabel = get_anonymous_label(&#34;ok&#34;)
 
     clc()
-    lda(abs_adr=n)
-    adc(value=val)
-    sta(abs_adr=n)
-    bcc(label=mlabel)
-    inc(abs_adr=n+1)
-    label(name=mlabel)
+    lda(at(res))
+    adc(imm(val))
+    sta(at(res))
+    bcc(at(mlabel))
+    inc(at(res+1))
+    label(mlabel)
 
 # ------------------------------------------------------------------------
 # sub8_to_16(n, val)
@@ -69,12 +69,12 @@ def sub8_to_16(n, val):
     mlabel = get_anonymous_label(&#34;ok&#34;)
 
     sec()
-    lda(abs_adr=n)
-    sbc(value=val)
-    sta(abs_adr=n)
-    bcs(label=mlabel)
-    dec(abs_adr=n+1)
-    label(name=mlabel)
+    lda(at(n))
+    sbc(imm(val))
+    sta(at(n))
+    bcs(at(mlabel))
+    dec(at(n+1))
+    label(mlabel)
 
 # ------------------------------------------------------------------------
 # waste_cycles(n)
@@ -93,7 +93,7 @@ def waste_cycles(n):
         for i in range(nops-1):
             nop()
             c = c - 2
-        bit(abs_adr=0xfe)
+        bit(at(0xfe))
         c = c - 3
     if c != 0:
         logger.error(f&#34;error {c} cycles remaining on {n}&#34;)
@@ -107,17 +107,17 @@ def clear_screen(clear_byte: int, screen: int, use_ptr: bool):
     mlabel = get_anonymous_label(&#34;loop&#34;)
 
     if use_ptr:
-        lda(abs_adr=clear_byte)
+        lda(at(clear_byte))
     else:
-        lda(imm=clear_byte)
-    ldx(imm=0)
+        lda(imm(clear_byte))
+    ldx(imm(0))
     label(mlabel)
-    sta(abs_adr=screen, index=r.X)
-    sta(abs_adr=screen + 0x100, index=r.X)
-    sta(abs_adr=screen + 0x200, index=r.X)
-    sta(abs_adr=screen + 0x300, index=r.X)
+    sta(at(screen), x)
+    sta(at(screen) + 0x100, x)
+    sta(at(screen) + 0x200, x)
+    sta(at(screen) + 0x300, x)
     inx()
-    bne(label=mlabel)
+    bne(at(mlabel))
 
 # ------------------------------------------------------------------------------------------
 # basic start
@@ -200,12 +200,12 @@ def setup_vic_bank(bank_start, use_dd02):
         dd02 = utils.generate_full_dd02(bank_start)
 
         logger.info(&#34;bank&#34;, bank_start, BITMAP_ADDR, SCREEN_MEM_ADDR, &#34;dd02&#34;, dd02, &#34;d018&#34;, utils.generate_d018(CHAR_MEM_ADDR, BITMAP_ADDR, SCREEN_MEM_ADDR), d018, &#34;mixed&#34;, (dd02 | d018))
-        lda(imm=dd02)
-        sta(abs_adr=dd02)
+        lda(imm(dd02))
+        sta(at(dd02))
     else:
         dd00 = utils.generate_dd00(bank_start)
-        lda(imm=dd00)
-        sta(abs_adr=dd00)
+        lda(imm(dd00))
+        sta(at(dd00))
 
 # ------------------------------------------------------------------------------------------
 # Generate d018 register
@@ -279,7 +279,7 @@ def generate_d018(charmem, bitmap, screenmem):
 </details>
 </dd>
 <dt id="shazzam.macros.macros.add8_to_16"><code class="name flex">
-<span>def <span class="ident">add8_to_16</span></span>(<span>n, val)</span>
+<span>def <span class="ident">add8_to_16</span></span>(<span>val, res)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -287,16 +287,16 @@ def generate_d018(charmem, bitmap, screenmem):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def add8_to_16(n, val):
+<pre><code class="python">def add8_to_16(val, res):
     mlabel = get_anonymous_label(&#34;ok&#34;)
 
     clc()
-    lda(abs_adr=n)
-    adc(value=val)
-    sta(abs_adr=n)
-    bcc(label=mlabel)
-    inc(abs_adr=n+1)
-    label(name=mlabel)</code></pre>
+    lda(at(res))
+    adc(imm(val))
+    sta(at(res))
+    bcc(at(mlabel))
+    inc(at(res+1))
+    label(mlabel)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.macros.macros.basic_start"><code class="name flex">
@@ -347,17 +347,17 @@ def generate_d018(charmem, bitmap, screenmem):
     mlabel = get_anonymous_label(&#34;loop&#34;)
 
     if use_ptr:
-        lda(abs_adr=clear_byte)
+        lda(at(clear_byte))
     else:
-        lda(imm=clear_byte)
-    ldx(imm=0)
+        lda(imm(clear_byte))
+    ldx(imm(0))
     label(mlabel)
-    sta(abs_adr=screen, index=r.X)
-    sta(abs_adr=screen + 0x100, index=r.X)
-    sta(abs_adr=screen + 0x200, index=r.X)
-    sta(abs_adr=screen + 0x300, index=r.X)
+    sta(at(screen), x)
+    sta(at(screen) + 0x100, x)
+    sta(at(screen) + 0x200, x)
+    sta(at(screen) + 0x300, x)
     inx()
-    bne(label=mlabel)</code></pre>
+    bne(at(mlabel))</code></pre>
 </details>
 </dd>
 <dt id="shazzam.macros.macros.generate_d018"><code class="name flex">
@@ -468,12 +468,12 @@ def generate_d018(charmem, bitmap, screenmem):
         dd02 = utils.generate_full_dd02(bank_start)
 
         logger.info(&#34;bank&#34;, bank_start, BITMAP_ADDR, SCREEN_MEM_ADDR, &#34;dd02&#34;, dd02, &#34;d018&#34;, utils.generate_d018(CHAR_MEM_ADDR, BITMAP_ADDR, SCREEN_MEM_ADDR), d018, &#34;mixed&#34;, (dd02 | d018))
-        lda(imm=dd02)
-        sta(abs_adr=dd02)
+        lda(imm(dd02))
+        sta(at(dd02))
     else:
         dd00 = utils.generate_dd00(bank_start)
-        lda(imm=dd00)
-        sta(abs_adr=dd00)</code></pre>
+        lda(imm(dd00))
+        sta(at(dd00))</code></pre>
 </details>
 </dd>
 <dt id="shazzam.macros.macros.sub8_to_16"><code class="name flex">
@@ -489,12 +489,12 @@ def generate_d018(charmem, bitmap, screenmem):
     mlabel = get_anonymous_label(&#34;ok&#34;)
 
     sec()
-    lda(abs_adr=n)
-    sbc(value=val)
-    sta(abs_adr=n)
-    bcs(label=mlabel)
-    dec(abs_adr=n+1)
-    label(name=mlabel)</code></pre>
+    lda(at(n))
+    sbc(imm(val))
+    sta(at(n))
+    bcs(at(mlabel))
+    dec(at(n+1))
+    label(mlabel)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.macros.macros.waste_cycles"><code class="name flex">
@@ -518,7 +518,7 @@ def generate_d018(charmem, bitmap, screenmem):
         for i in range(nops-1):
             nop()
             c = c - 2
-        bit(abs_adr=0xfe)
+        bit(at(0xfe))
         c = c - 3
     if c != 0:
         logger.error(f&#34;error {c} cycles remaining on {n}&#34;)

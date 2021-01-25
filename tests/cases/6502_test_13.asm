@@ -3,8 +3,6 @@
 # Tests SEI & CLI & SED & CLD.
 # Assumes prior tests pass...
 #
-# EXPECTED RESULT: $21 = 0x0C
-#
 test: SEI()
 78
 test: SED()
@@ -13,7 +11,7 @@ test: PHP()
 08
 test: PLA()
 68
-test: STA(abs_adr=0x20)
+test: STA(at(0x20))
 85
 20
 test: CLI()
@@ -24,9 +22,9 @@ test: PHP()
 08
 test: PLA()
 68
-test: ADC(abs_adr=0x20)
+test: ADC(at(0x20))
 65
 20
-test: STA(abs_adr=0x21)
+test: STA(at(0x21))
 85
 21

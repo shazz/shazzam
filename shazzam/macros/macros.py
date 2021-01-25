@@ -19,19 +19,19 @@ def add16(n1, n2, res):
     sta(at(res)+1)
 
 # ------------------------------------------------------------------------
-# add8_to_16(n, val)
+# add8_to_16(val, res)
 # add a 8bits value to a 16bits value
 # ------------------------------------------------------------------------
-def add8_to_16(n, val):
+def add8_to_16(val, res):
     mlabel = get_anonymous_label("ok")
 
     clc()
-    lda(abs_adr=n)
-    adc(value=val)
-    sta(abs_adr=n)
-    bcc(label=mlabel)
-    inc(abs_adr=n+1)
-    label(name=mlabel)
+    lda(at(res))
+    adc(imm(val))
+    sta(at(res))
+    bcc(at(mlabel))
+    inc(at(res+1))
+    label(mlabel)
 
 # ------------------------------------------------------------------------
 # sub8_to_16(n, val)
@@ -41,12 +41,12 @@ def sub8_to_16(n, val):
     mlabel = get_anonymous_label("ok")
 
     sec()
-    lda(abs_adr=n)
-    sbc(value=val)
-    sta(abs_adr=n)
-    bcs(label=mlabel)
-    dec(abs_adr=n+1)
-    label(name=mlabel)
+    lda(at(n))
+    sbc(imm(val))
+    sta(at(n))
+    bcs(at(mlabel))
+    dec(at(n+1))
+    label(mlabel)
 
 # ------------------------------------------------------------------------
 # waste_cycles(n)
@@ -65,7 +65,7 @@ def waste_cycles(n):
         for i in range(nops-1):
             nop()
             c = c - 2
-        bit(abs_adr=0xfe)
+        bit(at(0xfe))
         c = c - 3
     if c != 0:
         logger.error(f"error {c} cycles remaining on {n}")
@@ -79,17 +79,17 @@ def clear_screen(clear_byte: int, screen: int, use_ptr: bool):
     mlabel = get_anonymous_label("loop")
 
     if use_ptr:
-        lda(abs_adr=clear_byte)
+        lda(at(clear_byte))
     else:
-        lda(imm=clear_byte)
-    ldx(imm=0)
+        lda(imm(clear_byte))
+    ldx(imm(0))
     label(mlabel)
-    sta(abs_adr=screen, index=r.X)
-    sta(abs_adr=screen + 0x100, index=r.X)
-    sta(abs_adr=screen + 0x200, index=r.X)
-    sta(abs_adr=screen + 0x300, index=r.X)
+    sta(at(screen), x)
+    sta(at(screen) + 0x100, x)
+    sta(at(screen) + 0x200, x)
+    sta(at(screen) + 0x300, x)
     inx()
-    bne(label=mlabel)
+    bne(at(mlabel))
 
 # ------------------------------------------------------------------------------------------
 # basic start
@@ -172,12 +172,12 @@ def setup_vic_bank(bank_start, use_dd02):
         dd02 = utils.generate_full_dd02(bank_start)
 
         logger.info("bank", bank_start, BITMAP_ADDR, SCREEN_MEM_ADDR, "dd02", dd02, "d018", utils.generate_d018(CHAR_MEM_ADDR, BITMAP_ADDR, SCREEN_MEM_ADDR), d018, "mixed", (dd02 | d018))
-        lda(imm=dd02)
-        sta(abs_adr=dd02)
+        lda(imm(dd02))
+        sta(at(dd02))
     else:
         dd00 = utils.generate_dd00(bank_start)
-        lda(imm=dd00)
-        sta(abs_adr=dd00)
+        lda(imm(dd00))
+        sta(at(dd00))
 
 # ------------------------------------------------------------------------------------------
 # Generate d018 register

@@ -6,23 +6,24 @@ import shazzam.macros.macros as m
 
 def test_add16():
 
-    with segment(0x0, "add16") as s:
+        for n1 in range(512):
+            for n2 in range(250, 260):
 
-        m.add16("res", "n1", "n2")
+                with segment(0x0, "add16", check_address_dups=False) as s:
+                    m.add16("n1", "n2", "res")
+                    brk()
 
-        label(name="n1")
-        byte(value=0)
-        byte(value=10)
+                    label(name="n1")
+                    byte(n1 & 0xff)
+                    byte(n1 >> 8)
 
-        label(name="n2")
-        byte(value=0)
-        byte(value=10)
+                    label(name="n2")
+                    byte(n2 & 0xff)
+                    byte(n2 >> 8)
 
-        label(name="res")
-        byte(value=0)
-        byte(value=0)
+                    label(name="res")
+                    byte(0)
+                    byte(0)
+                    cpu, mmu = s.emulate()
+                    assert ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2)) == n1+n2, f"Sum should be {n1+n2}"
 
-        cpu, mem = s.emulate()
-        current = s.get_stats()['current_address']
-        assert mem.read(current-2) == 0, f"res[hi] should be 0"
-        assert mem.read(current-1) == 20, f"res[hi] should be 0"

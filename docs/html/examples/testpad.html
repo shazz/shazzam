@@ -50,27 +50,20 @@ def code():
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
-        m.add16(&#34;n1&#34;, &#34;n2&#34;, &#34;res&#34;)
+        lda(at(&#34;test&#34;))
+
+        m.add8_to_16(5, 320)
 
         brk()
-        nop()
-
-        label(&#34;n1&#34;)
-        byte(100)
-        byte(0)
-        nop()
-        label(&#34;n2&#34;)
-        byte(200)
-        byte(0)
-        nop()
         label(&#34;res&#34;)
         byte(0)
         byte(0)
 
-        cpu, mmu = s.emulate()
-        print(f&#34;Address: {get_current_address():04X}&#34;)
-        assert ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2)) == 300
-        print(s.get_stats())
+
+        # cpu, mmu = s.emulate()
+        # print(f&#34;Address: {get_current_address():04X}&#34;)
+        # assert ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2)) == 325
+        # print(s.get_stats())
 
         # nop()
         # sta(at(0x12))
@@ -86,14 +79,14 @@ def code():
         # sta(at(&#34;test&#34;),x)
         # sta(at(&#34;test&#34;),y)
 
-    # with segment(0x0900, assembler.get_data_segment()) as s:
-    #     label(&#34;test&#34;, is_global=True)
-    #     for i in range(10):
-    #         byte(i)
-    #     nop()   # else label won&#39;t be seen... to fixed
-    #     label(&#34;test2&#34;)
-    #     for i in range(3):
-    #         byte(i)
+    with segment(0x0900, assembler.get_data_segment()) as s:
+        label(&#34;test&#34;, is_global=True)
+        for i in range(10):
+            byte(i)
+        nop()   # else label won&#39;t be seen... to fixed
+        label(&#34;test2&#34;)
+        for i in range(3):
+            byte(i)
 
 
     # generate listing

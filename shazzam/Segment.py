@@ -265,15 +265,11 @@ class Segment():
                 self.logger.debug(f"-> immediate label name: {instr.immediate.name}")
 
                 if instr.immediate.name in self.labels:
-                    if self.use_relative_addressing:
-                        instr.immediate.value = self.labels[instr.label.name].address - adr - instr.get_size() if adr < self.labels[instr.label] else adr - self.labels[instr.label] - instr.get_size()
-                        self.logger.info(f"Use relative addressing to label {instr.label} at {self.labels[instr.label.address]:04X} from {adr:04X} will be: {instr.value}")
 
-                    else:
-                        val = self.labels[instr.immediate.name].value & 0xff if not instr.immediate.high_byte else (self.labels[instr.immediate.name].value >> 8) & 0xff
+                    val = self.labels[instr.immediate.name].value & 0xff if not instr.immediate.high_byte else (self.labels[instr.immediate.name].value >> 8) & 0xff
 
-                        instr.immediate.value = val
-                        instr.immediate.name = self.labels[instr.immediate.name].name
+                    instr.immediate.value = val
+                    instr.immediate.name = self.labels[instr.immediate.name].name
 
                 elif instr.immediate.name in g._PROGRAM.global_labels:
                     val = g._PROGRAM.global_labels[instr.immediate.name].value & 0xff if not instr.immediate.high_byte else (g._PROGRAM.global_labels[instr.immediate.name].value >> 8) & 0xff
@@ -286,8 +282,19 @@ class Segment():
             elif instr.address and instr.address.name:
                 self.logger.debug(f"-> address label name: {instr.address.name}")
                 if instr.address.name in self.labels:
-                    instr.address.value = self.labels[instr.address.name].value
-                    instr.address.name = self.labels[instr.address.name].name
+
+                    if instr.mode is 'rel':
+                        print(f"label address: {self.labels[instr.address.name].value}")
+                        instr.address.value = self.labels[instr.address.name].value
+                        if adr < self.labels[instr.address.name].value:
+                            instr.address.indirect = self.labels[instr.address.name].value - adr - instr.get_size()
+                        else:
+                            instr.address.indirect = adr - self.labels[instr.address.name].value - instr.get_size()
+
+                        self.logger.info(f"Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}")
+                    else:
+                        instr.address.value = self.labels[instr.address.name].value
+                        instr.address.name = self.labels[instr.address.name].name
 
                 elif instr.address.name in g._PROGRAM.global_labels:
                     instr.address.value = g._PROGRAM.global_labels[instr.address.name].value
@@ -306,6 +313,18 @@ class Segment():
         self.resolve_labels()
 
         code = []
+
+        # add globals import/export
+        locals_label = list(self.labels.keys())
+        globals_labels = list(g._PROGRAM.global_labels.keys())
+
+        for label in globals_labels:
+            if label not in locals_label:
+                code.append(f'\t\t{self.directive_prefix}import {label}\n')
+            else:
+                code.append(f'\t\t{self.directive_prefix}export {label}\n')
+
+        code.append('\n')
 
         # add segment directive
         code.append(f'\t\t{self.directive_prefix}segment "{self.name}"\n')
@@ -453,6 +472,8 @@ class Segment():
         Returns:
             [type]: [description]
         """
+        self.resolve_labels()
+
         if start_address is None:
             start_address = self.start_adr
 

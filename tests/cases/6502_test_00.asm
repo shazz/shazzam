@@ -2,10 +2,6 @@
 # Heather Justice 3/11/08
 # Tests instructions LDA/LDX/LDY & STA/STX/STY with all addressing modes.
 #
-# EXPECTED RESULTS:
-#  0x022A = 0x55 (decimal 85)
-#  A = 0x55, X = 0x2A, Y = 0x73
-#
 test: LDA(imm(85))
 a9
 55

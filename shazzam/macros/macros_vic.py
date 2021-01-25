@@ -2,74 +2,9 @@ import math
 import logging
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+from shazzam.macros.aliases import color, vic
 
 logger = logging.getLogger("shazzam")
-
-# ------------------------------------------------------------------------
-# add16(n1, n2, res)
-# 16 bits addition
-# ------------------------------------------------------------------------
-def add16(n1, n2, res):
-    clc()
-    lda(at(n1))
-    adc(at(n2))
-    sta(at(res)+0)
-    lda(at(n1)+1)
-    adc(at(n2)+1)
-    sta(at(res)+1)
-
-# ------------------------------------------------------------------------
-# add8_to_16(val, res)
-# add a 8bits value to a 16bits value
-# ------------------------------------------------------------------------
-def add8_to_16(val, res):
-    mlabel = get_anonymous_label("ok")
-
-    clc()
-    lda(at(res))
-    adc(imm(val))
-    sta(at(res))
-    bcc(at(mlabel))
-    inc(at(res+1))
-    label(mlabel)
-
-# ------------------------------------------------------------------------
-# sub8_to_16(n, val)
-# substracts a 8bits value to a 16bits value
-# ------------------------------------------------------------------------
-def sub8_to_16(n, val):
-    mlabel = get_anonymous_label("ok")
-
-    sec()
-    lda(at(n))
-    sbc(imm(val))
-    sta(at(n))
-    bcs(at(mlabel))
-    dec(at(n+1))
-    label(mlabel)
-
-# ------------------------------------------------------------------------
-# waste_cycles(n)
-# setup stable raster irq note: cannot be set on a badline or the second
-# interrupt happens before we store the stack pointer (among other things)
-# ------------------------------------------------------------------------
-def waste_cycles(n):
-    nops = math.floor(n/2)
-    rem = n & 1
-    c = n
-    if rem == 0:
-        for i in range(nops):
-            nop()
-            c = c - 2
-    else:
-        for i in range(nops-1):
-            nop()
-            c = c - 2
-        bit(at(0xfe))
-        c = c - 3
-    if c != 0:
-        logger.error(f"error {c} cycles remaining on {n}")
-        raise RuntimeError("should not be here")
 
 # ------------------------------------------------------------------------------------------
 # clear_screen(clear_byte, screen, use_ptr)
@@ -90,35 +25,6 @@ def clear_screen(clear_byte: int, screen: int, use_ptr: bool):
     sta(at(screen) + 0x300, x)
     inx()
     bne(at(mlabel))
-
-# ------------------------------------------------------------------------------------------
-# basic start
-# generate a compatible basic header
-# ------------------------------------------------------------------------------------------
-def basic_start(addr):
-    with segment(0x0801, "entry") as s:
-        byte(0x0c)
-        byte(0x08)
-        byte(0x00)
-        byte(0x00)
-        byte(0x9e)
-
-        if (addr >= 10000):
-            byte(0x30 + (addr//10000)%10)
-
-        if (addr >= 1000):
-            byte(0x30 + (addr//1000)%10)
-
-        if (addr >= 100):
-            byte(0x30 + (addr//100)%10)
-
-        if (addr >= 10):
-            byte(0x30 + (addr//10)%10)
-
-        byte(0x30 + addr % 10)
-        byte(0x0, 0x0, 0x0)
-
-        logger.info(f"after basic header, program start at {s.get_stats()['current_address']}")
 
 # ------------------------------------------------------------------------------------------
 # Setup VIC bacnk
@@ -222,3 +128,42 @@ def generate_d018(charmem, bitmap, screenmem):
 
     reg = ((mapping_charmem[charmem] << 1) | (mapping_bitmap[bitmap] << 1) | (mapping_screenmem[screenmem] << 4))
     return reg
+
+# ------------------------------------------------------------------------
+# vsync
+# ------------------------------------------------------------------------
+def vsync():
+    l_wait1 = get_anonymous_label("l_wait1")
+    l_wait2 = get_anonymous_label("l_wait2")
+
+    label(l_wait1)
+    lda(at(vic.scr_ctrl))
+    bpl(at(l_wait1))
+
+    label(l_wait2)
+    lda(at(vic.scr_ctrl))
+    bmi(at(l_wait2))
+
+# ------------------------------------------------------------------------
+# Init sprites
+# ------------------------------------------------------------------------
+def init_sprites(nb, data, spd, bank, scr_mem):
+
+    # set sprites specific color
+    for i in range(nb):
+        lda(imm(spd.colors[i]))
+        sta(at(vic.sprite0_color+i))            # set main sprite color
+
+    # set extra colors
+    lda(imm(0x0e))                              # spd.multicol1
+    sta(at(vic.sprite_extra_col1))
+
+    lda(imm(spd.multicol2))
+    sta(at(vic.sprite_extra_col2))
+
+    # set sprites pointers
+    sprite_balls_adr = (data-bank)/64
+    lda(imm(sprite_balls_adr))
+    for i in range(nb):
+		sta(at(bank + scr_mem + 0x3f8 + i))
+

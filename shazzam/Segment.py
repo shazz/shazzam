@@ -251,7 +251,7 @@ class Segment():
         for label, params in self.required_labels.items():
 
             if (label not in self.labels) and (label not in g._PROGRAM.global_labels):
-                print("global:", g._PROGRAM.global_labels)
+                self.logger.debug("global labels:", g._PROGRAM.global_labels)
                 raise ValueError(f"Label {label} is used but not defined locally or globally!")
 
             if params['relative'] and abs(params['from'] - self.labels[label].address) > 255:
@@ -283,7 +283,7 @@ class Segment():
                 self.logger.debug(f"-> address label name: {instr.address.name}")
                 if instr.address.name in self.labels:
 
-                    if instr.mode is 'rel':
+                    if instr.mode == 'rel':
                         print(f"label address: {self.labels[instr.address.name].value}")
                         instr.address.value = self.labels[instr.address.name].value
                         if adr < self.labels[instr.address.name].value:
@@ -440,6 +440,7 @@ class Segment():
                 g_bcode, resolved = self.get_bytecode(instr)
                 if not resolved:
                     raise ValueError("Bytecode cannot be yet generated")
+                    
                 bcode = str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()    # remove leading 'b and trailing '. Ex: bytearray(b'\xa9\x0b') A90B
                 bcode = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 

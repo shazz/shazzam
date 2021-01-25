@@ -119,7 +119,7 @@ class CC65(Assembler):
         self.generate_config(start_address, program)
 
         # seg_lines
-        cmd = [self.path, '-t', 'c64', '-C', f'generated/{program.name}/gen-c64-asm.cfg', '-u', '__EXEHDR__']
+        cmd = [self.path, '-v', '-g', '-d', '-t', 'c64', '-C', f'generated/{program.name}/gen-c64-asm.cfg', '-u', '__EXEHDR__']
         for segment in program.segments:
             cmd.append(f"generated/{program.name}/{segment.name}.asm")
 

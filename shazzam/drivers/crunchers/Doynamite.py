@@ -4,13 +4,13 @@ import logging
 
 from shazzam.Cruncher import Cruncher
 
-class Dodynamite(Cruncher):
+class Doynamite(Cruncher):
 
     def __init__(self, exe_path: str):
 
         cmd_prg_template = None
         cmd_bin_template = [exe_path, "FILENAME_TO_SET", "OUTPUT_TO_SET"]
-        super().__init__("dodynamite", exe_path, cmd_prg_template, cmd_bin_template)
+        super().__init__("doynamite", exe_path, cmd_prg_template, cmd_bin_template)
 
     def generate_depacker_routine(self, address: int) -> None:
         """generate_depacker_routine

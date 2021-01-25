@@ -7,7 +7,7 @@ from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
-import shazzam.macros.macros as m
+import shazzam.macros.macros_math as m
 
 # define your cross assembler
 assembler = CC65("cc65", "/home/shazz/projects/c64/bin/cl65")
@@ -22,21 +22,27 @@ def code():
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
-        val = 5
-        res = 320
-        m.add8_to_16(val, "res")
 
-        brk()
-        label("res")
-        byte(res & 0xff)
-        byte(res >> 8)
+        nop()
+        nop()
+        nop()
+        bcc(rel_at(0x0810))
 
-        cpu, mmu = s.emulate()
-        print(f"Address: {get_current_address():04X}")
+        # val = 5
+        # res = 320
+        # m.add8_to_16(val, "res")
 
-        result = ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2))
-        assert result  == 325, f"{result} vs {val+res}"
-        print(s.get_stats())
+        # brk()
+        # label("res")
+        # byte(res & 0xff)
+        # byte(res >> 8)
+
+        # cpu, mmu = s.emulate()
+        # print(f"Address: {get_current_address():04X}")
+
+        # result = ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2))
+        # assert result  == 325, f"{result} vs {val+res}"
+        # print(s.get_stats())
 
         # nop()
         # sta(at(0x12))

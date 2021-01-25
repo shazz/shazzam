@@ -16,14 +16,17 @@ def tests(session):
     """Launchs the tests and coverage."""
     session.install("-r", "deployments/requirements_run.txt")
     session.install("-r", "deployments/requirements_test.txt")
-    session.run("pytest", "-rs", "tests/test_opcodes.py")
+    session.run("pytest", "-rs", "tests/")
 
-    # coverage_run_params = [
-    #     "run", "-m", "pytest", '-W', 'ignore::UserWarning', "--html", "docs/reports/pytest/pytest.html", "-s"
-    # ]
-    # session.run("coverage", "report")
-    # session.run("coverage", "html", "-d", "docs/reports/coverage")
+    coverage_run_params = [
+        "run", "-m", "pytest", '-W', 'ignore::UserWarning', "--html", "docs/reports/pytest/pytest.html", "-s"
+    ]
+    session.run("coverage", "report")
+    session.run("coverage", "html", "-d", "docs/reports/coverage")
 
+"""
+This session will generate the docs.
+"""
 @nox.session(python=["3.8"])
 def docs(session):
     """Generate the docs."""
@@ -33,6 +36,9 @@ def docs(session):
     shutil.rmtree('docs/html', ignore_errors=True)
     session.run("pdoc3", "-o", "docs/html", "--html", "shazzam", "examples")
 
+"""
+This session will install the 3rd party tools.
+"""
 @nox.session(python=False)
 def install_3rd_party(session):
 
@@ -42,6 +48,7 @@ def install_3rd_party(session):
     session.run("wget", "--version")
     session.run("tar", "--version")
     session.run("unzip", "--version")
+    session.run("gcc", "--version")
 
     shutil.rmtree('third_party', ignore_errors=True)
 
@@ -86,5 +93,17 @@ def install_3rd_party(session):
     session.cd("nucrunch")
     session.run("make")
 
+    # doynamite
+    session.cd("..")
+    session.run("wget", "https://csdb.dk/release/download.php?id=160764", "-O", "doynamite.tar.gz")
+    session.run("tar", "-xvzf", "doynamite.tar.gz")
+    session.run("mv", "doynamite1.1", "doynamite")
+    session.cd("doynamite")
+    session.run("gcc", "lz.c", "-o", "lz")
+
+    # Sparkle
+    session.cd("..")
+    session.run("wget", "https://csdb.dk/release/download.php?id=241780", "-O", "sparkle.zip")
+    session.run("unzip", "sparkle.zip", "-d", "sparkle")
 
 

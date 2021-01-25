@@ -237,11 +237,25 @@ def at(value: Any) -> Address:
 
 def ind_at(value: Any) -> Address:
     if isinstance(value, str) and value != "":
-        return Address(name=value, indirect=True)
+        return Address(name=value)
     elif isinstance(value, int):
-        return Address(value=value, indirect=True)
+        return Address(value=value)
     else:
         raise ValueError("Address must be an int or a non empty string")
+
+def rel_at(value: Any) -> Address:
+    if isinstance(value, str) and value != "":
+        return Address(name=value)
+    elif isinstance(value, int):
+        rel_address = (value - (get_current_address() + 2)) & 0xff
+        g.logger.debug(f"Relative address: {value:04X} - ({get_current_address():04X}+2) = {rel_address:04X}")
+
+        if rel_address > 0xff:
+            raise ValueError(f"Relative address cannot be bigger than a byte: {get_current_address():04X} - {value:04X} = {rel_address:04X}")
+
+        return Address(value=value, indirect=rel_address)
+    else:
+        raise ValueError("Relative address must be an int or a non empty string")
 
 def imm(value: Any) -> Immediate:
     if isinstance(value, str):
@@ -411,9 +425,18 @@ def _create_a_function(*args, **kwargs):
     mnemonic = kwargs['mnemonic']
     g.logger.debug(f'creating wrapper for {mnemonic}')
     modes = []
+
+    opcode_found = False
     for opcode in Instruction.opcodes:
         if opcode[0] == mnemonic:
             modes.append(opcode[1])
+            opcode_found = True
+
+    if not opcode_found:
+        raise ValueError(f"Opcode {mnemonic} doesn't exist!")
+
+    if len(args) > 2:
+        raise ValueError(f"Opcode can't have more than 2 operands!")
 
     def function_template(*args, **kwargs):
 
@@ -476,7 +499,7 @@ def _create_a_function(*args, **kwargs):
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
 
         if 'rel' in modes:
-            if address.value is not None:
+            if address.indirect is not None:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
             else:
                 adr = g._CURRENT_CONTEXT.need_label(address.name)

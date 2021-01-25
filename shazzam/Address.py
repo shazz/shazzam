@@ -2,12 +2,12 @@ import logging
 
 class Address():
 
-    def __init__(self, name: str = None, value: int = None, indirect: int = 0):
+    def __init__(self, name: str = None, value: int = None, indirect: int = None):
 
         self.logger = logging.getLogger("shazzam")
 
-        if name is None and value is None:
-            raise ValueError("Address is void")
+        if name is None and value is None and indirect is None:
+            raise ValueError("Address cannot be void")
 
         if value and value > 0xffff:
             raise ValueError(f"Address value {value} exceeds 1 word")
@@ -56,6 +56,8 @@ class Address():
             return f"{self._value:04X}"
         elif self.name:
             return f"{self.name}@unknown"
+        elif self.indirect is not None:
+            return f"{self.indirect}"
         else:
             raise RuntimeError("Address is void")
 

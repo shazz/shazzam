@@ -137,8 +137,8 @@ class Instruction():
         elif self.mode in ['abs', 'abx', 'aby'] and self.address.value and self.address.value > 0xffff:
             raise ValueError(f"Absolute address cannot be bigger then a word! Got: {self.value:04X}")
 
-        elif self.mode in ['rel'] and self.address.value and abs(self.address.value - self.end_address) > 255:
-            raise ValueError(f"Relative address value cannot be bigger then a byte! Got: {self.address.value:04X} to {instruction_address:04X}")
+        elif self.mode in ['rel'] and self.address.indirect and self.address.indirect > 0xff:
+            raise ValueError(f"Relative address value cannot be bigger then a byte! Got: {self.address.indirect:04X}")
 
 
     def get_instruction_name(self) -> str:
@@ -183,7 +183,7 @@ class Instruction():
             str: [description]
         """
         resolved = True
-        if self.address and self.address.value is None:
+        if self.address and self.address.value is None and self.address.indirect is None:
             resolved = False
 
         if self.immediate and self.immediate.value is None:
@@ -204,9 +204,9 @@ class Instruction():
             return (def_address_value & 0xff), resolved
 
         elif self.mode in ['rel']:
-            if not resolved:
+            if self.address.indirect is None:
                 self.logger.warning(f"Relative address is managed by segment gen_code to find the label value")
-                return (def_address_value & 0xff), resolved
+                return (0 & 0xffff), resolved
             else:
                 return (self.address.indirect & 0xff), resolved
 

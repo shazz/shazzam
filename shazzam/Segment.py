@@ -135,12 +135,11 @@ class Segment():
             self.logger.debug(f"Adding {instr} to rasterline")
             g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
-        bcode, resolved = self.get_bytecode(instr)
-        instr.bytecode = bcode
-
-        if not resolved:
-            g.logger.warning("bytecode cannot be generated yet, will be resolve later!")
-            return None
+        try:
+            bcode = self.get_bytecode(instr)
+            instr.bytecode = bcode
+        except Exception as e:
+            g.logger.warning("bytecode cannot be generated yet, will be resolve later! Error: {e}")
 
         return instr
 
@@ -205,9 +204,7 @@ class Segment():
 
         bytecode = bytearray([])
         for adr, instr in self.instructions.items():
-            bcode, resolved = self.get_bytecode(instr)
-            if not resolved:
-                raise ValueError("Bytecodecannot be generated yet")
+            bcode = self.get_bytecode(instr)
             bytecode += bcode
 
         return bytecode
@@ -222,7 +219,7 @@ class Segment():
             bytearray: [description]
         """
         # print(instr.get_operand())
-        ope, resolved = instr.get_operand()
+        ope = instr.get_operand()
         op = instr.get_opcode()
 
         if ope is not None:
@@ -238,7 +235,7 @@ class Segment():
 
         self.logger.debug(f"Got bytecode for {instr}: {data}")
 
-        return bytearray(data), resolved
+        return bytearray(data)
 
     def resolve_labels(self) -> None:
         """Replace all instructions with their absolute address.
@@ -384,11 +381,9 @@ class Segment():
                             bcode = ""
                             for b in range(min(8, nb_bytes-(8*row))):
                                 bytedata = self.instructions[adr+(row*8)+b]
-
-                                g_bcode, resolved = self.get_bytecode(bytedata)
-                                if not resolved:
-                                    raise ValueError("Bytecode cannot be yet generated")
+                                g_bcode = self.get_bytecode(bytedata)
                                 bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+
                             bcode1 = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                             bcode2 = '$'+", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -413,11 +408,9 @@ class Segment():
                         bcode = ""
                         for b in range(nb_bytes):
                             bytedata = self.instructions[adr+b]
-
-                            g_bcode, resolved = self.get_bytecode(bytedata)
-                            if not resolved:
-                                raise ValueError("Bytecode cannot be yet generated")
+                            g_bcode = self.get_bytecode(bytedata)
                             bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+
                         bcode1 = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                         bcode2 = '$'+", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -438,9 +431,7 @@ class Segment():
                 s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
                 s_label = f"{label[0]}:" if label else ""
 
-                g_bcode, resolved = self.get_bytecode(instr)
-                if not resolved:
-                    raise ValueError("Bytecode cannot be yet generated")
+                g_bcode = self.get_bytecode(instr)
 
                 bcode = str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()    # remove leading 'b and trailing '. Ex: bytearray(b'\xa9\x0b') A90B
                 bcode = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))

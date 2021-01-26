@@ -43,7 +43,7 @@ from shazzam.Address import Address
 from shazzam.Immediate import Immediate
 from shazzam.Cruncher import Cruncher
 from shazzam.Assembler import Assembler
-
+import enum
 from typing import List, Any, Dict
 
 
@@ -268,9 +268,9 @@ def at(value: Any) -&gt; Address:
 
 def ind_at(value: Any) -&gt; Address:
     if isinstance(value, str) and value != &#34;&#34;:
-        return Address(name=value)
+        return Address(name=value, indirect=True)
     elif isinstance(value, int):
-        return Address(value=value)
+        return Address(value=value, indirect=True)
     else:
         raise ValueError(&#34;Address must be an int or a non empty string&#34;)
 
@@ -284,7 +284,7 @@ def rel_at(value: Any) -&gt; Address:
         if rel_address &gt; 0xff:
             raise ValueError(f&#34;Relative address cannot be bigger than a byte: {get_current_address():04X} - {value:04X} = {rel_address:04X}&#34;)
 
-        return Address(value=value, indirect=rel_address)
+        return Address(value=value, relative=rel_address)
     else:
         raise ValueError(&#34;Relative address must be an int or a non empty string&#34;)
 
@@ -489,8 +489,8 @@ def _create_a_function(*args, **kwargs):
 
         if len(args) == 2:
             index = args[1]
-            if not isinstance(index, Enum):
-                raise ValueError(&#34;2nd operand must be a Register&#34;)
+            if not isinstance(index, enum.EnumMeta):
+                raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
         if len(args) &gt; 2:
             raise ValueError(f&#34;Too many arguments!&#34;)
@@ -534,7 +534,7 @@ def _create_a_function(*args, **kwargs):
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
         if &#39;rel&#39; in modes:
-            if address.indirect is not None:
+            if address.relative is not None:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
             else:
                 adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -748,8 +748,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -793,7 +793,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -857,8 +857,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -902,7 +902,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -966,8 +966,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1011,7 +1011,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1075,8 +1075,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1120,7 +1120,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1184,8 +1184,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1229,7 +1229,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1293,8 +1293,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1338,7 +1338,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1402,8 +1402,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1447,7 +1447,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1511,8 +1511,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1556,7 +1556,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1620,8 +1620,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1665,7 +1665,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1729,8 +1729,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1774,7 +1774,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1838,8 +1838,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1883,7 +1883,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -1947,8 +1947,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -1992,7 +1992,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2056,8 +2056,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2101,7 +2101,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2165,8 +2165,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2210,7 +2210,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2274,8 +2274,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2319,7 +2319,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2383,8 +2383,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2428,7 +2428,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2492,8 +2492,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2537,7 +2537,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2601,8 +2601,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2646,7 +2646,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2710,8 +2710,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2755,7 +2755,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2819,8 +2819,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2864,7 +2864,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -2928,8 +2928,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -2973,7 +2973,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3037,8 +3037,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3082,7 +3082,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3146,8 +3146,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3191,7 +3191,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3255,8 +3255,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3300,7 +3300,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3364,8 +3364,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3409,7 +3409,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3473,8 +3473,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3518,7 +3518,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3582,8 +3582,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3627,7 +3627,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3691,8 +3691,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3736,7 +3736,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3800,8 +3800,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3845,7 +3845,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -3909,8 +3909,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -3954,7 +3954,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4018,8 +4018,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4063,7 +4063,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4127,8 +4127,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4172,7 +4172,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4236,8 +4236,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4281,7 +4281,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4345,8 +4345,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4390,7 +4390,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4454,8 +4454,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4499,7 +4499,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4563,8 +4563,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4608,7 +4608,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4672,8 +4672,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4717,7 +4717,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4781,8 +4781,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4826,7 +4826,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4890,8 +4890,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -4935,7 +4935,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -4999,8 +4999,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5044,7 +5044,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5108,8 +5108,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5153,7 +5153,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5217,8 +5217,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5262,7 +5262,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5326,8 +5326,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5371,7 +5371,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5435,8 +5435,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5480,7 +5480,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5544,8 +5544,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5589,7 +5589,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5653,8 +5653,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5698,7 +5698,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5762,8 +5762,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5807,7 +5807,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5871,8 +5871,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -5916,7 +5916,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -5980,8 +5980,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6025,7 +6025,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6089,8 +6089,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6134,7 +6134,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6198,8 +6198,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6243,7 +6243,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6307,8 +6307,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6352,7 +6352,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6416,8 +6416,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6461,7 +6461,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6525,8 +6525,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6570,7 +6570,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6634,8 +6634,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6679,7 +6679,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6743,8 +6743,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6788,7 +6788,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6852,8 +6852,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -6897,7 +6897,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -6961,8 +6961,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7006,7 +7006,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7070,8 +7070,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7115,7 +7115,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7270,8 +7270,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7315,7 +7315,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7379,8 +7379,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7424,7 +7424,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7488,8 +7488,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7533,7 +7533,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7597,8 +7597,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7642,7 +7642,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7706,8 +7706,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7751,7 +7751,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7815,8 +7815,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7860,7 +7860,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -7924,8 +7924,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -7969,7 +7969,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8033,8 +8033,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8078,7 +8078,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8142,8 +8142,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8187,7 +8187,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8251,8 +8251,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8296,7 +8296,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8396,8 +8396,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8441,7 +8441,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8505,8 +8505,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8550,7 +8550,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8614,8 +8614,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8659,7 +8659,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8723,8 +8723,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8768,7 +8768,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8832,8 +8832,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8877,7 +8877,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -8941,8 +8941,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -8986,7 +8986,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -9050,8 +9050,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -9095,7 +9095,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -9159,8 +9159,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -9204,7 +9204,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -9268,8 +9268,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -9313,7 +9313,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -9377,8 +9377,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -9422,7 +9422,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -9486,8 +9486,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -9531,7 +9531,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -9845,8 +9845,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -9890,7 +9890,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -9972,9 +9972,9 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 </summary>
 <pre><code class="python">def ind_at(value: Any) -&gt; Address:
     if isinstance(value, str) and value != &#34;&#34;:
-        return Address(name=value)
+        return Address(name=value, indirect=True)
     elif isinstance(value, int):
-        return Address(value=value)
+        return Address(value=value, indirect=True)
     else:
         raise ValueError(&#34;Address must be an int or a non empty string&#34;)</code></pre>
 </details>
@@ -10008,8 +10008,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10053,7 +10053,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10117,8 +10117,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10162,7 +10162,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10226,8 +10226,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10271,7 +10271,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10335,8 +10335,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10380,7 +10380,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10491,8 +10491,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10536,7 +10536,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10600,8 +10600,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10645,7 +10645,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10709,8 +10709,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10754,7 +10754,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10818,8 +10818,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10863,7 +10863,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -10927,8 +10927,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -10972,7 +10972,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11036,8 +11036,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11081,7 +11081,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11145,8 +11145,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11190,7 +11190,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11254,8 +11254,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11299,7 +11299,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11363,8 +11363,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11408,7 +11408,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11472,8 +11472,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11517,7 +11517,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11633,7 +11633,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
         if rel_address &gt; 0xff:
             raise ValueError(f&#34;Relative address cannot be bigger than a byte: {get_current_address():04X} - {value:04X} = {rel_address:04X}&#34;)
 
-        return Address(value=value, indirect=rel_address)
+        return Address(value=value, relative=rel_address)
     else:
         raise ValueError(&#34;Relative address must be an int or a non empty string&#34;)</code></pre>
 </details>
@@ -11667,8 +11667,8 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11712,7 +11712,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11776,8 +11776,8 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11821,7 +11821,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11885,8 +11885,8 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -11930,7 +11930,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -11994,8 +11994,8 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12039,7 +12039,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12103,8 +12103,8 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12148,7 +12148,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12212,8 +12212,8 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12257,7 +12257,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12321,8 +12321,8 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12366,7 +12366,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12507,8 +12507,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12552,7 +12552,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12634,8 +12634,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12679,7 +12679,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12743,8 +12743,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12788,7 +12788,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12852,8 +12852,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -12897,7 +12897,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -12961,8 +12961,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -13006,7 +13006,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -13070,8 +13070,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -13115,7 +13115,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -13179,8 +13179,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -13224,7 +13224,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -13288,8 +13288,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -13333,7 +13333,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -13397,8 +13397,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -13442,7 +13442,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)
@@ -13506,8 +13506,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
     if len(args) == 2:
         index = args[1]
-        if not isinstance(index, Enum):
-            raise ValueError(&#34;2nd operand must be a Register&#34;)
+        if not isinstance(index, enum.EnumMeta):
+            raise ValueError(f&#34;2nd operand must be a Register and not a {type(index)}&#34;)
 
     if len(args) &gt; 2:
         raise ValueError(f&#34;Too many arguments!&#34;)
@@ -13551,7 +13551,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;abs&#39;, address=address))
 
     if &#39;rel&#39; in modes:
-        if address.indirect is not None:
+        if address.relative is not None:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;rel&#39;, address=address))
         else:
             adr = g._CURRENT_CONTEXT.need_label(address.name)

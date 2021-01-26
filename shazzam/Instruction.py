@@ -184,12 +184,11 @@ class Instruction():
         Returns:
             str: [description]
         """
-        resolved = True
         if self.address and self.address.value is None and self.address.relative is None:
-            resolved = False
+            raise RuntimeError(f"Relative address is managed by segment gen_code to find the label value")
 
         if self.immediate and self.immediate.value is None:
-            resolved = False
+            raise RuntimeError(f"Immediate value is managed by segment gen_code to find the label value")
 
         def_address_value = self.address.value if self.address and self.address.value is not None else 0
         def_immediate_value = self.immediate.value if self.immediate and self.immediate.value is not None else 0
@@ -197,23 +196,23 @@ class Instruction():
         self.logger.debug(f"Get operand for mode {self.mode}")
 
         if self.mode in ['imp']:
-            return None, resolved
+            return None
 
         elif self.mode in ['imm', 'acc']:
-            return (def_immediate_value & 0xff), resolved
+            return (def_immediate_value & 0xff)
 
         elif self.mode in ['zpg', 'zpx', 'zpy']:
-            return (def_address_value & 0xff), resolved
+            return (def_address_value & 0xff)
 
         elif self.mode in ['rel']:
             if self.address.relative is None:
-                self.logger.warning(f"Relative address is managed by segment gen_code to find the label value")
-                return (0 & 0xffff), resolved
+                raise RuntimeError(f"Relative address is managed by segment gen_code to find the label value")
+                # return (0 & 0xffff)
             else:
-                return (self.address.relative & 0xff), resolved
+                return (self.address.relative & 0xff)
 
         else:
-            return (def_address_value & 0xffff), resolved
+            return (def_address_value & 0xffff)
 
     def __str__(self) -> str:
         """[summary]

@@ -162,13 +162,13 @@ class Segment():
             self.logger.debug(f&#34;Adding {instr} to rasterline&#34;)
             g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
-        bcode, resolved = self.get_bytecode(instr)
+        try:
+            bcode = self.get_bytecode(instr)
+            instr.bytecode = bcode
+        except Exception as e:
+            g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later! Error: {e}&#34;)
 
-        if not resolved:
-            g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later!&#34;)
-            return None
-
-        return bcode
+        return instr
 
     def add_byte(self, immediate: Immediate) -&gt; None:
         &#34;&#34;&#34;[summary]
@@ -231,9 +231,7 @@ class Segment():
 
         bytecode = bytearray([])
         for adr, instr in self.instructions.items():
-            bcode, resolved = self.get_bytecode(instr)
-            if not resolved:
-                raise ValueError(&#34;Bytecodecannot be generated yet&#34;)
+            bcode = self.get_bytecode(instr)
             bytecode += bcode
 
         return bytecode
@@ -248,7 +246,7 @@ class Segment():
             bytearray: [description]
         &#34;&#34;&#34;
         # print(instr.get_operand())
-        ope, resolved = instr.get_operand()
+        ope = instr.get_operand()
         op = instr.get_opcode()
 
         if ope is not None:
@@ -264,7 +262,7 @@ class Segment():
 
         self.logger.debug(f&#34;Got bytecode for {instr}: {data}&#34;)
 
-        return bytearray(data), resolved
+        return bytearray(data)
 
     def resolve_labels(self) -&gt; None:
         &#34;&#34;&#34;Replace all instructions with their absolute address.
@@ -314,9 +312,9 @@ class Segment():
                         print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                         instr.address.value = self.labels[instr.address.name].value
                         if adr &lt; self.labels[instr.address.name].value:
-                            instr.address.indirect = self.labels[instr.address.name].value - adr - instr.get_size()
+                            instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                         else:
-                            instr.address.indirect = adr - self.labels[instr.address.name].value - instr.get_size()
+                            instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
                         self.logger.info(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
                     else:
@@ -410,11 +408,9 @@ class Segment():
                             bcode = &#34;&#34;
                             for b in range(min(8, nb_bytes-(8*row))):
                                 bytedata = self.instructions[adr+(row*8)+b]
-
-                                g_bcode, resolved = self.get_bytecode(bytedata)
-                                if not resolved:
-                                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                                g_bcode = self.get_bytecode(bytedata)
                                 bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
                             bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                             bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -439,11 +435,9 @@ class Segment():
                         bcode = &#34;&#34;
                         for b in range(nb_bytes):
                             bytedata = self.instructions[adr+b]
-
-                            g_bcode, resolved = self.get_bytecode(bytedata)
-                            if not resolved:
-                                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                            g_bcode = self.get_bytecode(bytedata)
                             bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
                         bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                         bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -464,10 +458,8 @@ class Segment():
                 s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
                 s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
 
-                g_bcode, resolved = self.get_bytecode(instr)
-                if not resolved:
-                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
-                    
+                g_bcode = self.get_bytecode(instr)
+
                 bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
                 bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -711,13 +703,13 @@ class Segment():
             self.logger.debug(f&#34;Adding {instr} to rasterline&#34;)
             g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
-        bcode, resolved = self.get_bytecode(instr)
+        try:
+            bcode = self.get_bytecode(instr)
+            instr.bytecode = bcode
+        except Exception as e:
+            g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later! Error: {e}&#34;)
 
-        if not resolved:
-            g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later!&#34;)
-            return None
-
-        return bcode
+        return instr
 
     def add_byte(self, immediate: Immediate) -&gt; None:
         &#34;&#34;&#34;[summary]
@@ -780,9 +772,7 @@ class Segment():
 
         bytecode = bytearray([])
         for adr, instr in self.instructions.items():
-            bcode, resolved = self.get_bytecode(instr)
-            if not resolved:
-                raise ValueError(&#34;Bytecodecannot be generated yet&#34;)
+            bcode = self.get_bytecode(instr)
             bytecode += bcode
 
         return bytecode
@@ -797,7 +787,7 @@ class Segment():
             bytearray: [description]
         &#34;&#34;&#34;
         # print(instr.get_operand())
-        ope, resolved = instr.get_operand()
+        ope = instr.get_operand()
         op = instr.get_opcode()
 
         if ope is not None:
@@ -813,7 +803,7 @@ class Segment():
 
         self.logger.debug(f&#34;Got bytecode for {instr}: {data}&#34;)
 
-        return bytearray(data), resolved
+        return bytearray(data)
 
     def resolve_labels(self) -&gt; None:
         &#34;&#34;&#34;Replace all instructions with their absolute address.
@@ -863,9 +853,9 @@ class Segment():
                         print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                         instr.address.value = self.labels[instr.address.name].value
                         if adr &lt; self.labels[instr.address.name].value:
-                            instr.address.indirect = self.labels[instr.address.name].value - adr - instr.get_size()
+                            instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                         else:
-                            instr.address.indirect = adr - self.labels[instr.address.name].value - instr.get_size()
+                            instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
                         self.logger.info(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
                     else:
@@ -959,11 +949,9 @@ class Segment():
                             bcode = &#34;&#34;
                             for b in range(min(8, nb_bytes-(8*row))):
                                 bytedata = self.instructions[adr+(row*8)+b]
-
-                                g_bcode, resolved = self.get_bytecode(bytedata)
-                                if not resolved:
-                                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                                g_bcode = self.get_bytecode(bytedata)
                                 bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
                             bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                             bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -988,11 +976,9 @@ class Segment():
                         bcode = &#34;&#34;
                         for b in range(nb_bytes):
                             bytedata = self.instructions[adr+b]
-
-                            g_bcode, resolved = self.get_bytecode(bytedata)
-                            if not resolved:
-                                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                            g_bcode = self.get_bytecode(bytedata)
                             bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
                         bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                         bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1013,10 +999,8 @@ class Segment():
                 s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
                 s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
 
-                g_bcode, resolved = self.get_bytecode(instr)
-                if not resolved:
-                    raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
-                    
+                g_bcode = self.get_bytecode(instr)
+
                 bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
                 bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1228,13 +1212,13 @@ def size(self):
         self.logger.debug(f&#34;Adding {instr} to rasterline&#34;)
         g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
-    bcode, resolved = self.get_bytecode(instr)
+    try:
+        bcode = self.get_bytecode(instr)
+        instr.bytecode = bcode
+    except Exception as e:
+        g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later! Error: {e}&#34;)
 
-    if not resolved:
-        g.logger.warning(&#34;bytecode cannot be generated yet, will be resolve later!&#34;)
-        return None
-
-    return bcode</code></pre>
+    return instr</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.add_label"><code class="name flex">
@@ -1483,11 +1467,9 @@ def size(self):
                         bcode = &#34;&#34;
                         for b in range(min(8, nb_bytes-(8*row))):
                             bytedata = self.instructions[adr+(row*8)+b]
-
-                            g_bcode, resolved = self.get_bytecode(bytedata)
-                            if not resolved:
-                                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                            g_bcode = self.get_bytecode(bytedata)
                             bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
                         bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                         bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1512,11 +1494,9 @@ def size(self):
                     bcode = &#34;&#34;
                     for b in range(nb_bytes):
                         bytedata = self.instructions[adr+b]
-
-                        g_bcode, resolved = self.get_bytecode(bytedata)
-                        if not resolved:
-                            raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                        g_bcode = self.get_bytecode(bytedata)
                         bcode += str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()
+
                     bcode1 = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
                     bcode2 = &#39;$&#39;+&#34;, $&#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1537,10 +1517,8 @@ def size(self):
             s_address = f&#34;{adr-address_offset:04X}:&#34; if self.show_address else &#34;&#34;
             s_label = f&#34;{label[0]}:&#34; if label else &#34;&#34;
 
-            g_bcode, resolved = self.get_bytecode(instr)
-            if not resolved:
-                raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
-                
+            g_bcode = self.get_bytecode(instr)
+
             bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
             bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1630,7 +1608,7 @@ def size(self):
         bytearray: [description]
     &#34;&#34;&#34;
     # print(instr.get_operand())
-    ope, resolved = instr.get_operand()
+    ope = instr.get_operand()
     op = instr.get_opcode()
 
     if ope is not None:
@@ -1646,7 +1624,7 @@ def size(self):
 
     self.logger.debug(f&#34;Got bytecode for {instr}: {data}&#34;)
 
-    return bytearray(data), resolved</code></pre>
+    return bytearray(data)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.get_label"><code class="name flex">
@@ -1706,9 +1684,7 @@ def size(self):
 
     bytecode = bytearray([])
     for adr, instr in self.instructions.items():
-        bcode, resolved = self.get_bytecode(instr)
-        if not resolved:
-            raise ValueError(&#34;Bytecodecannot be generated yet&#34;)
+        bcode = self.get_bytecode(instr)
         bytecode += bcode
 
     return bytecode</code></pre>
@@ -1845,9 +1821,9 @@ def size(self):
                     print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                     instr.address.value = self.labels[instr.address.name].value
                     if adr &lt; self.labels[instr.address.name].value:
-                        instr.address.indirect = self.labels[instr.address.name].value - adr - instr.get_size()
+                        instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                     else:
-                        instr.address.indirect = adr - self.labels[instr.address.name].value - instr.get_size()
+                        instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
                     self.logger.info(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
                 else:

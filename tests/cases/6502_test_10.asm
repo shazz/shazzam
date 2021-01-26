@@ -14,9 +14,6 @@ test: CLC()
 18
 test: NOP()
 ea
-test: BCC(at(0x04))
-90
-04
 test: ADC(imm(0x60))
 69
 60
@@ -27,14 +24,8 @@ test: SEC()
 38
 test: NOP()
 ea
-test: BCC(at(0x01))
-90
-01
 test: CLV()
 b8
-test: BVC(at(0x02))
-50
-02
 test: LDA(imm(0x00))
 a9
 00

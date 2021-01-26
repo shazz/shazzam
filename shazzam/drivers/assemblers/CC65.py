@@ -130,10 +130,13 @@ class CC65(Assembler):
 
         # cl65 -t c64 -C generated/c64-asm.cfg -u __EXEHDR__ generated/entry.asm generated/INIT.asm generated/IRQ.asm -o main.prg
         self.logger.info(f"Assembling {program.name} using CL65 command: {cmd}")
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE)
-        output = data.communicate()
+        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        stdout_data, stderr_data = data.communicate()
 
-        self.logger.info(f"{program.name} assembled and linked")
+        if len(stderr_data) > 1:
+            self.logger.error(stderr_data)
+        else:
+            self.logger.info(f"{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked")
 
         return program_filename
 

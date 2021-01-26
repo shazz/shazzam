@@ -40,8 +40,9 @@ def code():
         nop()
         print(f"{s.get_stats()}")
 
-    # generate listing
-    gen_code()
+    # generate listing and code
+    gen_code("musicplease", prefs=prefs)
+    gen_listing("musicplease")
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)

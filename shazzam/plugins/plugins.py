@@ -1,4 +1,4 @@
-from typing import Dict
+from shazzam.defs import *
 
 # ---------------------------------------------------------------------
 # SPD Sprites file parser
@@ -15,7 +15,7 @@ from typing import Dict
 # byte 73 = 0-3 color, 4 overlay, 7 multicolor/singlecolor
 # bytes xx = "00", "00", "01", "00" added at the end of file (SpritePad animation info)
 # ---------------------------------------------------------------------
-def read_spd(filename: str) -> Dict:
+def read_spd(filename: str) -> Alias:
 
     with open(filename, "rb") as f:
         buf = f.read()
@@ -30,7 +30,7 @@ def read_spd(filename: str) -> Dict:
             data.append(bytearray(data_bytes))
             colors.append(0x0f & buf[8+(64*(i+1))])
 
-        return {
+        return Alias({
             "numSprites": numSprites,
             "enableMask": (1<<numSprites)-1,
             "colors": colors,
@@ -38,14 +38,14 @@ def read_spd(filename: str) -> Dict:
             "multicol1": buf[7],
             "multicol2": buf[8],
             "data": data
-        }
+        })
 
 # ---------------------------------------------------------------------
 # Parse SID file
 #
 # Extract SID start, init, play addresses and player data
 # ---------------------------------------------------------------------
-def read_sid(filename: str) -> Dict:
+def read_sid(filename: str) -> Alias:
 
     def readWord(buf, offs):
         return buf[offs] + (buf[offs+1] << 8)
@@ -63,12 +63,12 @@ def read_sid(filename: str) -> Dict:
         play = readWordBE(buf, 0x0c)
         numSongs = readWord(buf, 0x0e)
 
-        return {
+        return Alias({
             "start_address": startAddress,
             "data": buf[dataOffset+2:],
             "init": startAddress,
             "play": startAddress + 3
-        }
+        })
 
 # ---------------------------------------------------------------------
 # Get fade2black color table

@@ -138,7 +138,7 @@ class Segment():
             bcode = self.get_bytecode(instr)
             instr.bytecode = bcode
         except Exception as e:
-            g.logger.warning("bytecode cannot be generated yet, will be resolve later! Error: {e}")
+            g.logger.warning(f"bytecode cannot be generated yet, will be resolve later! Error: {e}")
 
         return instr
 

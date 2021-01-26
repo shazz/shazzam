@@ -20,7 +20,7 @@ class ByteData(Instruction):
         Returns:
             str: [description]
         """
-        return None, True
+        return None
 
     def get_opcode(self) -> str:
         """[summary]

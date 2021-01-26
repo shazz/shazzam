@@ -168,8 +168,10 @@ class CC65(Assembler):
         sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
         sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
 
-        if len(sorted_non_default_segments_adr) > 1:
-            first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
+        if len(sorted_non_default_segments_adr) > 0:
+            # TODO: test with node default entry point
+            # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
+            first_segment_address = sorted_non_default_segments_adr[0]
             CC65.memory = CC65.memory.replace("%%%", f"${first_segment_address:04X}")
         else:
             start_adr = sorted_default_segments_adr[0]

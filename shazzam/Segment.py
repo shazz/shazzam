@@ -95,7 +95,7 @@ class Segment():
         return self.end_adr - self.start_adr
 
     def change_format(self):
-
+        """change_format"""
         code_format = g._CODE_FORMAT
         comments_format = g._COMMENTS_FORMAT
         directive_prefix = g._DIRECTIVE_PREFIX
@@ -110,8 +110,7 @@ class Segment():
         self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
 
     def close(self) -> None:
-        """[summary]
-        """
+        """[summary]"""
         self.end_adr = self.next_position
 
     def add_instruction(self, instr: Instruction) -> bytearray:
@@ -155,7 +154,7 @@ class Segment():
         data = ByteData(immediate)
         self.instructions[self.next_position] = data
         self.next_position += 1
-        self.logger.debug(f"dded byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}")
+        self.logger.debug(f"added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}")
 
         return self.get_bytecode(data)
 
@@ -179,7 +178,17 @@ class Segment():
         return self.labels[name]
 
     def get_label(self, name: str) -> Address:
+        """get_label
 
+        Args:
+            name (str): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Address: [description]
+        """
         if name not in self.labels:
             self.logger.warning(f"label '{name}' cannot be found in segment")
             raise ValueError(f"Cannot find label '{name}' in segment")
@@ -199,7 +208,11 @@ class Segment():
         }
 
     def get_segment_bytecode(self) -> bytearray:
+        """get_segment_bytecode
 
+        Returns:
+            bytearray: [description]
+        """
         self.resolve_labels()
 
         bytecode = bytearray([])

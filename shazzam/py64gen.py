@@ -47,7 +47,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
     """
     global _CURRENT_CONTEXT, _PROGRAM
 
-    seg = Segment(start_adr=start_adr, name=name, use_relative_addressing=use_relative_addressing)
+    seg = Segment(start_adr=start_adr, name=name.upper(), use_relative_addressing=use_relative_addressing)
     g._CURRENT_CONTEXT = seg
 
     yield seg
@@ -330,7 +330,13 @@ def byte(value: Any) -> bytearray:
         elif value.startswith('<'):
             return g._CURRENT_CONTEXT.add_byte(Immediate(name=value[1:], high_byte=False))
         else:
-            raise ValueError(f"Low byte (<) or High byte (>) must be specified. Not {value}")
+            g.logger.warning(f"Low byte (<) or High byte (>) not specified. Considering this is a character string")
+
+            ret_array = []
+            for v in value:
+                ret_array.append(g._CURRENT_CONTEXT.add_byte(Immediate(value=ord(v))))
+
+            return ret_array
 
     elif isinstance(value, int):
         return g._CURRENT_CONTEXT.add_byte(Immediate(value=value))
@@ -378,7 +384,7 @@ def incbin(data: bytearray) -> None:
         raise RuntimeError(f"No segment defined!")
 
     for b in data:
-        g._CURRENT_CONTEXT.add_byte(b)
+        g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
 
 def get_current_address() -> int:
 
@@ -469,74 +475,84 @@ def _create_a_function(*args, **kwargs):
 
         g.logger.debug(f"Adding conditions for modes: {modes}")
 
-        if 'zpx' in modes and index is RegisterX and address and not address.indirect and address.value < 0x100:
-            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
+        try:
+            if 'zpx' in modes and index is RegisterX and address.value and not address.indirect and address.value < 0x100:
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
 
-        if 'zpy' in modes and index is RegisterY and address and not address.indirect and address.value < 0x100:
-            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', address=address))
+            if 'zpy' in modes and index is RegisterY and address.value and not address.indirect and address.value < 0x100:
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', address=address))
 
-        if 'abx' in modes and index is RegisterX and not address.indirect:
-            if address.value is not None:
-                if 'zpx' in modes and address.value < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
-                elif address.value > 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', address=address))
-            else:
-                adr = g._CURRENT_CONTEXT.need_label(address.name)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', address=address))
+            if 'abx' in modes and index is RegisterX and not address.indirect:
+                if address.value is not None:
+                    if 'zpx' in modes and address.value < 0x100:
+                        return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpx', address=address))
+                    elif address.value > 0x100:
+                        return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', address=address))
+                else:
+                    adr = g._CURRENT_CONTEXT.need_label(address.name)
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abx', address=address))
 
-        if 'aby' in modes and index is RegisterY and not address.indirect:
-            if address.value is not None:
-                if 'zpy' in modes and address.value < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', address=address))
-                elif address.value > 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', address=address))
-            else:
-                adr = g._CURRENT_CONTEXT.need_label(address.name)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', address=address))
+            if 'aby' in modes and index is RegisterY and not address.indirect:
+                if address.value is not None:
+                    if 'zpy' in modes and address.value < 0x100:
+                        return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpy', address=address))
+                    elif address.value > 0x100:
+                        return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', address=address))
+                else:
+                    adr = g._CURRENT_CONTEXT.need_label(address.name)
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'aby', address=address))
 
-        if 'abs' in modes and index is None and address and not address.indirect:
-            if address.value is not None:
-                if 'zpg' in modes and address.value < 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpg', address=address))
-                elif address.value >= 0x100:
-                   return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
-            else:
-                adr = g._CURRENT_CONTEXT.need_label(address.name)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
+            if 'abs' in modes and index is None and address and not address.indirect:
+                if address.value is not None:
+                    if 'zpg' in modes and address.value < 0x100:
+                        return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'zpg', address=address))
+                    elif address.value >= 0x100:
+                        return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
+                else:
+                    adr = g._CURRENT_CONTEXT.need_label(address.name)
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
 
-        if 'rel' in modes:
-            if address.relative is not None:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
-            else:
-                adr = g._CURRENT_CONTEXT.need_label(address.name)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
+            if 'rel' in modes:
+                if address.relative is not None:
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
+                else:
+                    adr = g._CURRENT_CONTEXT.need_label(address.name)
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
 
-        if 'imm' in modes and immediate is not None:
-            if immediate.value is None:
-                adr = g._CURRENT_CONTEXT.need_label(immediate.name)
-            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imm', immediate=immediate))
+            if 'imm' in modes and immediate is not None:
+                if immediate.value is None:
+                    adr = g._CURRENT_CONTEXT.need_label(immediate.name)
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imm', immediate=immediate))
 
-        if 'imp' in modes:
-            return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imp'))
+            if 'imp' in modes:
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'imp'))
 
-        if 'iix' in modes and index is RegisterX and address and address.indirect:
-            if address.value and address.value <= 0x100:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iix', address=address))
+            if 'iix' in modes and index is RegisterX and address and address.indirect:
+                if address.value and address.value <= 0x100:
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iix', address=address))
 
-        if 'iiy' in modes and index is RegisterY and address and address.indirect:
-            if address.value and address.value <= 0x100:
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iiy', address=address))
+            if 'iiy' in modes and index is RegisterY and address and address.indirect:
+                if address.value and address.value <= 0x100:
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iiy', address=address))
 
-        if 'acc' in modes and index is Register.A:
-             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'acc'))
+            if 'acc' in modes and index is Register.A:
+                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'acc'))
 
-        if 'ind' in modes:
-            if address.value :
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', address=address))
-            else:
-                adr = g._CURRENT_CONTEXT.need_label(address.name)
-                return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', address=address))
+            if 'ind' in modes:
+                if address.value :
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', address=address))
+                else:
+                    adr = g._CURRENT_CONTEXT.need_label(address.name)
+                    return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'ind', address=address))
+        except Exception as e:
+            import inspect
+            callerframerecord = inspect.stack()[1]    # 0 represents this line,  1 represents line at caller
+
+            frame = callerframerecord[0]
+            info = inspect.getframeinfo(frame)
+            print(info)
+
+            raise
 
         raise NotImplementedError(f"No condition for {mnemonic} and args: {args}. Possible modes: {modes}")
 

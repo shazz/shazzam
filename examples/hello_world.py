@@ -24,8 +24,46 @@ def code():
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
-        label("hello")
-        nop()
+
+        jsr(at(0x0e544))        # ROM routine to clear the screen Clear screen.Input: – Output: – Used registers: A, X, Y.
+
+        lda(imm(0x0))           # a =(at(0x00
+        sta(at(0xd020))        # set border color to blacköfoö
+        sta(at(0xd021))        # set window color to black
+
+        lda(imm(0x18))          # a =(at(0x018 = 0001 100 0
+        sta(at(0xd018))        # set Memory setup register to char memory 4 (3 bits(at(0x02000-$27FF,) screen memory to 1 ($0400-$07FF)
+        ldx(imm(0x00))          # x = 0
+
+        label("write")
+        lda(at("msg"),x)        # a = charAt(msg)
+        jsr(at(0xffd2))        # KERNAL function to write to output:
+                                # CHROUT. Write byte to default output.
+                                # (If not screen, must call OPEN and CHKOUT beforehands.)
+                                # Input: A = Byte to write.
+                                # Output: –
+                                # Used registers: –
+                                # Real address: ($0326),(at(0x0F1CA.
+        inx()                   # x++
+        cpx(imm(40))            # loop if x != 40 (msg length)
+        bne(rel_at("write"))
+        ldx(imm(0x00))          # reset x
+
+        label("setcolor")
+        lda(imm(0x05))          # a = 5  => color for font is green
+        sta(at(0xd800),x)      # colorRAM(x) = 5
+        inx()                   # x++
+        cpx(imm(0x40))          # do it 40 times
+        bne(rel_at("setcolor"))
+
+        label("loop")
+        jmp(at("loop"))
+
+        label("msg")
+        byte("WELCOME TO THE MATRIX - THE 8BITS MATRIX")
+
+    with segment(0x1ffe, "charset") as s:    #(at(0x02000 - 2 header bytes
+        incbin(open("resources/aeg_collection_12.64c", "rb").read())
 
     # generate listing
     gen_code("helloworld")

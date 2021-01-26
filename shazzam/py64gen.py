@@ -15,7 +15,7 @@ from shazzam.Address import Address
 from shazzam.Immediate import Immediate
 from shazzam.Cruncher import Cruncher
 from shazzam.Assembler import Assembler
-
+import enum
 from typing import List, Any, Dict
 
 
@@ -240,9 +240,9 @@ def at(value: Any) -> Address:
 
 def ind_at(value: Any) -> Address:
     if isinstance(value, str) and value != "":
-        return Address(name=value)
+        return Address(name=value, indirect=True)
     elif isinstance(value, int):
-        return Address(value=value)
+        return Address(value=value, indirect=True)
     else:
         raise ValueError("Address must be an int or a non empty string")
 
@@ -256,7 +256,7 @@ def rel_at(value: Any) -> Address:
         if rel_address > 0xff:
             raise ValueError(f"Relative address cannot be bigger than a byte: {get_current_address():04X} - {value:04X} = {rel_address:04X}")
 
-        return Address(value=value, indirect=rel_address)
+        return Address(value=value, relative=rel_address)
     else:
         raise ValueError("Relative address must be an int or a non empty string")
 
@@ -461,8 +461,8 @@ def _create_a_function(*args, **kwargs):
 
         if len(args) == 2:
             index = args[1]
-            if not isinstance(index, Enum):
-                raise ValueError("2nd operand must be a Register")
+            if not isinstance(index, enum.EnumMeta):
+                raise ValueError(f"2nd operand must be a Register and not a {type(index)}")
 
         if len(args) > 2:
             raise ValueError(f"Too many arguments!")
@@ -506,7 +506,7 @@ def _create_a_function(*args, **kwargs):
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'abs', address=address))
 
         if 'rel' in modes:
-            if address.indirect is not None:
+            if address.relative is not None:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'rel', address=address))
             else:
                 adr = g._CURRENT_CONTEXT.need_label(address.name)

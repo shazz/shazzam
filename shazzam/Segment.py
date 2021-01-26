@@ -136,12 +136,13 @@ class Segment():
             g._CURRENT_RASTER.add_cycles(instr.get_cycle_count())
 
         bcode, resolved = self.get_bytecode(instr)
+        instr.bytecode = bcode
 
         if not resolved:
             g.logger.warning("bytecode cannot be generated yet, will be resolve later!")
             return None
 
-        return bcode
+        return instr
 
     def add_byte(self, immediate: Immediate) -> None:
         """[summary]
@@ -287,9 +288,9 @@ class Segment():
                         print(f"label address: {self.labels[instr.address.name].value}")
                         instr.address.value = self.labels[instr.address.name].value
                         if adr < self.labels[instr.address.name].value:
-                            instr.address.indirect = self.labels[instr.address.name].value - adr - instr.get_size()
+                            instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                         else:
-                            instr.address.indirect = adr - self.labels[instr.address.name].value - instr.get_size()
+                            instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
                         self.logger.info(f"Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}")
                     else:
@@ -440,7 +441,7 @@ class Segment():
                 g_bcode, resolved = self.get_bytecode(instr)
                 if not resolved:
                     raise ValueError("Bytecode cannot be yet generated")
-                    
+
                 bcode = str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()    # remove leading 'b and trailing '. Ex: bytearray(b'\xa9\x0b') A90B
                 bcode = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 

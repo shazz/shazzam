@@ -2,7 +2,7 @@ import logging
 
 class Address():
 
-    def __init__(self, name: str = None, value: int = None, indirect: int = None):
+    def __init__(self, name: str = None, value: int = None, relative: int = None, indirect: bool = False):
 
         self.logger = logging.getLogger("shazzam")
 
@@ -15,6 +15,7 @@ class Address():
         self.name = name
         self._value = value
         self.indirect = indirect
+        self.relative = relative
         self._add_modifier = None
         self._sub_modifier = None
 
@@ -56,8 +57,8 @@ class Address():
             return f"{self._value:04X}"
         elif self.name:
             return f"{self.name}@unknown"
-        elif self.indirect is not None:
-            return f"{self.indirect}"
+        elif self.relative is not None:
+            return f"{self.relative}"
         else:
             raise RuntimeError("Address is void")
 

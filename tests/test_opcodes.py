@@ -17,14 +17,14 @@ def test_hmc_6502_roms(cases, test_name):
 
     with segment(0x0, test_name, check_address_dups=False) as s:
         for instr, res in cases.items():
-            bc = eval(instr)
+            bc = eval(instr).bytecode
             assert bc == res, f"{instr} should generate byte code ${res.hex('$', 3)} and not ${bc.hex('$', 3)}."
 
 def test_lda():
 
     with segment(0x0, "lda_imm", check_address_dups=False) as s:
         for i in range(255+1):
-            assert lda(imm(i)) == bytearray([Instruction.opcodes.index(["lda","imm"]), i]), f"error for i = {i}"
+            assert lda(imm(i)).bytecode == bytearray([Instruction.opcodes.index(["lda","imm"]), i]), f"error for i = {i}"
 
         with pytest.raises(ValueError):
             lda(imm(256))
@@ -33,10 +33,10 @@ def test_lda():
 
     with segment(0x0, "lda_abs_zpg", check_address_dups=False) as s:
         for i in range(0x100):
-            assert lda(at(i)) == bytearray([Instruction.opcodes.index(["lda","zpg"]), i & 0xff]), f"error for i = {i}"
+            assert lda(at(i)).bytecode == bytearray([Instruction.opcodes.index(["lda","zpg"]), i & 0xff]), f"error for i = {i}"
 
         for i in range(0x100, 0xffff+1):
-            assert lda(at(i)) == bytearray([Instruction.opcodes.index(["lda","abs"]), i & 0xff, (i >>8) & 0xff]), f"error for i = {i}"
+            assert lda(at(i)).bytecode == bytearray([Instruction.opcodes.index(["lda","abs"]), i & 0xff, (i >>8) & 0xff]), f"error for i = {i}"
 
         with pytest.raises(ValueError):
             lda(at(0x10000))

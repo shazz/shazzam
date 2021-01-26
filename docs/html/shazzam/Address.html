@@ -30,12 +30,12 @@
 
 class Address():
 
-    def __init__(self, name: str = None, value: int = None, indirect: int = 0):
+    def __init__(self, name: str = None, value: int = None, indirect: int = None):
 
         self.logger = logging.getLogger(&#34;shazzam&#34;)
 
-        if name is None and value is None:
-            raise ValueError(&#34;Address is void&#34;)
+        if name is None and value is None and indirect is None:
+            raise ValueError(&#34;Address cannot be void&#34;)
 
         if value and value &gt; 0xffff:
             raise ValueError(f&#34;Address value {value} exceeds 1 word&#34;)
@@ -84,6 +84,8 @@ class Address():
             return f&#34;{self._value:04X}&#34;
         elif self.name:
             return f&#34;{self.name}@unknown&#34;
+        elif self.indirect is not None:
+            return f&#34;{self.indirect}&#34;
         else:
             raise RuntimeError(&#34;Address is void&#34;)
 
@@ -102,7 +104,7 @@ class Address():
 <dl>
 <dt id="shazzam.Address.Address"><code class="flex name class">
 <span>class <span class="ident">Address</span></span>
-<span>(</span><span>name: str = None, value: int = None, indirect: int = 0)</span>
+<span>(</span><span>name: str = None, value: int = None, indirect: int = None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -112,12 +114,12 @@ class Address():
 </summary>
 <pre><code class="python">class Address():
 
-    def __init__(self, name: str = None, value: int = None, indirect: int = 0):
+    def __init__(self, name: str = None, value: int = None, indirect: int = None):
 
         self.logger = logging.getLogger(&#34;shazzam&#34;)
 
-        if name is None and value is None:
-            raise ValueError(&#34;Address is void&#34;)
+        if name is None and value is None and indirect is None:
+            raise ValueError(&#34;Address cannot be void&#34;)
 
         if value and value &gt; 0xffff:
             raise ValueError(f&#34;Address value {value} exceeds 1 word&#34;)
@@ -166,6 +168,8 @@ class Address():
             return f&#34;{self._value:04X}&#34;
         elif self.name:
             return f&#34;{self.name}@unknown&#34;
+        elif self.indirect is not None:
+            return f&#34;{self.indirect}&#34;
         else:
             raise RuntimeError(&#34;Address is void&#34;)
 

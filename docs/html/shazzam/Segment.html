@@ -278,7 +278,7 @@ class Segment():
         for label, params in self.required_labels.items():
 
             if (label not in self.labels) and (label not in g._PROGRAM.global_labels):
-                print(&#34;global:&#34;, g._PROGRAM.global_labels)
+                self.logger.debug(&#34;global labels:&#34;, g._PROGRAM.global_labels)
                 raise ValueError(f&#34;Label {label} is used but not defined locally or globally!&#34;)
 
             if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label].address) &gt; 255:
@@ -310,7 +310,7 @@ class Segment():
                 self.logger.debug(f&#34;-&gt; address label name: {instr.address.name}&#34;)
                 if instr.address.name in self.labels:
 
-                    if instr.mode is &#39;rel&#39;:
+                    if instr.mode == &#39;rel&#39;:
                         print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                         instr.address.value = self.labels[instr.address.name].value
                         if adr &lt; self.labels[instr.address.name].value:
@@ -467,6 +467,7 @@ class Segment():
                 g_bcode, resolved = self.get_bytecode(instr)
                 if not resolved:
                     raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                    
                 bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
                 bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -826,7 +827,7 @@ class Segment():
         for label, params in self.required_labels.items():
 
             if (label not in self.labels) and (label not in g._PROGRAM.global_labels):
-                print(&#34;global:&#34;, g._PROGRAM.global_labels)
+                self.logger.debug(&#34;global labels:&#34;, g._PROGRAM.global_labels)
                 raise ValueError(f&#34;Label {label} is used but not defined locally or globally!&#34;)
 
             if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label].address) &gt; 255:
@@ -858,7 +859,7 @@ class Segment():
                 self.logger.debug(f&#34;-&gt; address label name: {instr.address.name}&#34;)
                 if instr.address.name in self.labels:
 
-                    if instr.mode is &#39;rel&#39;:
+                    if instr.mode == &#39;rel&#39;:
                         print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                         instr.address.value = self.labels[instr.address.name].value
                         if adr &lt; self.labels[instr.address.name].value:
@@ -1015,6 +1016,7 @@ class Segment():
                 g_bcode, resolved = self.get_bytecode(instr)
                 if not resolved:
                     raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                    
                 bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
                 bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1538,6 +1540,7 @@ def size(self):
             g_bcode, resolved = self.get_bytecode(instr)
             if not resolved:
                 raise ValueError(&#34;Bytecode cannot be yet generated&#34;)
+                
             bcode = str(binascii.hexlify(g_bcode))[2:].replace(&#34;&#39;&#34;, &#34;&#34;).upper()    # remove leading &#39;b and trailing &#39;. Ex: bytearray(b&#39;\xa9\x0b&#39;) A90B
             bcode = &#34; &#34;.join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
@@ -1806,7 +1809,7 @@ def size(self):
     for label, params in self.required_labels.items():
 
         if (label not in self.labels) and (label not in g._PROGRAM.global_labels):
-            print(&#34;global:&#34;, g._PROGRAM.global_labels)
+            self.logger.debug(&#34;global labels:&#34;, g._PROGRAM.global_labels)
             raise ValueError(f&#34;Label {label} is used but not defined locally or globally!&#34;)
 
         if params[&#39;relative&#39;] and abs(params[&#39;from&#39;] - self.labels[label].address) &gt; 255:
@@ -1838,7 +1841,7 @@ def size(self):
             self.logger.debug(f&#34;-&gt; address label name: {instr.address.name}&#34;)
             if instr.address.name in self.labels:
 
-                if instr.mode is &#39;rel&#39;:
+                if instr.mode == &#39;rel&#39;:
                     print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                     instr.address.value = self.labels[instr.address.name].value
                     if adr &lt; self.labels[instr.address.name].value:

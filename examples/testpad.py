@@ -12,7 +12,10 @@ import shazzam.macros.macros_math as m
 # define your cross assembler
 assembler = CC65("cc65", "/home/shazz/projects/c64/bin/cl65")
 prefs = assembler.get_code_format()
-set_prefs(code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+set_prefs(default_code_segment=assembler.get_code_segment(),
+          code_format=prefs.code,
+          comments_format=prefs.comments,
+          directive_prefix=prefs.directive)
 
 @reloading
 def code():
@@ -26,7 +29,7 @@ def code():
         nop()
         nop()
         nop()
-        bcc(rel_at(0x0810))
+        # bcc(rel_at(0x0810))
 
         # val = 5
         # res = 320
@@ -58,14 +61,14 @@ def code():
         # sta(at("test"),x)
         # sta(at("test"),y)
 
-    # with segment(0x0900, assembler.get_data_segment()) as s:
-    #     label("test", is_global=True)
-    #     for i in range(10):
-    #         byte(i)
-    #     nop()   # else label won't be seen... to fixed
-    #     label("test2")
-    #     for i in range(3):
-    #         byte(i)
+    with segment(0x0812, assembler.get_data_segment()) as s:
+        label("test", is_global=True)
+        for i in range(10):
+            byte(i)
+        nop()   # else label won't be seen... to fixed
+        label("test2")
+        for i in range(3):
+            byte(i)
 
 
     # generate listing

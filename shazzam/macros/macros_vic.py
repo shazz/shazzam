@@ -165,5 +165,5 @@ def init_sprites(nb, data, spd, bank, scr_mem):
     sprite_balls_adr = (data-bank)/64
     lda(imm(sprite_balls_adr))
     for i in range(nb):
-		sta(at(bank + scr_mem + 0x3f8 + i))
+        sta(at(bank + scr_mem + 0x3f8 + i))
 

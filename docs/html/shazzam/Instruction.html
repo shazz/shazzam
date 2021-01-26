@@ -165,8 +165,8 @@ class Instruction():
         elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
             raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
-        elif self.mode in [&#39;rel&#39;] and self.address.value and abs(self.address.value - self.end_address) &gt; 255:
-            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.value:04X} to {instruction_address:04X}&#34;)
+        elif self.mode in [&#39;rel&#39;] and self.address.indirect and self.address.indirect &gt; 0xff:
+            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.indirect:04X}&#34;)
 
 
     def get_instruction_name(self) -&gt; str:
@@ -211,7 +211,7 @@ class Instruction():
             str: [description]
         &#34;&#34;&#34;
         resolved = True
-        if self.address and self.address.value is None:
+        if self.address and self.address.value is None and self.address.indirect is None:
             resolved = False
 
         if self.immediate and self.immediate.value is None:
@@ -232,9 +232,9 @@ class Instruction():
             return (def_address_value &amp; 0xff), resolved
 
         elif self.mode in [&#39;rel&#39;]:
-            if not resolved:
+            if self.address.indirect is None:
                 self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-                return (def_address_value &amp; 0xff), resolved
+                return (0 &amp; 0xffff), resolved
             else:
                 return (self.address.indirect &amp; 0xff), resolved
 
@@ -480,8 +480,8 @@ class Instruction():
         elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
             raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
-        elif self.mode in [&#39;rel&#39;] and self.address.value and abs(self.address.value - self.end_address) &gt; 255:
-            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.value:04X} to {instruction_address:04X}&#34;)
+        elif self.mode in [&#39;rel&#39;] and self.address.indirect and self.address.indirect &gt; 0xff:
+            raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.indirect:04X}&#34;)
 
 
     def get_instruction_name(self) -&gt; str:
@@ -526,7 +526,7 @@ class Instruction():
             str: [description]
         &#34;&#34;&#34;
         resolved = True
-        if self.address and self.address.value is None:
+        if self.address and self.address.value is None and self.address.indirect is None:
             resolved = False
 
         if self.immediate and self.immediate.value is None:
@@ -547,9 +547,9 @@ class Instruction():
             return (def_address_value &amp; 0xff), resolved
 
         elif self.mode in [&#39;rel&#39;]:
-            if not resolved:
+            if self.address.indirect is None:
                 self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-                return (def_address_value &amp; 0xff), resolved
+                return (0 &amp; 0xffff), resolved
             else:
                 return (self.address.indirect &amp; 0xff), resolved
 
@@ -708,8 +708,8 @@ class Instruction():
     elif self.mode in [&#39;abs&#39;, &#39;abx&#39;, &#39;aby&#39;] and self.address.value and self.address.value &gt; 0xffff:
         raise ValueError(f&#34;Absolute address cannot be bigger then a word! Got: {self.value:04X}&#34;)
 
-    elif self.mode in [&#39;rel&#39;] and self.address.value and abs(self.address.value - self.end_address) &gt; 255:
-        raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.value:04X} to {instruction_address:04X}&#34;)</code></pre>
+    elif self.mode in [&#39;rel&#39;] and self.address.indirect and self.address.indirect &gt; 0xff:
+        raise ValueError(f&#34;Relative address value cannot be bigger then a byte! Got: {self.address.indirect:04X}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Instruction.Instruction.get_cycle_count"><code class="name flex">
@@ -802,7 +802,7 @@ class Instruction():
         str: [description]
     &#34;&#34;&#34;
     resolved = True
-    if self.address and self.address.value is None:
+    if self.address and self.address.value is None and self.address.indirect is None:
         resolved = False
 
     if self.immediate and self.immediate.value is None:
@@ -823,9 +823,9 @@ class Instruction():
         return (def_address_value &amp; 0xff), resolved
 
     elif self.mode in [&#39;rel&#39;]:
-        if not resolved:
+        if self.address.indirect is None:
             self.logger.warning(f&#34;Relative address is managed by segment gen_code to find the label value&#34;)
-            return (def_address_value &amp; 0xff), resolved
+            return (0 &amp; 0xffff), resolved
         else:
             return (self.address.indirect &amp; 0xff), resolved
 

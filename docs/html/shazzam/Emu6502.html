@@ -89,7 +89,7 @@ class Emu6502():
         while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
             try:
                 cpu.step()
-                input()
+                # input()
 
                 current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
                 current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
@@ -206,7 +206,7 @@ class Emu6502():
         while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
             try:
                 cpu.step()
-                input()
+                # input()
 
                 current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
                 current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
@@ -282,7 +282,7 @@ class Emu6502():
     while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
         try:
             cpu.step()
-            input()
+            # input()
 
             current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
             current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]

@@ -35,12 +35,15 @@ from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
-import shazzam.macros.macros as m
+import shazzam.macros.macros_math as m
 
 # define your cross assembler
 assembler = CC65(&#34;cc65&#34;, &#34;/home/shazz/projects/c64/bin/cl65&#34;)
 prefs = assembler.get_code_format()
-set_prefs(code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+set_prefs(default_code_segment=assembler.get_code_segment(),
+          code_format=prefs.code,
+          comments_format=prefs.comments,
+          directive_prefix=prefs.directive)
 
 @reloading
 def code():
@@ -50,19 +53,26 @@ def code():
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
-        lda(at(&#34;test&#34;))
 
-        m.add8_to_16(5, 320)
+        nop()
+        nop()
+        nop()
+        # bcc(rel_at(0x0810))
 
-        brk()
-        label(&#34;res&#34;)
-        byte(0)
-        byte(0)
+        # val = 5
+        # res = 320
+        # m.add8_to_16(val, &#34;res&#34;)
 
+        # brk()
+        # label(&#34;res&#34;)
+        # byte(res &amp; 0xff)
+        # byte(res &gt;&gt; 8)
 
         # cpu, mmu = s.emulate()
         # print(f&#34;Address: {get_current_address():04X}&#34;)
-        # assert ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2)) == 325
+
+        # result = ((mmu.read(get_current_address()-1)*256) + mmu.read(get_current_address()-2))
+        # assert result  == 325, f&#34;{result} vs {val+res}&#34;
         # print(s.get_stats())
 
         # nop()
@@ -79,7 +89,7 @@ def code():
         # sta(at(&#34;test&#34;),x)
         # sta(at(&#34;test&#34;),y)
 
-    with segment(0x0900, assembler.get_data_segment()) as s:
+    with segment(0x0812, assembler.get_data_segment()) as s:
         label(&#34;test&#34;, is_global=True)
         for i in range(10):
             byte(i)

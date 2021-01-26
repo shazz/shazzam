@@ -105,6 +105,8 @@ class CC65(Assembler):
         data = subprocess.Popen(cmd, stdout = subprocess.PIPE)
         output = data.communicate()
 
+        self.logger.info(f"{segment.name} assembled")
+
         return segment_filename
 
     def assemble_prg(self, program: Program, start_address: int) -> str:
@@ -127,9 +129,11 @@ class CC65(Assembler):
         cmd.append(program_filename)
 
         # cl65 -t c64 -C generated/c64-asm.cfg -u __EXEHDR__ generated/entry.asm generated/INIT.asm generated/IRQ.asm -o main.prg
-        self.logger.info(f"Assembling {segment.name} using CL65 command: {cmd}")
+        self.logger.info(f"Assembling {program.name} using CL65 command: {cmd}")
         data = subprocess.Popen(cmd, stdout = subprocess.PIPE)
         output = data.communicate()
+
+        self.logger.info(f"{program.name} assembled and linked")
 
         return program_filename
 
@@ -148,23 +152,35 @@ class CC65(Assembler):
 
         # gen memory
         entry_point_found = False
+        non_default_segments = []
+        default_segments = []
         for i, segment in enumerate(program.segments):
             if segment.name in ["CODE", "DATA", "BSS"]:
                 entry_point_found = True
+                default_segments.append(segment)
+            else:
+                non_default_segments.append(segment)
 
         if entry_point_found is False:
             raise RuntimeError(f"Entry point in CODE, DATA or BSS segment not found!")
 
         # find segment next to BASIC header
-        sorted_segments_adr = sorted([segment.start_adr for segment in program.segments])
+        sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
+        sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
 
-        if len(sorted_segments_adr) > 1:
-            first_segment_address = sorted_segments_adr[sorted_segments_adr.index(start_address)+1]
+        if len(sorted_non_default_segments_adr) > 1:
+            first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
             CC65.memory = CC65.memory.replace("%%%", f"${first_segment_address:04X}")
         else:
-            main_size = start_address + CC65.basic_header_size + (program.segments[0].size)
-            self.logger.info(f"Only one CODE segment of size: {program.segments[0].size} + {CC65.basic_header_size} + 0x{start_address:04X} = {main_size:04X}")
-            CC65.memory = CC65.memory.replace("%%%", f"${main_size:04X}")
+            start_adr = sorted_default_segments_adr[0]
+            end_adr = sorted_default_segments_adr[-1]
+            for segment in default_segments:
+                end_adr = max(end_adr, segment.end_adr)
+
+            # main_size = start_address + CC65.basic_header_size + (program.segments[0].size)
+            main_size = end_adr - start_adr
+            # self.logger.info(f"Only one CODE segment of size: {program.segments[0].size} + {CC65.basic_header_size} + 0x{start_address:04X} = {main_size:04X}")
+            CC65.memory = CC65.memory.replace("%%%", f"${end_adr:04X}")
 
         mem_lines = ""
         for i, segment in enumerate(program.segments):

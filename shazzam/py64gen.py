@@ -22,12 +22,13 @@ from typing import List, Any, Dict
 # ---------------------------------------------------------------------
 # py64gen public functions
 # ---------------------------------------------------------------------
-def set_prefs(code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat):
+def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format
     g._DIRECTIVE_PREFIX = directive_prefix
+    g._DEFAULT_CODE_SEGMENT = default_code_segment
 
 @contextmanager
 def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True) -> Segment:
@@ -57,8 +58,6 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
         # check segments with same base address
         if segment.start_adr == start_adr and segment.name != seg.name and check_address_dups:
             raise ValueError(f"Multiple segments have the same start address {start_adr:04X}: {segment.name} and {seg.name}")
-
-        # TODO: check overlap
 
         # else
         if segment.start_adr == start_adr and segment.name == seg.name:
@@ -116,6 +115,9 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -> None:
     """
     global _PROGRAM
 
+    # TODO: check overlap
+    overlaps = _check_segments_ovelap()
+
     g._PROGRAM.set_name(prg_name)
 
     if header is None:
@@ -126,7 +128,7 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -> None:
 
     if prefs:
         g.logger.debug(f"Setting assembler pref: {prefs}")
-        set_prefs(code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+        set_prefs(default_code_segment=prefs.default_code_segment, code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
 
     for segment in g._PROGRAM.segments:
 
@@ -157,11 +159,12 @@ def gen_listing(prg_name: str, header: str = None) -> None:
         header += "; https://github.com/shazz/shazzam\n\n"
 
     prefs = Alias( {
+            "default_code_segment": "CODE",
             "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
             "comments": CommentsFormat.USE_SEMICOLON,
             "directive": DirectiveFormat.USE_DOT
         })
-    set_prefs(code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+    set_prefs(default_code_segment=prefs.default_code_segment, code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
 
     for segment in g._PROGRAM.segments:
 
@@ -453,9 +456,13 @@ def _create_a_function(*args, **kwargs):
                 address = args[0]
             elif isinstance(args[0], Immediate):
                 immediate = args[0]
+            else:
+                raise ValueError("1st operand must be an Address or an Immediate")
 
         if len(args) == 2:
             index = args[1]
+            if not isinstance(index, Enum):
+                raise ValueError("2nd operand must be a Register")
 
         if len(args) > 2:
             raise ValueError(f"Too many arguments!")
@@ -655,4 +662,25 @@ tsx	= _create_a_function(mnemonic="tsx")
 txa	= _create_a_function(mnemonic="txa")
 txs	= _create_a_function(mnemonic="txs")
 tya	= _create_a_function(mnemonic="tya")
+
+# -----------------------------------------------------------
+# Private functions
+# -----------------------------------------------------------
+
+def _check_segments_ovelap(code_segment: str = "CODE") -> None:
+
+    intervals = []
+    for segment in g._PROGRAM.segments:
+        if segment.name == code_segment:
+            intervals.append((segment.start_adr, segment.end_adr+13))   # adding basic header 13 bytes
+        else:
+            intervals.append((segment.start_adr, segment.end_adr))
+
+    intervals.sort()
+    g.logger.info(f"Checking overlapping intervals: {[(hex(interval[0]), hex(interval[1])) for interval in intervals]}")
+
+    for i in range(1, len(intervals)):
+        if intervals[i][0] <= intervals[i-1][1]:
+            raise ValueError(f"The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!")
+
 

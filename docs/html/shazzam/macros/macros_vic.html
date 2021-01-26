@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
-<title>shazzam.macros.macros API documentation</title>
+<title>shazzam.macros.macros_vic API documentation</title>
 <meta name="description" content="" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
@@ -19,7 +19,7 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>shazzam.macros.macros</code></h1>
+<h1 class="title">Module <code>shazzam.macros.macros_vic</code></h1>
 </header>
 <section id="section-intro">
 <details class="source">
@@ -30,74 +30,9 @@
 import logging
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+from shazzam.macros.aliases import color, vic
 
 logger = logging.getLogger(&#34;shazzam&#34;)
-
-# ------------------------------------------------------------------------
-# add16(n1, n2, res)
-# 16 bits addition
-# ------------------------------------------------------------------------
-def add16(n1, n2, res):
-    clc()
-    lda(at(n1))
-    adc(at(n2))
-    sta(at(res)+0)
-    lda(at(n1)+1)
-    adc(at(n2)+1)
-    sta(at(res)+1)
-
-# ------------------------------------------------------------------------
-# add8_to_16(val, res)
-# add a 8bits value to a 16bits value
-# ------------------------------------------------------------------------
-def add8_to_16(val, res):
-    mlabel = get_anonymous_label(&#34;ok&#34;)
-
-    clc()
-    lda(at(res))
-    adc(imm(val))
-    sta(at(res))
-    bcc(at(mlabel))
-    inc(at(res+1))
-    label(mlabel)
-
-# ------------------------------------------------------------------------
-# sub8_to_16(n, val)
-# substracts a 8bits value to a 16bits value
-# ------------------------------------------------------------------------
-def sub8_to_16(n, val):
-    mlabel = get_anonymous_label(&#34;ok&#34;)
-
-    sec()
-    lda(at(n))
-    sbc(imm(val))
-    sta(at(n))
-    bcs(at(mlabel))
-    dec(at(n+1))
-    label(mlabel)
-
-# ------------------------------------------------------------------------
-# waste_cycles(n)
-# setup stable raster irq note: cannot be set on a badline or the second
-# interrupt happens before we store the stack pointer (among other things)
-# ------------------------------------------------------------------------
-def waste_cycles(n):
-    nops = math.floor(n/2)
-    rem = n &amp; 1
-    c = n
-    if rem == 0:
-        for i in range(nops):
-            nop()
-            c = c - 2
-    else:
-        for i in range(nops-1):
-            nop()
-            c = c - 2
-        bit(at(0xfe))
-        c = c - 3
-    if c != 0:
-        logger.error(f&#34;error {c} cycles remaining on {n}&#34;)
-        raise RuntimeError(&#34;should not be here&#34;)
 
 # ------------------------------------------------------------------------------------------
 # clear_screen(clear_byte, screen, use_ptr)
@@ -118,35 +53,6 @@ def clear_screen(clear_byte: int, screen: int, use_ptr: bool):
     sta(at(screen) + 0x300, x)
     inx()
     bne(at(mlabel))
-
-# ------------------------------------------------------------------------------------------
-# basic start
-# generate a compatible basic header
-# ------------------------------------------------------------------------------------------
-def basic_start(addr):
-    with segment(0x0801, &#34;entry&#34;) as s:
-        byte(0x0c)
-        byte(0x08)
-        byte(0x00)
-        byte(0x00)
-        byte(0x9e)
-
-        if (addr &gt;= 10000):
-            byte(0x30 + (addr//10000)%10)
-
-        if (addr &gt;= 1000):
-            byte(0x30 + (addr//1000)%10)
-
-        if (addr &gt;= 100):
-            byte(0x30 + (addr//100)%10)
-
-        if (addr &gt;= 10):
-            byte(0x30 + (addr//10)%10)
-
-        byte(0x30 + addr % 10)
-        byte(0x0, 0x0, 0x0)
-
-        logger.info(f&#34;after basic header, program start at {s.get_stats()[&#39;current_address&#39;]}&#34;)
 
 # ------------------------------------------------------------------------------------------
 # Setup VIC bacnk
@@ -249,7 +155,45 @@ def generate_d018(charmem, bitmap, screenmem):
     logger.debug(screenmem, mapping_screenmem[screenmem])
 
     reg = ((mapping_charmem[charmem] &lt;&lt; 1) | (mapping_bitmap[bitmap] &lt;&lt; 1) | (mapping_screenmem[screenmem] &lt;&lt; 4))
-    return reg</code></pre>
+    return reg
+
+# ------------------------------------------------------------------------
+# vsync
+# ------------------------------------------------------------------------
+def vsync():
+    l_wait1 = get_anonymous_label(&#34;l_wait1&#34;)
+    l_wait2 = get_anonymous_label(&#34;l_wait2&#34;)
+
+    label(l_wait1)
+    lda(at(vic.scr_ctrl))
+    bpl(at(l_wait1))
+
+    label(l_wait2)
+    lda(at(vic.scr_ctrl))
+    bmi(at(l_wait2))
+
+# ------------------------------------------------------------------------
+# Init sprites
+# ------------------------------------------------------------------------
+def init_sprites(nb, data, spd, bank, scr_mem):
+
+    # set sprites specific color
+    for i in range(nb):
+        lda(imm(spd.colors[i]))
+        sta(at(vic.sprite0_color+i))            # set main sprite color
+
+    # set extra colors
+    lda(imm(0x0e))                              # spd.multicol1
+    sta(at(vic.sprite_extra_col1))
+
+    lda(imm(spd.multicol2))
+    sta(at(vic.sprite_extra_col2))
+
+    # set sprites pointers
+    sprite_balls_adr = (data-bank)/64
+    lda(imm(sprite_balls_adr))
+    for i in range(nb):
+        sta(at(bank + scr_mem + 0x3f8 + i))</code></pre>
 </details>
 </section>
 <section>
@@ -259,82 +203,7 @@ def generate_d018(charmem, bitmap, screenmem):
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="shazzam.macros.macros.add16"><code class="name flex">
-<span>def <span class="ident">add16</span></span>(<span>n1, n2, res)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def add16(n1, n2, res):
-    clc()
-    lda(at(n1))
-    adc(at(n2))
-    sta(at(res)+0)
-    lda(at(n1)+1)
-    adc(at(n2)+1)
-    sta(at(res)+1)</code></pre>
-</details>
-</dd>
-<dt id="shazzam.macros.macros.add8_to_16"><code class="name flex">
-<span>def <span class="ident">add8_to_16</span></span>(<span>val, res)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def add8_to_16(val, res):
-    mlabel = get_anonymous_label(&#34;ok&#34;)
-
-    clc()
-    lda(at(res))
-    adc(imm(val))
-    sta(at(res))
-    bcc(at(mlabel))
-    inc(at(res+1))
-    label(mlabel)</code></pre>
-</details>
-</dd>
-<dt id="shazzam.macros.macros.basic_start"><code class="name flex">
-<span>def <span class="ident">basic_start</span></span>(<span>addr)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def basic_start(addr):
-    with segment(0x0801, &#34;entry&#34;) as s:
-        byte(0x0c)
-        byte(0x08)
-        byte(0x00)
-        byte(0x00)
-        byte(0x9e)
-
-        if (addr &gt;= 10000):
-            byte(0x30 + (addr//10000)%10)
-
-        if (addr &gt;= 1000):
-            byte(0x30 + (addr//1000)%10)
-
-        if (addr &gt;= 100):
-            byte(0x30 + (addr//100)%10)
-
-        if (addr &gt;= 10):
-            byte(0x30 + (addr//10)%10)
-
-        byte(0x30 + addr % 10)
-        byte(0x0, 0x0, 0x0)
-
-        logger.info(f&#34;after basic header, program start at {s.get_stats()[&#39;current_address&#39;]}&#34;)</code></pre>
-</details>
-</dd>
-<dt id="shazzam.macros.macros.clear_screen"><code class="name flex">
+<dt id="shazzam.macros.macros_vic.clear_screen"><code class="name flex">
 <span>def <span class="ident">clear_screen</span></span>(<span>clear_byte: int, screen: int, use_ptr: bool)</span>
 </code></dt>
 <dd>
@@ -360,7 +229,7 @@ def generate_d018(charmem, bitmap, screenmem):
     bne(at(mlabel))</code></pre>
 </details>
 </dd>
-<dt id="shazzam.macros.macros.generate_d018"><code class="name flex">
+<dt id="shazzam.macros.macros_vic.generate_d018"><code class="name flex">
 <span>def <span class="ident">generate_d018</span></span>(<span>charmem, bitmap, screenmem)</span>
 </code></dt>
 <dd>
@@ -411,7 +280,37 @@ def generate_d018(charmem, bitmap, screenmem):
     return reg</code></pre>
 </details>
 </dd>
-<dt id="shazzam.macros.macros.setup_vic_bank"><code class="name flex">
+<dt id="shazzam.macros.macros_vic.init_sprites"><code class="name flex">
+<span>def <span class="ident">init_sprites</span></span>(<span>nb, data, spd, bank, scr_mem)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def init_sprites(nb, data, spd, bank, scr_mem):
+
+    # set sprites specific color
+    for i in range(nb):
+        lda(imm(spd.colors[i]))
+        sta(at(vic.sprite0_color+i))            # set main sprite color
+
+    # set extra colors
+    lda(imm(0x0e))                              # spd.multicol1
+    sta(at(vic.sprite_extra_col1))
+
+    lda(imm(spd.multicol2))
+    sta(at(vic.sprite_extra_col2))
+
+    # set sprites pointers
+    sprite_balls_adr = (data-bank)/64
+    lda(imm(sprite_balls_adr))
+    for i in range(nb):
+        sta(at(bank + scr_mem + 0x3f8 + i))</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.macros_vic.setup_vic_bank"><code class="name flex">
 <span>def <span class="ident">setup_vic_bank</span></span>(<span>bank_start, use_dd02)</span>
 </code></dt>
 <dd>
@@ -476,8 +375,8 @@ def generate_d018(charmem, bitmap, screenmem):
         sta(at(dd00))</code></pre>
 </details>
 </dd>
-<dt id="shazzam.macros.macros.sub8_to_16"><code class="name flex">
-<span>def <span class="ident">sub8_to_16</span></span>(<span>n, val)</span>
+<dt id="shazzam.macros.macros_vic.vsync"><code class="name flex">
+<span>def <span class="ident">vsync</span></span>(<span>)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -485,44 +384,17 @@ def generate_d018(charmem, bitmap, screenmem):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def sub8_to_16(n, val):
-    mlabel = get_anonymous_label(&#34;ok&#34;)
+<pre><code class="python">def vsync():
+    l_wait1 = get_anonymous_label(&#34;l_wait1&#34;)
+    l_wait2 = get_anonymous_label(&#34;l_wait2&#34;)
 
-    sec()
-    lda(at(n))
-    sbc(imm(val))
-    sta(at(n))
-    bcs(at(mlabel))
-    dec(at(n+1))
-    label(mlabel)</code></pre>
-</details>
-</dd>
-<dt id="shazzam.macros.macros.waste_cycles"><code class="name flex">
-<span>def <span class="ident">waste_cycles</span></span>(<span>n)</span>
-</code></dt>
-<dd>
-<div class="desc"></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def waste_cycles(n):
-    nops = math.floor(n/2)
-    rem = n &amp; 1
-    c = n
-    if rem == 0:
-        for i in range(nops):
-            nop()
-            c = c - 2
-    else:
-        for i in range(nops-1):
-            nop()
-            c = c - 2
-        bit(at(0xfe))
-        c = c - 3
-    if c != 0:
-        logger.error(f&#34;error {c} cycles remaining on {n}&#34;)
-        raise RuntimeError(&#34;should not be here&#34;)</code></pre>
+    label(l_wait1)
+    lda(at(vic.scr_ctrl))
+    bpl(at(l_wait1))
+
+    label(l_wait2)
+    lda(at(vic.scr_ctrl))
+    bmi(at(l_wait2))</code></pre>
 </details>
 </dd>
 </dl>
@@ -542,15 +414,12 @@ def generate_d018(charmem, bitmap, screenmem):
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="two-column">
-<li><code><a title="shazzam.macros.macros.add16" href="#shazzam.macros.macros.add16">add16</a></code></li>
-<li><code><a title="shazzam.macros.macros.add8_to_16" href="#shazzam.macros.macros.add8_to_16">add8_to_16</a></code></li>
-<li><code><a title="shazzam.macros.macros.basic_start" href="#shazzam.macros.macros.basic_start">basic_start</a></code></li>
-<li><code><a title="shazzam.macros.macros.clear_screen" href="#shazzam.macros.macros.clear_screen">clear_screen</a></code></li>
-<li><code><a title="shazzam.macros.macros.generate_d018" href="#shazzam.macros.macros.generate_d018">generate_d018</a></code></li>
-<li><code><a title="shazzam.macros.macros.setup_vic_bank" href="#shazzam.macros.macros.setup_vic_bank">setup_vic_bank</a></code></li>
-<li><code><a title="shazzam.macros.macros.sub8_to_16" href="#shazzam.macros.macros.sub8_to_16">sub8_to_16</a></code></li>
-<li><code><a title="shazzam.macros.macros.waste_cycles" href="#shazzam.macros.macros.waste_cycles">waste_cycles</a></code></li>
+<ul class="">
+<li><code><a title="shazzam.macros.macros_vic.clear_screen" href="#shazzam.macros.macros_vic.clear_screen">clear_screen</a></code></li>
+<li><code><a title="shazzam.macros.macros_vic.generate_d018" href="#shazzam.macros.macros_vic.generate_d018">generate_d018</a></code></li>
+<li><code><a title="shazzam.macros.macros_vic.init_sprites" href="#shazzam.macros.macros_vic.init_sprites">init_sprites</a></code></li>
+<li><code><a title="shazzam.macros.macros_vic.setup_vic_bank" href="#shazzam.macros.macros_vic.setup_vic_bank">setup_vic_bank</a></code></li>
+<li><code><a title="shazzam.macros.macros_vic.vsync" href="#shazzam.macros.macros_vic.vsync">vsync</a></code></li>
 </ul>
 </li>
 </ul>

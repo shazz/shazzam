@@ -8,7 +8,7 @@ import logging
 import sys
 
 def initialize():
-    global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
+    global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX, _DEFAULT_CODE_SEGMENT
     global _PROGRAM, _GLOBAL_LABELS, _CURRENT_CONTEXT, _CURRENT_RASTER
     global logger
 
@@ -22,7 +22,7 @@ def initialize():
     _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX ]
     _COMMENTS_FORMAT = CommentsFormat.USE_SEMICOLON
     _DIRECTIVE_PREFIX = DirectiveFormat.NO_PREFIX
-
+    _DEFAULT_CODE_SEGMENT = "CODE"
 
     logger = logging.getLogger("shazzam")
     logger.setLevel(logging.INFO)

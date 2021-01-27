@@ -326,11 +326,11 @@ class Segment():
         code = []
 
         # add globals import/export
-        locals_label = list(self.labels.keys())
+        locals_labels = list(self.labels.keys())
         globals_labels = list(g._PROGRAM.global_labels.keys())
 
         for label in globals_labels:
-            if label not in locals_label:
+            if label not in locals_labels:
                 code.append(f'\t\t{self.directive_prefix}import {label}\n')
             else:
                 code.append(f'\t\t{self.directive_prefix}export {label}\n')
@@ -340,12 +340,20 @@ class Segment():
         # add segment directive
         code.append(f'\t\t{self.directive_prefix}segment "{self.name}"\n')
 
+        # get longest label
+
+        if len(locals_labels) > 0:
+            label_size = max(10, len(max(locals_labels)) + 6)
+        else:
+            label_size = 10
+
+        print(f"Label size: {label_size}")
         code_template_index = {
             "address": 0,
             "bytecode": 8 if self.show_address else 0,
             "label": 40 if self.show_bytecode else 8 if self.show_address else 0,
-            "instruction": 50 if self.show_bytecode else 18 if self.show_address else 10,
-            "cycles": 70 if self.show_bytecode else 38 if self.show_address else 30,
+            "instruction": 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
+            "cycles": 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
         }
 
         process_byte = True
@@ -508,10 +516,12 @@ class Segment():
             [type]: [description]
         """
         if len(self.instructions) == 0:
-            raise RuntimeError(f"No instruction in the segment!")
+            return Alias({
+                "start_address": hex(self.start_adr),
+            })
 
         last_instr = self.get_last_instruction()
-        return {
+        return Alias({
             "size": self.next_position - self.start_adr,
             "cycles_used": self.total_cycles_used,
             "instructions": len(self.instructions),
@@ -522,7 +532,7 @@ class Segment():
                 "size": last_instr.get_size(),
                 "cycles": last_instr.get_cycle_count()
             }
-        }
+        })
 
 
     def get_anonymous_label(self, prefix: str) -> str:

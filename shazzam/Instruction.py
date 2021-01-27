@@ -291,6 +291,9 @@ class Instruction():
         elif self.mode == 'iix':
             val = f"(${self.address.value:02X},X)" if self.use_upper else f"(${self.address.value:02x},x)"
 
+        elif self.mode == 'acc':
+            val = "a"
+
         else:
             raise NotImplementedError(f"Model {self.mode}")
 

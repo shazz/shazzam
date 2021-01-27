@@ -102,7 +102,7 @@ class CC65(Assembler):
         cmd.append(segment_filename)
 
         self.logger.info(f"Assembling {segment.name} segment using CL65 command: {cmd}")
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         output = data.communicate()
 
         self.logger.info(f"{segment.name} assembled")

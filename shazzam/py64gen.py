@@ -107,7 +107,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER.close()
     g._CURRENT_RASTER = None
 
-def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -> None:
+def gen_code(header: str = None, prefs: Alias = None) -> None:
     """[summary]
 
     Args:
@@ -115,10 +115,7 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -> None:
     """
     global _PROGRAM
 
-    # TODO: check overlap
     overlaps = _check_segments_ovelap()
-
-    g._PROGRAM.set_name(prg_name)
 
     if header is None:
         header  = "; Generated code using Shazzam py64gen\n"
@@ -142,15 +139,13 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -> None:
                 f.writelines(header)
                 f.writelines(code)
 
-def gen_listing(prg_name: str, header: str = None) -> None:
+def gen_listing(header: str = None) -> None:
     """[summary] gen_listing
 
     Args:
         header (str, optional): [description]. Defaults to None.
     """
     global _PROGRAM
-
-    g._PROGRAM.set_name(prg_name)
 
     if header is None:
         header  = "; Generated listing using Shazzam py64gen\n"
@@ -177,23 +172,21 @@ def gen_listing(prg_name: str, header: str = None) -> None:
                 f.writelines(header)
                 f.writelines(code)
 
-def assemble_segment(assembler: Assembler, cruncher: Cruncher = None) -> None:
+def assemble_segment(assembler: Assembler) -> None:
     """Assemble segment
 
     Args:
         assembler ([type]): [description]
         cruncher (None): [description]
     """
-    global _CURRENT_CONTEXT
+    global _CURRENT_CONTEXT, _PROGRAM
 
-    output_file = assembler.assemble_segment(_CURRENT_CONTEXT)
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError(f"No segment defined!")
 
-    if cruncher is not None:
-        try:
-            cruncher.crunch_incbin(output_file)
-        except AttributeError as e:
-            g.logger.error(f"The cruncher class {cruncher.__class__} needs to implement crunch_incbin()!")
-            g.logger.error(e)
+    output_file = assembler.assemble_segment(g._PROGRAM, g._CURRENT_CONTEXT)
+
+    return output_file
 
 def assemble_prg(assembler: Assembler, start_address: int, cruncher: Cruncher = None) -> None:
     """Assemble listing
@@ -383,6 +376,9 @@ def incbin(data: bytearray) -> None:
     if g._CURRENT_CONTEXT is None:
         raise RuntimeError(f"No segment defined!")
 
+    if not isinstance(data, bytearray):
+        raise ValueError(f"incbin argument muust be a bytearray and not a {type(data)}")
+
     for b in data:
         g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
 
@@ -398,12 +394,15 @@ def get_current_address() -> int:
 # Utils
 # ---------------------------------------------------------------------
 _funcs = {}
-def generate(func) -> None:
+def generate(func, program_name: str) -> None:
     """[summary]
 
     Args:
         func ([type]): [description]
     """
+    global _PROGRAM
+    g._PROGRAM.set_name(program_name)
+
     for i in reloading(range(10)):
         src = dill.source.getsource(func.__dict__['__inner__'])
         # src = dill.source.getsource(func)
@@ -417,8 +416,8 @@ def generate(func) -> None:
                 _funcs[func.__name__] = h
                 func()
 
-        sleep(0.5)
-    generate(func)
+        sleep(1.0)
+    generate(func, program_name)
 
 def _create_a_function(*args, **kwargs):
     """[summary]
@@ -462,8 +461,10 @@ def _create_a_function(*args, **kwargs):
                 address = args[0]
             elif isinstance(args[0], Immediate):
                 immediate = args[0]
+            elif isinstance(args[0], enum.EnumMeta):
+                index = args[0]
             else:
-                raise ValueError("1st operand must be an Address or an Immediate")
+                raise ValueError(f"1st operand must be an Address or an Immediate, not a {type(args[0])}")
 
         if len(args) == 2:
             index = args[1]
@@ -535,7 +536,7 @@ def _create_a_function(*args, **kwargs):
                 if address.value and address.value <= 0x100:
                     return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'iiy', address=address))
 
-            if 'acc' in modes and index is Register.A:
+            if 'acc' in modes and index is RegisterACC:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, 'acc'))
 
             if 'ind' in modes:

@@ -20,14 +20,14 @@ def read_spd(filename: str) -> Alias:
     with open(filename, "rb") as f:
         buf = f.read()
         numSprites = buf[4]+1
-        data = []
+        data = bytearray()
         colors = []
         for i in range(numSprites):
             offs = i*64+9
             data_bytes = []
             for j in range(64):
                 data_bytes.append(buf[offs + j])
-            data.append(bytearray(data_bytes))
+            data.extend(bytearray(data_bytes))
             colors.append(0x0f & buf[8+(64*(i+1))])
 
         return Alias({

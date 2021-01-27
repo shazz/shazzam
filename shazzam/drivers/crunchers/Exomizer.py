@@ -3,6 +3,8 @@ import os
 import logging
 
 from shazzam.Cruncher import Cruncher
+from shazzam.py64gen import *
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
 class Exomizer(Cruncher):
 
@@ -22,6 +24,4 @@ class Exomizer(Cruncher):
         Raises:
             NotImplementedError: [description]
         """
-        with segment(address, "depacker") as s:
-            nop()
-            raise NotImplementedError()
+        nop()

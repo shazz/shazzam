@@ -24,15 +24,16 @@ set_prefs(default_code_segment=assembler.get_code_segment(),
           comments_format=prefs.comments,
           directive_prefix=prefs.directive)
 
-cruncher = Exomizer("/home/shazz/projects/c64/bin/exomizer")
-cruncher = Nucrunch("/home/shazz/projects/c64/bin/nucrunch")
-cruncher = Pucrunch("/home/shazz/projects/c64/bin/pucrunch")
+prg_cruncher  = Exomizer("/home/shazz/projects/c64/bin/exomizer")
+prg_cruncher  = Nucrunch("/home/shazz/projects/c64/bin/nucrunch")
+prg_cruncher  = Pucrunch("/home/shazz/projects/c64/bin/pucrunch")
+data_cruncher = Apultra("/home/shazz/projects/c64/bin/apultra")
 
 @reloading
 def code():
 
     # define here or anywhere, doesn't matter, your variables
-    spd = p.read_spd("resources/ball.spd")
+    sidfile = "resources/Meetro.sid"
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
@@ -40,15 +41,22 @@ def code():
         nop()
         print(f"{s.get_stats()}")
 
+    with segment(0x1000, "packedata") as s:
+        incbin(data_cruncher.crunch_incbin(sidfile))
+        print(s.get_stats())
+
+    with segment(0x1900, "depacker") as s:
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address)
+
     # generate listing and code
-    gen_code("musicplease", prefs=prefs)
-    gen_listing("musicplease")
+    gen_code(prefs=prefs)
+    gen_listing()
 
     # finally assemble segments to PRG using cross assembler then crunch it!
-    assemble_prg(assembler, start_address=0x0801)
+    assemble_prg(assembler, start_address=0x0801, cruncher=prg_cruncher)
 
 if __name__ == "__main__":
-    generate(code)
+    generate(code, "crunchcrunch")
 
 
 

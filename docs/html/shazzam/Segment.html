@@ -165,7 +165,7 @@ class Segment():
             bcode = self.get_bytecode(instr)
             instr.bytecode = bcode
         except Exception as e:
-            g.logger.warning(f&#34;bytecode cannot be generated yet, will be resolve later! Error: {e}&#34;)
+            g.logger.debug(f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
 
         return instr
 
@@ -258,7 +258,6 @@ class Segment():
         Returns:
             bytearray: [description]
         &#34;&#34;&#34;
-        # print(instr.get_operand())
         ope = instr.get_operand()
         op = instr.get_opcode()
 
@@ -322,14 +321,14 @@ class Segment():
                 if instr.address.name in self.labels:
 
                     if instr.mode == &#39;rel&#39;:
-                        print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
+                        self.logger.debug(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                         instr.address.value = self.labels[instr.address.name].value
                         if adr &lt; self.labels[instr.address.name].value:
                             instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                         else:
                             instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
-                        self.logger.info(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
+                        self.logger.debug(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
                     else:
                         instr.address.value = self.labels[instr.address.name].value
                         instr.address.name = self.labels[instr.address.name].name
@@ -353,11 +352,11 @@ class Segment():
         code = []
 
         # add globals import/export
-        locals_label = list(self.labels.keys())
+        locals_labels = list(self.labels.keys())
         globals_labels = list(g._PROGRAM.global_labels.keys())
 
         for label in globals_labels:
-            if label not in locals_label:
+            if label not in locals_labels:
                 code.append(f&#39;\t\t{self.directive_prefix}import {label}\n&#39;)
             else:
                 code.append(f&#39;\t\t{self.directive_prefix}export {label}\n&#39;)
@@ -367,12 +366,20 @@ class Segment():
         # add segment directive
         code.append(f&#39;\t\t{self.directive_prefix}segment &#34;{self.name}&#34;\n&#39;)
 
+        # get longest label
+
+        if len(locals_labels) &gt; 0:
+            label_size = max(10, len(max(locals_labels)) + 6)
+        else:
+            label_size = 10
+
+        self.logger.debug(f&#34;Label size: {label_size}&#34;)
         code_template_index = {
             &#34;address&#34;: 0,
             &#34;bytecode&#34;: 8 if self.show_address else 0,
             &#34;label&#34;: 40 if self.show_bytecode else 8 if self.show_address else 0,
-            &#34;instruction&#34;: 50 if self.show_bytecode else 18 if self.show_address else 10,
-            &#34;cycles&#34;: 70 if self.show_bytecode else 38 if self.show_address else 30,
+            &#34;instruction&#34;: 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
+            &#34;cycles&#34;: 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
         }
 
         process_byte = True
@@ -535,10 +542,12 @@ class Segment():
             [type]: [description]
         &#34;&#34;&#34;
         if len(self.instructions) == 0:
-            raise RuntimeError(f&#34;No instruction in the segment!&#34;)
+            return Alias({
+                &#34;start_address&#34;: hex(self.start_adr),
+            })
 
         last_instr = self.get_last_instruction()
-        return {
+        return Alias({
             &#34;size&#34;: self.next_position - self.start_adr,
             &#34;cycles_used&#34;: self.total_cycles_used,
             &#34;instructions&#34;: len(self.instructions),
@@ -549,7 +558,7 @@ class Segment():
                 &#34;size&#34;: last_instr.get_size(),
                 &#34;cycles&#34;: last_instr.get_cycle_count()
             }
-        }
+        })
 
 
     def get_anonymous_label(self, prefix: str) -&gt; str:
@@ -719,7 +728,7 @@ class Segment():
             bcode = self.get_bytecode(instr)
             instr.bytecode = bcode
         except Exception as e:
-            g.logger.warning(f&#34;bytecode cannot be generated yet, will be resolve later! Error: {e}&#34;)
+            g.logger.debug(f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
 
         return instr
 
@@ -812,7 +821,6 @@ class Segment():
         Returns:
             bytearray: [description]
         &#34;&#34;&#34;
-        # print(instr.get_operand())
         ope = instr.get_operand()
         op = instr.get_opcode()
 
@@ -876,14 +884,14 @@ class Segment():
                 if instr.address.name in self.labels:
 
                     if instr.mode == &#39;rel&#39;:
-                        print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
+                        self.logger.debug(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                         instr.address.value = self.labels[instr.address.name].value
                         if adr &lt; self.labels[instr.address.name].value:
                             instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                         else:
                             instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
-                        self.logger.info(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
+                        self.logger.debug(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
                     else:
                         instr.address.value = self.labels[instr.address.name].value
                         instr.address.name = self.labels[instr.address.name].name
@@ -907,11 +915,11 @@ class Segment():
         code = []
 
         # add globals import/export
-        locals_label = list(self.labels.keys())
+        locals_labels = list(self.labels.keys())
         globals_labels = list(g._PROGRAM.global_labels.keys())
 
         for label in globals_labels:
-            if label not in locals_label:
+            if label not in locals_labels:
                 code.append(f&#39;\t\t{self.directive_prefix}import {label}\n&#39;)
             else:
                 code.append(f&#39;\t\t{self.directive_prefix}export {label}\n&#39;)
@@ -921,12 +929,20 @@ class Segment():
         # add segment directive
         code.append(f&#39;\t\t{self.directive_prefix}segment &#34;{self.name}&#34;\n&#39;)
 
+        # get longest label
+
+        if len(locals_labels) &gt; 0:
+            label_size = max(10, len(max(locals_labels)) + 6)
+        else:
+            label_size = 10
+
+        self.logger.debug(f&#34;Label size: {label_size}&#34;)
         code_template_index = {
             &#34;address&#34;: 0,
             &#34;bytecode&#34;: 8 if self.show_address else 0,
             &#34;label&#34;: 40 if self.show_bytecode else 8 if self.show_address else 0,
-            &#34;instruction&#34;: 50 if self.show_bytecode else 18 if self.show_address else 10,
-            &#34;cycles&#34;: 70 if self.show_bytecode else 38 if self.show_address else 30,
+            &#34;instruction&#34;: 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
+            &#34;cycles&#34;: 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
         }
 
         process_byte = True
@@ -1089,10 +1105,12 @@ class Segment():
             [type]: [description]
         &#34;&#34;&#34;
         if len(self.instructions) == 0:
-            raise RuntimeError(f&#34;No instruction in the segment!&#34;)
+            return Alias({
+                &#34;start_address&#34;: hex(self.start_adr),
+            })
 
         last_instr = self.get_last_instruction()
-        return {
+        return Alias({
             &#34;size&#34;: self.next_position - self.start_adr,
             &#34;cycles_used&#34;: self.total_cycles_used,
             &#34;instructions&#34;: len(self.instructions),
@@ -1103,7 +1121,7 @@ class Segment():
                 &#34;size&#34;: last_instr.get_size(),
                 &#34;cycles&#34;: last_instr.get_cycle_count()
             }
-        }
+        })
 
 
     def get_anonymous_label(self, prefix: str) -&gt; str:
@@ -1242,7 +1260,7 @@ def size(self):
         bcode = self.get_bytecode(instr)
         instr.bytecode = bcode
     except Exception as e:
-        g.logger.warning(f&#34;bytecode cannot be generated yet, will be resolve later! Error: {e}&#34;)
+        g.logger.debug(f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
 
     return instr</code></pre>
 </details>
@@ -1424,11 +1442,11 @@ def size(self):
     code = []
 
     # add globals import/export
-    locals_label = list(self.labels.keys())
+    locals_labels = list(self.labels.keys())
     globals_labels = list(g._PROGRAM.global_labels.keys())
 
     for label in globals_labels:
-        if label not in locals_label:
+        if label not in locals_labels:
             code.append(f&#39;\t\t{self.directive_prefix}import {label}\n&#39;)
         else:
             code.append(f&#39;\t\t{self.directive_prefix}export {label}\n&#39;)
@@ -1438,12 +1456,20 @@ def size(self):
     # add segment directive
     code.append(f&#39;\t\t{self.directive_prefix}segment &#34;{self.name}&#34;\n&#39;)
 
+    # get longest label
+
+    if len(locals_labels) &gt; 0:
+        label_size = max(10, len(max(locals_labels)) + 6)
+    else:
+        label_size = 10
+
+    self.logger.debug(f&#34;Label size: {label_size}&#34;)
     code_template_index = {
         &#34;address&#34;: 0,
         &#34;bytecode&#34;: 8 if self.show_address else 0,
         &#34;label&#34;: 40 if self.show_bytecode else 8 if self.show_address else 0,
-        &#34;instruction&#34;: 50 if self.show_bytecode else 18 if self.show_address else 10,
-        &#34;cycles&#34;: 70 if self.show_bytecode else 38 if self.show_address else 30,
+        &#34;instruction&#34;: 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
+        &#34;cycles&#34;: 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
     }
 
     process_byte = True
@@ -1632,7 +1658,6 @@ def size(self):
     Returns:
         bytearray: [description]
     &#34;&#34;&#34;
-    # print(instr.get_operand())
     ope = instr.get_operand()
     op = instr.get_opcode()
 
@@ -1770,10 +1795,12 @@ def size(self):
         [type]: [description]
     &#34;&#34;&#34;
     if len(self.instructions) == 0:
-        raise RuntimeError(f&#34;No instruction in the segment!&#34;)
+        return Alias({
+            &#34;start_address&#34;: hex(self.start_adr),
+        })
 
     last_instr = self.get_last_instruction()
-    return {
+    return Alias({
         &#34;size&#34;: self.next_position - self.start_adr,
         &#34;cycles_used&#34;: self.total_cycles_used,
         &#34;instructions&#34;: len(self.instructions),
@@ -1784,7 +1811,7 @@ def size(self):
             &#34;size&#34;: last_instr.get_size(),
             &#34;cycles&#34;: last_instr.get_cycle_count()
         }
-    }</code></pre>
+    })</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.need_label"><code class="name flex">
@@ -1877,14 +1904,14 @@ def size(self):
             if instr.address.name in self.labels:
 
                 if instr.mode == &#39;rel&#39;:
-                    print(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
+                    self.logger.debug(f&#34;label address: {self.labels[instr.address.name].value}&#34;)
                     instr.address.value = self.labels[instr.address.name].value
                     if adr &lt; self.labels[instr.address.name].value:
                         instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                     else:
                         instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
-                    self.logger.info(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
+                    self.logger.debug(f&#34;Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}&#34;)
                 else:
                     instr.address.value = self.labels[instr.address.name].value
                     instr.address.name = self.labels[instr.address.name].name

@@ -16,7 +16,7 @@ class Emu6502():
     def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address) -> CPU:
 
         self.logger.info(f"Loading code from {seg_start_address:04X} to {seg_stop_address:04X}")
-        self.logger.info(f"Set PC at {seg_entry_address:04X}")
+        self.logger.debug(f"Set PC at {seg_entry_address:04X}")
 
         # bytecode copy for debugging as read() advances the buffer
         from copy import deepcopy

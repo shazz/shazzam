@@ -138,7 +138,7 @@ class Segment():
             bcode = self.get_bytecode(instr)
             instr.bytecode = bcode
         except Exception as e:
-            g.logger.warning(f"bytecode cannot be generated yet, will be resolve later! Error: {e}")
+            g.logger.debug(f"bytecode cannot be generated yet, will be resolve later! [{e}]")
 
         return instr
 
@@ -231,7 +231,6 @@ class Segment():
         Returns:
             bytearray: [description]
         """
-        # print(instr.get_operand())
         ope = instr.get_operand()
         op = instr.get_opcode()
 
@@ -295,14 +294,14 @@ class Segment():
                 if instr.address.name in self.labels:
 
                     if instr.mode == 'rel':
-                        print(f"label address: {self.labels[instr.address.name].value}")
+                        self.logger.debug(f"label address: {self.labels[instr.address.name].value}")
                         instr.address.value = self.labels[instr.address.name].value
                         if adr < self.labels[instr.address.name].value:
                             instr.address.relative = self.labels[instr.address.name].value - adr - instr.get_size()
                         else:
                             instr.address.relative = adr - self.labels[instr.address.name].value - instr.get_size()
 
-                        self.logger.info(f"Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}")
+                        self.logger.debug(f"Use relative addressing to label {instr.address.name} at {self.labels[instr.address.name].value:04X} from {adr:04X}")
                     else:
                         instr.address.value = self.labels[instr.address.name].value
                         instr.address.name = self.labels[instr.address.name].name
@@ -347,7 +346,7 @@ class Segment():
         else:
             label_size = 10
 
-        print(f"Label size: {label_size}")
+        self.logger.debug(f"Label size: {label_size}")
         code_template_index = {
             "address": 0,
             "bytecode": 8 if self.show_address else 0,

@@ -29,29 +29,448 @@
 <pre><code class="python">import subprocess
 import os
 import logging
+from enum import Enum
 
 from shazzam.Cruncher import Cruncher
+from shazzam.py64gen import *
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+
+class PackingMode(Enum):
+    FORWARD = 0
+    BACKWARD = 1
 
 class Apultra(Cruncher):
 
-    def __init__(self, exe_path: str):
+    def __init__(self, exe_path: str, mode: PackingMode = PackingMode.FORWARD):
+
+        self.mode = mode
 
         cmd_prg_template = None
-        cmd_bin_template = [exe_path, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+
+        if mode is PackingMode.FORWARD:
+            cmd_bin_template = [exe_path, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+        else:
+            cmd_bin_template = [exe_path, &#34;-b&#34;, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+
         super().__init__(&#34;apultra&#34;, exe_path, cmd_prg_template, cmd_bin_template)
 
     def generate_depacker_routine(self, address: int) -&gt; None:
-        &#34;&#34;&#34;generate_depacker_routine
 
-        Args:
-            address (int): [description]
+        if self.mode is PackingMode.FORWARD:
+            self._forward_depacker(address)
+        else:
+            self._backward_depacker(address)
 
-        Raises:
-            NotImplementedError: [description]
-        &#34;&#34;&#34;
-        with segment(address, &#34;depacker&#34;) as s:
-            nop()
-            raise NotImplementedError()</code></pre>
+    def _forward_depacker(self, address: int):
+
+        # apl_decompress - Decompress data stored in Jorgen Ibsen&#39;s aPLib format.
+        #
+        # Args: apl_srcptr = ptr to compessed data
+        # Args: apl_dstptr = ptr to output buffer
+        # Uses: lots!
+        #
+        # As an optimization, the code to handle window offsets &gt; 64768 bytes has
+        # been removed, since these don&#39;t occur with a 16-bit address range.
+        #
+        # As an optimization, the code to handle window offsets &gt; 32000 bytes can
+        # be commented-out, since these don&#39;t occur in typical 8-bit computer usage.
+
+        # Zero page locations, Data usage is last 12 bytes of zero-page.
+        apl_bitbuf = 0xF7
+        apl_offset = 0xF8
+        apl_winptr = 0xFA
+        apl_srcptr = 0xFC
+        apl_dstptr = 0xFE
+        apl_length = apl_winptr
+
+        # Macro to increment the source pointer to the next page.
+        def APL_INC_PAGE():
+            inc(at(apl_srcptr)+1)
+
+        # Macro to read a byte from the compressed source data.
+        def APL_GET_SRC():
+            skip = get_anonymous_label(&#34;skip&#34;)
+            lda(ind_at(apl_srcptr),y)
+            inc(at(apl_srcptr)+0)
+            bne(rel_at(skip))
+            APL_INC_PAGE()
+            label(skip)
+
+        label(&#34;apl_decompress&#34;, is_global=True)
+
+        ldy(imm(0))
+        lda(imm(0x80))
+        sta(at(apl_bitbuf))
+
+        label(&#34;apl_literal&#34;)
+        APL_GET_SRC()
+
+        label(&#34;apl_write_byte&#34;)
+        ldx(imm(0))
+        sta(ind_at(apl_dstptr),y)
+        inc(at(apl_dstptr)+0)
+        bne(rel_at(&#34;apl_next_tag&#34;))
+        inc(at(apl_dstptr)+1)
+
+        label(&#34;apl_next_tag&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip0&#34;))
+        jsr(at(&#34;apl_load_bit&#34;))
+        label(&#34;apl_skip0&#34;)
+        bcc(rel_at(&#34;apl_literal&#34;))
+
+        label(&#34;apl_skip1&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip2&#34;))
+        jsr(at(&#34;apl_load_bit&#34;))
+
+        label(&#34;apl_skip2&#34;)
+        bcc(rel_at(&#34;apl_copy_large&#34;))
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip3&#34;))
+        jsr(at(&#34;apl_load_bit&#34;))
+
+        label(&#34;apl_skip3&#34;)
+        bcc(rel_at(&#34;apl_copy_normal&#34;))
+
+        label(&#34;apl_copy_short&#34;)
+        lda(imm(0x10))
+
+        label(&#34;apl_nibble_loop&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip4&#34;))
+        pha()
+        jsr(at(&#34;apl_load_bit&#34;))
+        pla()
+
+        label(&#34;apl_skip4&#34;)
+        rol(a)
+        bcc(rel_at(&#34;apl_nibble_loop&#34;))
+        beq(rel_at(&#34;apl_write_byte&#34;))
+        eor(imm(0xFF))
+        tay()
+        iny()
+        dec(at(apl_dstptr)+1)
+        lda(ind_at(apl_dstptr),y)
+        inc(at(apl_dstptr)+1)
+        ldy(imm(0))
+        beq(rel_at(&#34;apl_write_byte&#34;))
+
+        label(&#34;apl_copy_normal&#34;)
+        APL_GET_SRC()
+        lsr(a)
+        beq(rel_at(&#34;apl_finished&#34;))
+        sta(at(apl_offset)+0)
+        sty(at(apl_offset)+1)
+        tya()
+        tax()
+        adc(imm(2))
+        bne(rel_at(&#34;apl_do_match&#34;))
+        label(&#34;apl_get_gamma&#34;)
+        lda(imm(1))
+
+        label(&#34;apl_gamma_loop&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip5&#34;))
+        pha()
+        jsr(at(&#34;apl_load_bit&#34;))
+        pla()
+
+        label(&#34;apl_skip5&#34;)
+        rol(a)
+        rol(at(apl_length)+1)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip6&#34;))
+        pha()
+        jsr(at(&#34;apl_load_bit&#34;))
+        pla()
+        label(&#34;apl_skip6&#34;)
+        bcs(rel_at(&#34;apl_gamma_loop&#34;))
+
+        label(&#34;apl_finished&#34;)
+        rts()
+
+        label(&#34;apl_copy_large&#34;)
+        jsr(at(&#34;apl_get_gamma&#34;))
+        sty(at(apl_length)+1)
+        cpx(imm(1))
+        sbc(imm(2))
+        bcs(rel_at(&#34;apl_normal_pair&#34;))
+        jsr(at(&#34;apl_get_gamma&#34;))
+        ldx(at(apl_length)+1)
+        bcc(rel_at(&#34;apl_do_match&#34;))
+
+        label(&#34;apl_normal_pair&#34;)
+        sta(at(apl_offset)+1)
+        APL_GET_SRC()
+        sta(at(apl_offset)+0)
+        jsr(at(&#34;apl_get_gamma&#34;))
+        ldx(at(apl_length)+1)
+        ldy(at(apl_offset)+1)
+        beq(rel_at(&#34;apl_lt256&#34;))
+        cpy(imm(0x7D))
+        bcs(rel_at(&#34;apl_match_plus2&#34;))
+        cpy(imm(0x05))
+        bcs(rel_at(&#34;apl_match_plus1&#34;))
+        bcc(rel_at(&#34;apl_do_match&#34;))
+        label(&#34;apl_lt256&#34;)
+        ldy(at(apl_offset)+0)
+        bmi(rel_at(&#34;apl_do_match&#34;))
+        sec()
+
+        label(&#34;apl_match_plus2&#34;)
+        adc(imm(1))
+        bcs(rel_at(&#34;apl_match_plus256&#34;))
+        label(&#34;apl_match_plus1&#34;)
+        adc(imm(0))
+        bcc(rel_at(&#34;apl_do_match&#34;))
+        label(&#34;apl_match_plus256&#34;)
+        inx()
+
+        label(&#34;apl_do_match&#34;)
+        eor(imm(0xFF))
+        tay()
+        iny()
+        beq(rel_at(&#34;apl_calc_addr&#34;))
+        eor(imm(0xFF))
+        inx()
+        clc()
+        adc(at(apl_dstptr)+0)
+        sta(at(apl_dstptr)+0)
+        bcs(rel_at(&#34;apl_calc_addr&#34;))
+        dec(at(apl_dstptr)+1)
+
+        label(&#34;apl_calc_addr&#34;)
+        sec()
+        lda(at(apl_dstptr)+0)
+        sbc(at(apl_offset)+0)
+        sta(at(apl_winptr)+0)
+        lda(at(apl_dstptr)+1)
+        sbc(at(apl_offset)+1)
+        sta(at(apl_winptr)+1)
+
+        label(&#34;apl_copy_page&#34;)
+        lda(ind_at(apl_winptr),y)
+        sta(ind_at(apl_dstptr),y)
+        iny()
+        bne(rel_at(&#34;apl_copy_page&#34;))
+        inc(at(apl_winptr)+1)
+        inc(at(apl_dstptr)+1)
+        dex()
+        bne(rel_at(&#34;apl_copy_page&#34;))
+        inx()
+        jmp(at(&#34;apl_next_tag&#34;))
+
+        label(&#34;apl_load_bit&#34;)
+        APL_GET_SRC()
+        rol(a)
+        sta(at(apl_bitbuf))
+
+        rts()
+
+
+    def _backward_depacker(self, address: int) -&gt; None:
+
+        # Zero page locations
+        apl_gamma2_hi     = 0xF6
+        apl_bitbuf        = 0xF7
+        apl_offset        = 0xF8
+        apl_winptr        = 0xFA
+        apl_srcptr        = 0xFC
+        apl_dstptr        = 0xFE
+
+        # Read a byte from the source into A. Trashes X
+        def APL_GET_SRC():
+            src_page_done = get_anonymous_label(&#34;src_page_done&#34;)
+            lda(ind_at(apl_srcptr),y)
+            ldx(at(apl_srcptr)+0)
+            bne(rel_at(src_page_done))
+            dec(at(apl_srcptr)+1)
+            label(src_page_done)
+            dec(at(apl_srcptr+0))
+
+        # Write a byte to the destinatipn
+        def APL_PUT_DST():
+            dst_page_done = get_anonymous_label(&#34;dst_page_done&#34;)
+            sta(ind_at(apl_dstptr),y)
+            lda(at(apl_dstptr)+0)
+            bne(rel_at(dst_page_done))
+            dec(at(apl_dstptr)+1)
+            label(dst_page_done)
+            dec(at(apl_dstptr)+0)
+
+        # Read one bit from the source into the carry, trash A
+        def APL_GET_BIT():
+            has_bits = get_anonymous_label(&#34;has_bits&#34;)
+            asl(at(apl_bitbuf))
+            bne(rel_at(has_bits))
+            jsr(at(&#34;apl_apl_load_bits&#34;))
+            label(has_bits)
+
+        # Read one bit from the source into the carry, preserve A
+        def APL_GET_BIT_SAVEA():
+            has_bits = get_anonymous_label(&#34;has_bits&#34;)
+            asl(at(apl_bitbuf))
+            bne(rel_at(has_bits))
+            pha()
+            jsr(at(&#34;apl_apl_load_bits&#34;))
+            pla()
+            label(has_bits)
+
+        # Decompress aPLib data backwards
+        label(&#34;apl_decompress&#34;, is_global=True)
+        lda(imm(0x80))                      # initialize empty bit queue
+        sta(at(apl_bitbuf))               # plus bit to roll into carry
+        ldy(imm(0x00))                      # clear Y for indirect addr
+
+        label(&#34;apl_copy_literal&#34;)
+        APL_GET_SRC()                  # read literal from source
+        label(&#34;apl_write_literal&#34;)
+        APL_PUT_DST()                  # write literal to destination
+
+        ldx(imm(0x00))                      # clear &#39;follows match&#39; flag
+
+        label(&#34;apl_next_token&#34;)
+        APL_GET_BIT()                  # read &#39;literal or match&#39; bit
+        bcc(rel_at(&#34;apl_copy_literal&#34;))             # if 0&#34;) literal
+
+        APL_GET_BIT()                  # read &#39;8+n bits or other&#39; bit
+        bcc(rel_at(&#34;apl_long_match&#34;))               # if 10x&#34;) long 8+n bits match
+
+                                        # 11x&#34;) other type of match
+
+        APL_GET_BIT()                  # read &#39;7)+1) match or short literal&#39; bit
+        bcs(rel_at(&#34;apl_short_match&#34;))              # if 111&#34;) 4 bit offset for 1-byte copy
+
+        APL_GET_SRC()                  # read low byte of offset + length bit
+        lsr(a)                           # shift offset into place, len bit into carry
+        beq(rel_at(&#34;apl_done&#34;))                     # check for EOD
+        sta(at(apl_offset)+0)             # store low byte of offset
+        sty(at(apl_offset)+1)             # set high byte of offset to 0
+
+        tya()                           # set A to 0
+        sty(at(apl_gamma2_hi))            # set high byte of len to 0
+        adc(imm(0x02))                      # add 2 or 3 depending on len bit in carry
+                                                # now, low part of len is in A
+                                                # high part of len in apl_gamma2_hi is 0
+                                                # offset is written to apl_offset
+        bne(rel_at(&#34;apl_got_len&#34;))                  # go copy matched bytes
+
+        label(&#34;apl_long_match&#34;)
+        jsr(at(&#34;apl_get_gamma2&#34;))               # 10&#34;) read gamma2 high offset bits in A
+        sty(at(apl_gamma2_hi))            # zero out high byte of gamma2
+
+        cpx(imm(0x01))                      # set carry if following literal
+        sbc(imm(0x02))                      # substract 3 if following literal, 2 otherwise
+        bcs(rel_at(&#34;apl_no_repmatch&#34;))
+
+        jsr(at(&#34;apl_get_gamma2&#34;))               # read repmatch length&#34;) low part in A
+        bcc(rel_at(&#34;apl_got_len&#34;))                  # go copy large match
+                                    # (carry is always clear after label(&#34;apl_get_gamma2)
+
+        label(&#34;apl_short_match&#34;)
+        lda(imm(0x10))                      # clear offset, load end bit into place
+        label(&#34;apl_read_short_offs&#34;)
+        APL_GET_BIT_SAVEA            # read one bit of offset into carry
+        rol(a)                           # shift into A, shift end bit as well
+        bcc(rel_at(&#34;apl_read_short_offs&#34;))          # loop until end bit is shifted out into carry
+
+        beq(rel_at(&#34;apl_write_literal&#34;))            # zero offset means write a 0
+        tay()
+        lda(ind_at(apl_dstptr),y)            # load backreferenced byte
+        ldy(imm(0x00))                      # clear Y again
+        beq(rel_at(&#34;apl_write_literal&#34;))            # go write byte to destination
+
+        label(&#34;apl_get_gamma2&#34;)
+        lda(imm(0x01))                      # 1 so it gets shifted to 2
+        label(&#34;apl_gamma2_loop&#34;)
+        APL_GET_BIT_SAVEA()            # read data bit
+        rol(a)                           # shift into low byte
+        rol(at(apl_gamma2_hi))            # shift into high byte
+        APL_GET_BIT_SAVEA()            # read continuation bit
+        bcs(rel_at(&#34;apl_gamma2_loop&#34;))              # loop until a zero continuation bit is read
+        label(&#34;apl_done&#34;)
+        rts()
+
+        label(&#34;apl_no_repmatch&#34;)
+        sta(at(apl_offset)+1)             # write high byte of offset
+        APL_GET_SRC()                  # read low byte of offset from source
+        sta(at(apl_offset)+0)             # store low byte of offset
+
+        jsr(at(&#34;apl_get_gamma2&#34;))               # read match length&#34;) low part in A
+
+        ldx(at(apl_offset)+1)             # high offset byte is zero?
+        beq(rel_at(&#34;apl_offset_1byte&#34;))             # if so, offset(at(&#34;apl_ 256
+
+                                    # offset is &gt;= 256label(&#34;apl_
+
+        cpx(imm(0x7d))                      # offset &gt;= 32000 (7d00) ?
+        bcs(rel_at(&#34;apl_offset_incby2&#34;))            # if so, increase match len by 2
+        cpx(imm(0x05))                      # offset &gt;= 1280 (0500) ?
+        bcs(rel_at(&#34;apl_offset_incby1&#34;))            # if so, increase match len by 1
+        bcc(rel_at(&#34;apl_got_len&#34;))                  # length is fine, go copy
+
+        label(&#34;apl_offset_1byte&#34;)
+        ldx(at(apl_offset)+0)             # offset(at(&#34;apl_ 128 ?
+        bmi(rel_at(&#34;apl_got_len&#34;))                  # if so, increase match len by 2
+        sec()                           # carry must be set below
+
+        label(&#34;apl_offset_incby2&#34;)
+        adc(imm(0x01))                      # add 1 + set carry (from bcs or sec)
+        bcs(rel_at(&#34;apl_len_inchi&#34;))                # go add 256 to len if overflow
+
+                                                # carry clear&#34;) fall through for no-op
+
+        label(&#34;apl_offset_incby1&#34;)
+        adc(imm(0x00))                      # add 1 + carry
+        bcc(rel_at(&#34;apl_got_len&#34;))
+        label(&#34;apl_len_inchi&#34;)
+        inc(at(apl_gamma2_hi))            # add 256 to len if low byte overflows
+
+        label(&#34;apl_got_len&#34;)
+        tax()                           # transfer low byte of len into X
+        beq(rel_at(&#34;apl_add_offset&#34;))
+        inc(at(apl_gamma2_hi))
+
+        label(&#34;apl_add_offset&#34;)
+        clc()                           # add dest + match offset
+        lda(at(apl_dstptr)+0)             # low 8 bits
+        adc(at(apl_offset)+0)
+        sta(at(apl_winptr)+0)             # store back reference address
+        lda(at(apl_dstptr)+1)             # high 8 bits
+        adc(at(apl_offset)+1)
+        sta(at(apl_winptr)+1)             # store high 8 bits of address
+
+        label(&#34;apl_copy_match_loop&#34;)
+        lda(ind_at(apl_winptr),y)            # read one byte of backreference
+        APL_PUT_DST()                  # write byte to destination
+
+        lda(at(apl_winptr)+0)             # decrement backreference address
+        bne(rel_at(&#34;apl_backref_page_done&#34;))
+        dec(at(apl_winptr)+1)
+        label(&#34;apl_backref_page_done&#34;)
+        dec(at(apl_winptr)+0)
+
+        dex                           # loop to copy all matched bytes
+        bne(rel_at(&#34;apl_copy_match_loop&#34;))
+        dec(at(apl_gamma2_hi))
+        bne(rel_at(&#34;apl_copy_match_loop&#34;))
+
+                                    # X is 0 when exiting the loop above
+        inx()                           # set &#39;follows match&#39; flag
+        jmp(at(&#34;apl_next_token&#34;))             # go decode next token
+
+        label(&#34;apl_apl_load_bits&#34;)
+        lda(ind_at(apl_srcptr),y)            # read 8 bits from source
+        rol(a)                           # shift bit queue, and high bit into carry
+        sta(at(apl_bitbuf))               # save bit queue
+
+        lda(at(apl_srcptr)+0)
+        bne(rel_at(&#34;apl_bits_page_done&#34;))
+        dec(at(apl_srcptr)+1)
+        label(&#34;apl_bits_page_done&#34;)
+        dec(at(apl_srcptr)+0)
+        rts()</code></pre>
 </details>
 </section>
 <section>
@@ -65,7 +484,7 @@ class Apultra(Cruncher):
 <dl>
 <dt id="shazzam.drivers.crunchers.Apultra.Apultra"><code class="flex name class">
 <span>class <span class="ident">Apultra</span></span>
-<span>(</span><span>exe_path: str)</span>
+<span>(</span><span>exe_path: str, mode: <a title="shazzam.drivers.crunchers.Apultra.PackingMode" href="#shazzam.drivers.crunchers.Apultra.PackingMode">PackingMode</a> = PackingMode.FORWARD)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -75,24 +494,436 @@ class Apultra(Cruncher):
 </summary>
 <pre><code class="python">class Apultra(Cruncher):
 
-    def __init__(self, exe_path: str):
+    def __init__(self, exe_path: str, mode: PackingMode = PackingMode.FORWARD):
+
+        self.mode = mode
 
         cmd_prg_template = None
-        cmd_bin_template = [exe_path, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+
+        if mode is PackingMode.FORWARD:
+            cmd_bin_template = [exe_path, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+        else:
+            cmd_bin_template = [exe_path, &#34;-b&#34;, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+
         super().__init__(&#34;apultra&#34;, exe_path, cmd_prg_template, cmd_bin_template)
 
     def generate_depacker_routine(self, address: int) -&gt; None:
-        &#34;&#34;&#34;generate_depacker_routine
 
-        Args:
-            address (int): [description]
+        if self.mode is PackingMode.FORWARD:
+            self._forward_depacker(address)
+        else:
+            self._backward_depacker(address)
 
-        Raises:
-            NotImplementedError: [description]
-        &#34;&#34;&#34;
-        with segment(address, &#34;depacker&#34;) as s:
-            nop()
-            raise NotImplementedError()</code></pre>
+    def _forward_depacker(self, address: int):
+
+        # apl_decompress - Decompress data stored in Jorgen Ibsen&#39;s aPLib format.
+        #
+        # Args: apl_srcptr = ptr to compessed data
+        # Args: apl_dstptr = ptr to output buffer
+        # Uses: lots!
+        #
+        # As an optimization, the code to handle window offsets &gt; 64768 bytes has
+        # been removed, since these don&#39;t occur with a 16-bit address range.
+        #
+        # As an optimization, the code to handle window offsets &gt; 32000 bytes can
+        # be commented-out, since these don&#39;t occur in typical 8-bit computer usage.
+
+        # Zero page locations, Data usage is last 12 bytes of zero-page.
+        apl_bitbuf = 0xF7
+        apl_offset = 0xF8
+        apl_winptr = 0xFA
+        apl_srcptr = 0xFC
+        apl_dstptr = 0xFE
+        apl_length = apl_winptr
+
+        # Macro to increment the source pointer to the next page.
+        def APL_INC_PAGE():
+            inc(at(apl_srcptr)+1)
+
+        # Macro to read a byte from the compressed source data.
+        def APL_GET_SRC():
+            skip = get_anonymous_label(&#34;skip&#34;)
+            lda(ind_at(apl_srcptr),y)
+            inc(at(apl_srcptr)+0)
+            bne(rel_at(skip))
+            APL_INC_PAGE()
+            label(skip)
+
+        label(&#34;apl_decompress&#34;, is_global=True)
+
+        ldy(imm(0))
+        lda(imm(0x80))
+        sta(at(apl_bitbuf))
+
+        label(&#34;apl_literal&#34;)
+        APL_GET_SRC()
+
+        label(&#34;apl_write_byte&#34;)
+        ldx(imm(0))
+        sta(ind_at(apl_dstptr),y)
+        inc(at(apl_dstptr)+0)
+        bne(rel_at(&#34;apl_next_tag&#34;))
+        inc(at(apl_dstptr)+1)
+
+        label(&#34;apl_next_tag&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip0&#34;))
+        jsr(at(&#34;apl_load_bit&#34;))
+        label(&#34;apl_skip0&#34;)
+        bcc(rel_at(&#34;apl_literal&#34;))
+
+        label(&#34;apl_skip1&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip2&#34;))
+        jsr(at(&#34;apl_load_bit&#34;))
+
+        label(&#34;apl_skip2&#34;)
+        bcc(rel_at(&#34;apl_copy_large&#34;))
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip3&#34;))
+        jsr(at(&#34;apl_load_bit&#34;))
+
+        label(&#34;apl_skip3&#34;)
+        bcc(rel_at(&#34;apl_copy_normal&#34;))
+
+        label(&#34;apl_copy_short&#34;)
+        lda(imm(0x10))
+
+        label(&#34;apl_nibble_loop&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip4&#34;))
+        pha()
+        jsr(at(&#34;apl_load_bit&#34;))
+        pla()
+
+        label(&#34;apl_skip4&#34;)
+        rol(a)
+        bcc(rel_at(&#34;apl_nibble_loop&#34;))
+        beq(rel_at(&#34;apl_write_byte&#34;))
+        eor(imm(0xFF))
+        tay()
+        iny()
+        dec(at(apl_dstptr)+1)
+        lda(ind_at(apl_dstptr),y)
+        inc(at(apl_dstptr)+1)
+        ldy(imm(0))
+        beq(rel_at(&#34;apl_write_byte&#34;))
+
+        label(&#34;apl_copy_normal&#34;)
+        APL_GET_SRC()
+        lsr(a)
+        beq(rel_at(&#34;apl_finished&#34;))
+        sta(at(apl_offset)+0)
+        sty(at(apl_offset)+1)
+        tya()
+        tax()
+        adc(imm(2))
+        bne(rel_at(&#34;apl_do_match&#34;))
+        label(&#34;apl_get_gamma&#34;)
+        lda(imm(1))
+
+        label(&#34;apl_gamma_loop&#34;)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip5&#34;))
+        pha()
+        jsr(at(&#34;apl_load_bit&#34;))
+        pla()
+
+        label(&#34;apl_skip5&#34;)
+        rol(a)
+        rol(at(apl_length)+1)
+        asl(at(apl_bitbuf))
+        bne(rel_at(&#34;apl_skip6&#34;))
+        pha()
+        jsr(at(&#34;apl_load_bit&#34;))
+        pla()
+        label(&#34;apl_skip6&#34;)
+        bcs(rel_at(&#34;apl_gamma_loop&#34;))
+
+        label(&#34;apl_finished&#34;)
+        rts()
+
+        label(&#34;apl_copy_large&#34;)
+        jsr(at(&#34;apl_get_gamma&#34;))
+        sty(at(apl_length)+1)
+        cpx(imm(1))
+        sbc(imm(2))
+        bcs(rel_at(&#34;apl_normal_pair&#34;))
+        jsr(at(&#34;apl_get_gamma&#34;))
+        ldx(at(apl_length)+1)
+        bcc(rel_at(&#34;apl_do_match&#34;))
+
+        label(&#34;apl_normal_pair&#34;)
+        sta(at(apl_offset)+1)
+        APL_GET_SRC()
+        sta(at(apl_offset)+0)
+        jsr(at(&#34;apl_get_gamma&#34;))
+        ldx(at(apl_length)+1)
+        ldy(at(apl_offset)+1)
+        beq(rel_at(&#34;apl_lt256&#34;))
+        cpy(imm(0x7D))
+        bcs(rel_at(&#34;apl_match_plus2&#34;))
+        cpy(imm(0x05))
+        bcs(rel_at(&#34;apl_match_plus1&#34;))
+        bcc(rel_at(&#34;apl_do_match&#34;))
+        label(&#34;apl_lt256&#34;)
+        ldy(at(apl_offset)+0)
+        bmi(rel_at(&#34;apl_do_match&#34;))
+        sec()
+
+        label(&#34;apl_match_plus2&#34;)
+        adc(imm(1))
+        bcs(rel_at(&#34;apl_match_plus256&#34;))
+        label(&#34;apl_match_plus1&#34;)
+        adc(imm(0))
+        bcc(rel_at(&#34;apl_do_match&#34;))
+        label(&#34;apl_match_plus256&#34;)
+        inx()
+
+        label(&#34;apl_do_match&#34;)
+        eor(imm(0xFF))
+        tay()
+        iny()
+        beq(rel_at(&#34;apl_calc_addr&#34;))
+        eor(imm(0xFF))
+        inx()
+        clc()
+        adc(at(apl_dstptr)+0)
+        sta(at(apl_dstptr)+0)
+        bcs(rel_at(&#34;apl_calc_addr&#34;))
+        dec(at(apl_dstptr)+1)
+
+        label(&#34;apl_calc_addr&#34;)
+        sec()
+        lda(at(apl_dstptr)+0)
+        sbc(at(apl_offset)+0)
+        sta(at(apl_winptr)+0)
+        lda(at(apl_dstptr)+1)
+        sbc(at(apl_offset)+1)
+        sta(at(apl_winptr)+1)
+
+        label(&#34;apl_copy_page&#34;)
+        lda(ind_at(apl_winptr),y)
+        sta(ind_at(apl_dstptr),y)
+        iny()
+        bne(rel_at(&#34;apl_copy_page&#34;))
+        inc(at(apl_winptr)+1)
+        inc(at(apl_dstptr)+1)
+        dex()
+        bne(rel_at(&#34;apl_copy_page&#34;))
+        inx()
+        jmp(at(&#34;apl_next_tag&#34;))
+
+        label(&#34;apl_load_bit&#34;)
+        APL_GET_SRC()
+        rol(a)
+        sta(at(apl_bitbuf))
+
+        rts()
+
+
+    def _backward_depacker(self, address: int) -&gt; None:
+
+        # Zero page locations
+        apl_gamma2_hi     = 0xF6
+        apl_bitbuf        = 0xF7
+        apl_offset        = 0xF8
+        apl_winptr        = 0xFA
+        apl_srcptr        = 0xFC
+        apl_dstptr        = 0xFE
+
+        # Read a byte from the source into A. Trashes X
+        def APL_GET_SRC():
+            src_page_done = get_anonymous_label(&#34;src_page_done&#34;)
+            lda(ind_at(apl_srcptr),y)
+            ldx(at(apl_srcptr)+0)
+            bne(rel_at(src_page_done))
+            dec(at(apl_srcptr)+1)
+            label(src_page_done)
+            dec(at(apl_srcptr+0))
+
+        # Write a byte to the destinatipn
+        def APL_PUT_DST():
+            dst_page_done = get_anonymous_label(&#34;dst_page_done&#34;)
+            sta(ind_at(apl_dstptr),y)
+            lda(at(apl_dstptr)+0)
+            bne(rel_at(dst_page_done))
+            dec(at(apl_dstptr)+1)
+            label(dst_page_done)
+            dec(at(apl_dstptr)+0)
+
+        # Read one bit from the source into the carry, trash A
+        def APL_GET_BIT():
+            has_bits = get_anonymous_label(&#34;has_bits&#34;)
+            asl(at(apl_bitbuf))
+            bne(rel_at(has_bits))
+            jsr(at(&#34;apl_apl_load_bits&#34;))
+            label(has_bits)
+
+        # Read one bit from the source into the carry, preserve A
+        def APL_GET_BIT_SAVEA():
+            has_bits = get_anonymous_label(&#34;has_bits&#34;)
+            asl(at(apl_bitbuf))
+            bne(rel_at(has_bits))
+            pha()
+            jsr(at(&#34;apl_apl_load_bits&#34;))
+            pla()
+            label(has_bits)
+
+        # Decompress aPLib data backwards
+        label(&#34;apl_decompress&#34;, is_global=True)
+        lda(imm(0x80))                      # initialize empty bit queue
+        sta(at(apl_bitbuf))               # plus bit to roll into carry
+        ldy(imm(0x00))                      # clear Y for indirect addr
+
+        label(&#34;apl_copy_literal&#34;)
+        APL_GET_SRC()                  # read literal from source
+        label(&#34;apl_write_literal&#34;)
+        APL_PUT_DST()                  # write literal to destination
+
+        ldx(imm(0x00))                      # clear &#39;follows match&#39; flag
+
+        label(&#34;apl_next_token&#34;)
+        APL_GET_BIT()                  # read &#39;literal or match&#39; bit
+        bcc(rel_at(&#34;apl_copy_literal&#34;))             # if 0&#34;) literal
+
+        APL_GET_BIT()                  # read &#39;8+n bits or other&#39; bit
+        bcc(rel_at(&#34;apl_long_match&#34;))               # if 10x&#34;) long 8+n bits match
+
+                                        # 11x&#34;) other type of match
+
+        APL_GET_BIT()                  # read &#39;7)+1) match or short literal&#39; bit
+        bcs(rel_at(&#34;apl_short_match&#34;))              # if 111&#34;) 4 bit offset for 1-byte copy
+
+        APL_GET_SRC()                  # read low byte of offset + length bit
+        lsr(a)                           # shift offset into place, len bit into carry
+        beq(rel_at(&#34;apl_done&#34;))                     # check for EOD
+        sta(at(apl_offset)+0)             # store low byte of offset
+        sty(at(apl_offset)+1)             # set high byte of offset to 0
+
+        tya()                           # set A to 0
+        sty(at(apl_gamma2_hi))            # set high byte of len to 0
+        adc(imm(0x02))                      # add 2 or 3 depending on len bit in carry
+                                                # now, low part of len is in A
+                                                # high part of len in apl_gamma2_hi is 0
+                                                # offset is written to apl_offset
+        bne(rel_at(&#34;apl_got_len&#34;))                  # go copy matched bytes
+
+        label(&#34;apl_long_match&#34;)
+        jsr(at(&#34;apl_get_gamma2&#34;))               # 10&#34;) read gamma2 high offset bits in A
+        sty(at(apl_gamma2_hi))            # zero out high byte of gamma2
+
+        cpx(imm(0x01))                      # set carry if following literal
+        sbc(imm(0x02))                      # substract 3 if following literal, 2 otherwise
+        bcs(rel_at(&#34;apl_no_repmatch&#34;))
+
+        jsr(at(&#34;apl_get_gamma2&#34;))               # read repmatch length&#34;) low part in A
+        bcc(rel_at(&#34;apl_got_len&#34;))                  # go copy large match
+                                    # (carry is always clear after label(&#34;apl_get_gamma2)
+
+        label(&#34;apl_short_match&#34;)
+        lda(imm(0x10))                      # clear offset, load end bit into place
+        label(&#34;apl_read_short_offs&#34;)
+        APL_GET_BIT_SAVEA            # read one bit of offset into carry
+        rol(a)                           # shift into A, shift end bit as well
+        bcc(rel_at(&#34;apl_read_short_offs&#34;))          # loop until end bit is shifted out into carry
+
+        beq(rel_at(&#34;apl_write_literal&#34;))            # zero offset means write a 0
+        tay()
+        lda(ind_at(apl_dstptr),y)            # load backreferenced byte
+        ldy(imm(0x00))                      # clear Y again
+        beq(rel_at(&#34;apl_write_literal&#34;))            # go write byte to destination
+
+        label(&#34;apl_get_gamma2&#34;)
+        lda(imm(0x01))                      # 1 so it gets shifted to 2
+        label(&#34;apl_gamma2_loop&#34;)
+        APL_GET_BIT_SAVEA()            # read data bit
+        rol(a)                           # shift into low byte
+        rol(at(apl_gamma2_hi))            # shift into high byte
+        APL_GET_BIT_SAVEA()            # read continuation bit
+        bcs(rel_at(&#34;apl_gamma2_loop&#34;))              # loop until a zero continuation bit is read
+        label(&#34;apl_done&#34;)
+        rts()
+
+        label(&#34;apl_no_repmatch&#34;)
+        sta(at(apl_offset)+1)             # write high byte of offset
+        APL_GET_SRC()                  # read low byte of offset from source
+        sta(at(apl_offset)+0)             # store low byte of offset
+
+        jsr(at(&#34;apl_get_gamma2&#34;))               # read match length&#34;) low part in A
+
+        ldx(at(apl_offset)+1)             # high offset byte is zero?
+        beq(rel_at(&#34;apl_offset_1byte&#34;))             # if so, offset(at(&#34;apl_ 256
+
+                                    # offset is &gt;= 256label(&#34;apl_
+
+        cpx(imm(0x7d))                      # offset &gt;= 32000 (7d00) ?
+        bcs(rel_at(&#34;apl_offset_incby2&#34;))            # if so, increase match len by 2
+        cpx(imm(0x05))                      # offset &gt;= 1280 (0500) ?
+        bcs(rel_at(&#34;apl_offset_incby1&#34;))            # if so, increase match len by 1
+        bcc(rel_at(&#34;apl_got_len&#34;))                  # length is fine, go copy
+
+        label(&#34;apl_offset_1byte&#34;)
+        ldx(at(apl_offset)+0)             # offset(at(&#34;apl_ 128 ?
+        bmi(rel_at(&#34;apl_got_len&#34;))                  # if so, increase match len by 2
+        sec()                           # carry must be set below
+
+        label(&#34;apl_offset_incby2&#34;)
+        adc(imm(0x01))                      # add 1 + set carry (from bcs or sec)
+        bcs(rel_at(&#34;apl_len_inchi&#34;))                # go add 256 to len if overflow
+
+                                                # carry clear&#34;) fall through for no-op
+
+        label(&#34;apl_offset_incby1&#34;)
+        adc(imm(0x00))                      # add 1 + carry
+        bcc(rel_at(&#34;apl_got_len&#34;))
+        label(&#34;apl_len_inchi&#34;)
+        inc(at(apl_gamma2_hi))            # add 256 to len if low byte overflows
+
+        label(&#34;apl_got_len&#34;)
+        tax()                           # transfer low byte of len into X
+        beq(rel_at(&#34;apl_add_offset&#34;))
+        inc(at(apl_gamma2_hi))
+
+        label(&#34;apl_add_offset&#34;)
+        clc()                           # add dest + match offset
+        lda(at(apl_dstptr)+0)             # low 8 bits
+        adc(at(apl_offset)+0)
+        sta(at(apl_winptr)+0)             # store back reference address
+        lda(at(apl_dstptr)+1)             # high 8 bits
+        adc(at(apl_offset)+1)
+        sta(at(apl_winptr)+1)             # store high 8 bits of address
+
+        label(&#34;apl_copy_match_loop&#34;)
+        lda(ind_at(apl_winptr),y)            # read one byte of backreference
+        APL_PUT_DST()                  # write byte to destination
+
+        lda(at(apl_winptr)+0)             # decrement backreference address
+        bne(rel_at(&#34;apl_backref_page_done&#34;))
+        dec(at(apl_winptr)+1)
+        label(&#34;apl_backref_page_done&#34;)
+        dec(at(apl_winptr)+0)
+
+        dex                           # loop to copy all matched bytes
+        bne(rel_at(&#34;apl_copy_match_loop&#34;))
+        dec(at(apl_gamma2_hi))
+        bne(rel_at(&#34;apl_copy_match_loop&#34;))
+
+                                    # X is 0 when exiting the loop above
+        inx()                           # set &#39;follows match&#39; flag
+        jmp(at(&#34;apl_next_token&#34;))             # go decode next token
+
+        label(&#34;apl_apl_load_bits&#34;)
+        lda(ind_at(apl_srcptr),y)            # read 8 bits from source
+        rol(a)                           # shift bit queue, and high bit into carry
+        sta(at(apl_bitbuf))               # save bit queue
+
+        lda(at(apl_srcptr)+0)
+        bne(rel_at(&#34;apl_bits_page_done&#34;))
+        dec(at(apl_srcptr)+1)
+        label(&#34;apl_bits_page_done&#34;)
+        dec(at(apl_srcptr)+0)
+        rts()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -104,33 +935,17 @@ class Apultra(Cruncher):
 <span>def <span class="ident">generate_depacker_routine</span></span>(<span>self, address: int) ‑> NoneType</span>
 </code></dt>
 <dd>
-<div class="desc"><p>generate_depacker_routine</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>address</code></strong> :&ensp;<code>int</code></dt>
-<dd>[description]</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>NotImplementedError</code></dt>
-<dd>[description]</dd>
-</dl></div>
+<div class="desc"></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def generate_depacker_routine(self, address: int) -&gt; None:
-    &#34;&#34;&#34;generate_depacker_routine
 
-    Args:
-        address (int): [description]
-
-    Raises:
-        NotImplementedError: [description]
-    &#34;&#34;&#34;
-    with segment(address, &#34;depacker&#34;) as s:
-        nop()
-        raise NotImplementedError()</code></pre>
+    if self.mode is PackingMode.FORWARD:
+        self._forward_depacker(address)
+    else:
+        self._backward_depacker(address)</code></pre>
 </details>
 </dd>
 </dl>
@@ -143,6 +958,36 @@ class Apultra(Cruncher):
 </ul>
 </li>
 </ul>
+</dd>
+<dt id="shazzam.drivers.crunchers.Apultra.PackingMode"><code class="flex name class">
+<span>class <span class="ident">PackingMode</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class PackingMode(Enum):
+    FORWARD = 0
+    BACKWARD = 1</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="shazzam.drivers.crunchers.Apultra.PackingMode.BACKWARD"><code class="name">var <span class="ident">BACKWARD</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.drivers.crunchers.Apultra.PackingMode.FORWARD"><code class="name">var <span class="ident">FORWARD</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
 </dd>
 </dl>
 </section>
@@ -164,6 +1009,13 @@ class Apultra(Cruncher):
 <h4><code><a title="shazzam.drivers.crunchers.Apultra.Apultra" href="#shazzam.drivers.crunchers.Apultra.Apultra">Apultra</a></code></h4>
 <ul class="">
 <li><code><a title="shazzam.drivers.crunchers.Apultra.Apultra.generate_depacker_routine" href="#shazzam.drivers.crunchers.Apultra.Apultra.generate_depacker_routine">generate_depacker_routine</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="shazzam.drivers.crunchers.Apultra.PackingMode" href="#shazzam.drivers.crunchers.Apultra.PackingMode">PackingMode</a></code></h4>
+<ul class="">
+<li><code><a title="shazzam.drivers.crunchers.Apultra.PackingMode.BACKWARD" href="#shazzam.drivers.crunchers.Apultra.PackingMode.BACKWARD">BACKWARD</a></code></li>
+<li><code><a title="shazzam.drivers.crunchers.Apultra.PackingMode.FORWARD" href="#shazzam.drivers.crunchers.Apultra.PackingMode.FORWARD">FORWARD</a></code></li>
 </ul>
 </li>
 </ul>

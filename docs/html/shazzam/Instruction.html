@@ -319,6 +319,9 @@ class Instruction():
         elif self.mode == &#39;iix&#39;:
             val = f&#34;(${self.address.value:02X},X)&#34; if self.use_upper else f&#34;(${self.address.value:02x},x)&#34;
 
+        elif self.mode == &#39;acc&#39;:
+            val = &#34;a&#34;
+
         else:
             raise NotImplementedError(f&#34;Model {self.mode}&#34;)
 
@@ -634,6 +637,9 @@ class Instruction():
 
         elif self.mode == &#39;iix&#39;:
             val = f&#34;(${self.address.value:02X},X)&#34; if self.use_upper else f&#34;(${self.address.value:02x},x)&#34;
+
+        elif self.mode == &#39;acc&#39;:
+            val = &#34;a&#34;
 
         else:
             raise NotImplementedError(f&#34;Model {self.mode}&#34;)

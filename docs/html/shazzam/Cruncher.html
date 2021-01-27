@@ -51,37 +51,66 @@ class Cruncher():
         if self.prg_cmd is None:
             raise RuntimeError(&#34;Packer command line for PRG is not set!&#34;)
 
+        output_filename = f&#34;{os.path.splitext(filename)[0]}_packed.prg&#34;
         self.prg_cmd[self.prg_cmd.index(&#34;FILENAME_TO_SET&#34;)] = filename
-        self.prg_cmd[self.prg_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = f&#34;{os.path.splitext(filename)[0]}_packed.prg&#34;
+        self.prg_cmd[self.prg_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = output_filename
+
         if extra_params and len(extra_params) &gt; 0:
             self.prg_cmd[1:1] = extra_params
 
 
         self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
-        print(&#34;---------------------------------------------------------------&#34;)
-        data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE)
-        output = data.communicate()
-        print(&#34;---------------------------------------------------------------&#34;)
+        data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        stdout_data, stderr_data = data.communicate()
 
-    def crunch_incbin(self, payload: bytearray, extra_params: List = None) -&gt; None:
+        err = stderr_data.decode()
+        if &#34;error&#34; in err:
+            self.logger.error(err)
+            raise RuntimeError(f&#34;Program cannot be packed due to: {err}&#34;)
+        else:
+            self.logger.info(f&#34;{filename} packed to {os.path.getsize(output_filename)} bytes&#34;)
+
+
+    def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
         &#34;&#34;&#34;crunch_incbin
 
         Args:
-            payload (bytearray): [description]
+            filename (str): [description]
+            extra_params (List, optional): [description]. Defaults to None.
+
+        Raises:
+            RuntimeError: [description]
         &#34;&#34;&#34;
         if self.incbin_cmd is None:
             raise RuntimeError(&#34;Packer command line for incbin is not set!&#34;)
 
+        output_filename = f&#34;{os.path.splitext(filename)[0]}.bin&#34;
+
         self.incbin_cmd[self.incbin_cmd.index(&#34;FILENAME_TO_SET&#34;)] = filename
-        self.incbin_cmd[self.incbin_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = f&#34;{os.path.splitext(filename)[0]}.bin&#34;
+        self.incbin_cmd[self.incbin_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = output_filename
+
         if extra_params and len(extra_params) &gt; 0:
             self.prg_cmd[1:1] = extra_params
 
         self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.incbin_cmd }&#34;)
-        print(&#34;---------------------------------------------------------------&#34;)
-        data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE)
-        output = data.communicate()
-        print(&#34;---------------------------------------------------------------&#34;)
+        data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        stdout_data, stderr_data = data.communicate()
+
+        # check packing ratio
+        unpacked_size = os.path.getsize(filename)
+        packed_size = os.path.getsize(output_filename)
+        if packed_size &gt;= unpacked_size:
+            raise RuntimeError(f&#34;Packing doesn&#39;t shrink the incbin. Size increased from {unpacked_size} to {packed_size} bytes&#34;)
+
+        if len(stderr_data) &gt; 1:
+            self.logger.error(stderr_data.decode())
+            raise RuntimeError(f&#34;Segment cannot be packed due to: {stderr_data.decode()}&#34;)
+
+        self.logger.info(f&#34;{filename} was {unpacked_size} bytes, packed to {packed_size} bytes&#34;)
+        with open(output_filename, &#34;rb&#34;) as f:
+            barr = f.read()
+
+        return bytearray(barr)
 
     def generate_depacker_routine(self, address: int) -&gt; None:
         pass</code></pre>
@@ -124,37 +153,66 @@ class Cruncher():
         if self.prg_cmd is None:
             raise RuntimeError(&#34;Packer command line for PRG is not set!&#34;)
 
+        output_filename = f&#34;{os.path.splitext(filename)[0]}_packed.prg&#34;
         self.prg_cmd[self.prg_cmd.index(&#34;FILENAME_TO_SET&#34;)] = filename
-        self.prg_cmd[self.prg_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = f&#34;{os.path.splitext(filename)[0]}_packed.prg&#34;
+        self.prg_cmd[self.prg_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = output_filename
+
         if extra_params and len(extra_params) &gt; 0:
             self.prg_cmd[1:1] = extra_params
 
 
         self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
-        print(&#34;---------------------------------------------------------------&#34;)
-        data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE)
-        output = data.communicate()
-        print(&#34;---------------------------------------------------------------&#34;)
+        data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        stdout_data, stderr_data = data.communicate()
 
-    def crunch_incbin(self, payload: bytearray, extra_params: List = None) -&gt; None:
+        err = stderr_data.decode()
+        if &#34;error&#34; in err:
+            self.logger.error(err)
+            raise RuntimeError(f&#34;Program cannot be packed due to: {err}&#34;)
+        else:
+            self.logger.info(f&#34;{filename} packed to {os.path.getsize(output_filename)} bytes&#34;)
+
+
+    def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
         &#34;&#34;&#34;crunch_incbin
 
         Args:
-            payload (bytearray): [description]
+            filename (str): [description]
+            extra_params (List, optional): [description]. Defaults to None.
+
+        Raises:
+            RuntimeError: [description]
         &#34;&#34;&#34;
         if self.incbin_cmd is None:
             raise RuntimeError(&#34;Packer command line for incbin is not set!&#34;)
 
+        output_filename = f&#34;{os.path.splitext(filename)[0]}.bin&#34;
+
         self.incbin_cmd[self.incbin_cmd.index(&#34;FILENAME_TO_SET&#34;)] = filename
-        self.incbin_cmd[self.incbin_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = f&#34;{os.path.splitext(filename)[0]}.bin&#34;
+        self.incbin_cmd[self.incbin_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = output_filename
+
         if extra_params and len(extra_params) &gt; 0:
             self.prg_cmd[1:1] = extra_params
 
         self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.incbin_cmd }&#34;)
-        print(&#34;---------------------------------------------------------------&#34;)
-        data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE)
-        output = data.communicate()
-        print(&#34;---------------------------------------------------------------&#34;)
+        data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        stdout_data, stderr_data = data.communicate()
+
+        # check packing ratio
+        unpacked_size = os.path.getsize(filename)
+        packed_size = os.path.getsize(output_filename)
+        if packed_size &gt;= unpacked_size:
+            raise RuntimeError(f&#34;Packing doesn&#39;t shrink the incbin. Size increased from {unpacked_size} to {packed_size} bytes&#34;)
+
+        if len(stderr_data) &gt; 1:
+            self.logger.error(stderr_data.decode())
+            raise RuntimeError(f&#34;Segment cannot be packed due to: {stderr_data.decode()}&#34;)
+
+        self.logger.info(f&#34;{filename} was {unpacked_size} bytes, packed to {packed_size} bytes&#34;)
+        with open(output_filename, &#34;rb&#34;) as f:
+            barr = f.read()
+
+        return bytearray(barr)
 
     def generate_depacker_routine(self, address: int) -&gt; None:
         pass</code></pre>
@@ -171,38 +229,66 @@ class Cruncher():
 <h3>Methods</h3>
 <dl>
 <dt id="shazzam.Cruncher.Cruncher.crunch_incbin"><code class="name flex">
-<span>def <span class="ident">crunch_incbin</span></span>(<span>self, payload: bytearray, extra_params: List = None) ‑> NoneType</span>
+<span>def <span class="ident">crunch_incbin</span></span>(<span>self, filename: str, extra_params: List = None) ‑> bytearray</span>
 </code></dt>
 <dd>
 <div class="desc"><p>crunch_incbin</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>payload</code></strong> :&ensp;<code>bytearray</code></dt>
+<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>extra_params</code></strong> :&ensp;<code>List</code>, optional</dt>
+<dd>[description]. Defaults to None.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>RuntimeError</code></dt>
 <dd>[description]</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def crunch_incbin(self, payload: bytearray, extra_params: List = None) -&gt; None:
+<pre><code class="python">def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
     &#34;&#34;&#34;crunch_incbin
 
     Args:
-        payload (bytearray): [description]
+        filename (str): [description]
+        extra_params (List, optional): [description]. Defaults to None.
+
+    Raises:
+        RuntimeError: [description]
     &#34;&#34;&#34;
     if self.incbin_cmd is None:
         raise RuntimeError(&#34;Packer command line for incbin is not set!&#34;)
 
+    output_filename = f&#34;{os.path.splitext(filename)[0]}.bin&#34;
+
     self.incbin_cmd[self.incbin_cmd.index(&#34;FILENAME_TO_SET&#34;)] = filename
-    self.incbin_cmd[self.incbin_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = f&#34;{os.path.splitext(filename)[0]}.bin&#34;
+    self.incbin_cmd[self.incbin_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = output_filename
+
     if extra_params and len(extra_params) &gt; 0:
         self.prg_cmd[1:1] = extra_params
 
     self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.incbin_cmd }&#34;)
-    print(&#34;---------------------------------------------------------------&#34;)
-    data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE)
-    output = data.communicate()
-    print(&#34;---------------------------------------------------------------&#34;)</code></pre>
+    data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    stdout_data, stderr_data = data.communicate()
+
+    # check packing ratio
+    unpacked_size = os.path.getsize(filename)
+    packed_size = os.path.getsize(output_filename)
+    if packed_size &gt;= unpacked_size:
+        raise RuntimeError(f&#34;Packing doesn&#39;t shrink the incbin. Size increased from {unpacked_size} to {packed_size} bytes&#34;)
+
+    if len(stderr_data) &gt; 1:
+        self.logger.error(stderr_data.decode())
+        raise RuntimeError(f&#34;Segment cannot be packed due to: {stderr_data.decode()}&#34;)
+
+    self.logger.info(f&#34;{filename} was {unpacked_size} bytes, packed to {packed_size} bytes&#34;)
+    with open(output_filename, &#34;rb&#34;) as f:
+        barr = f.read()
+
+    return bytearray(barr)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Cruncher.Cruncher.crunch_prg"><code class="name flex">
@@ -228,17 +314,24 @@ class Cruncher():
     if self.prg_cmd is None:
         raise RuntimeError(&#34;Packer command line for PRG is not set!&#34;)
 
+    output_filename = f&#34;{os.path.splitext(filename)[0]}_packed.prg&#34;
     self.prg_cmd[self.prg_cmd.index(&#34;FILENAME_TO_SET&#34;)] = filename
-    self.prg_cmd[self.prg_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = f&#34;{os.path.splitext(filename)[0]}_packed.prg&#34;
+    self.prg_cmd[self.prg_cmd.index(&#34;OUTPUT_TO_SET&#34;)] = output_filename
+
     if extra_params and len(extra_params) &gt; 0:
         self.prg_cmd[1:1] = extra_params
 
 
     self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
-    print(&#34;---------------------------------------------------------------&#34;)
-    data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE)
-    output = data.communicate()
-    print(&#34;---------------------------------------------------------------&#34;)</code></pre>
+    data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    stdout_data, stderr_data = data.communicate()
+
+    err = stderr_data.decode()
+    if &#34;error&#34; in err:
+        self.logger.error(err)
+        raise RuntimeError(f&#34;Program cannot be packed due to: {err}&#34;)
+    else:
+        self.logger.info(f&#34;{filename} packed to {os.path.getsize(output_filename)} bytes&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Cruncher.Cruncher.generate_depacker_routine"><code class="name flex">

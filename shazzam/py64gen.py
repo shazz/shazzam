@@ -63,16 +63,16 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
         if segment.start_adr == start_adr and segment.name == seg.name:
             found = True
 
-            g.logger.info(f"Removing segment {segment.name} to PROGRAM")
+            g.logger.debug(f"Removing segment {segment.name} to PROGRAM")
             g._PROGRAM.segments.remove(segment)
 
-            g.logger.info(f"Adding segment {segment.name} to PROGRAM")
+            g.logger.debug(f"Adding segment {segment.name} to PROGRAM")
             g._PROGRAM.segments.append(seg)
 
             break
 
     if not found:
-        g.logger.info(f"Adding new segment {seg.name} to PROGRAM")
+        g.logger.debug(f"Adding new segment {seg.name} to PROGRAM")
         g._PROGRAM.segments.append(seg)
 
     g._CURRENT_CONTEXT.close()
@@ -129,7 +129,7 @@ def gen_code(header: str = None, prefs: Alias = None) -> None:
 
     for segment in g._PROGRAM.segments:
 
-        g.logger.info(f"generating code for segment {segment.name} from {g._PROGRAM.segments}")
+        g.logger.debug(f"generating code for segment {segment.name} from {g._PROGRAM.segments}")
         segment.change_format()
         code = segment.gen_code()
 
@@ -206,6 +206,31 @@ def assemble_prg(assembler: Assembler, start_address: int, cruncher: Cruncher = 
         except AttributeError as e:
             g.logger.error(f"The cruncher class {cruncher.__class__} needs to implement crunch_prg()!")
             g.logger.error(e)
+
+def get_segment_addresses(name: str) -> int:
+    """get_segment_start_address
+
+    Args:
+        name (str): [description]
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        int: [description]
+    """
+    global _PROGRAM
+
+    #TODO: how to make this works if a segment is defined after this call ?
+    for segment in g._PROGRAM.segments:
+
+        if segment.name.upper() == name.upper():
+            return Alias({
+                "start_address": segment.start_adr,
+                "end_address": segment.end_adr
+            })
+
+    raise ValueError(f"Segment {name} not found!")
 
 def gen_sparkle_script():
     """[summary]

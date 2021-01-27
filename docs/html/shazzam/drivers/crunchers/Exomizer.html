@@ -31,6 +31,8 @@ import os
 import logging
 
 from shazzam.Cruncher import Cruncher
+from shazzam.py64gen import *
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
 class Exomizer(Cruncher):
 
@@ -50,9 +52,7 @@ class Exomizer(Cruncher):
         Raises:
             NotImplementedError: [description]
         &#34;&#34;&#34;
-        with segment(address, &#34;depacker&#34;) as s:
-            nop()
-            raise NotImplementedError()</code></pre>
+        nop()</code></pre>
 </details>
 </section>
 <section>
@@ -92,9 +92,7 @@ class Exomizer(Cruncher):
         Raises:
             NotImplementedError: [description]
         &#34;&#34;&#34;
-        with segment(address, &#34;depacker&#34;) as s:
-            nop()
-            raise NotImplementedError()</code></pre>
+        nop()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -130,9 +128,7 @@ class Exomizer(Cruncher):
     Raises:
         NotImplementedError: [description]
     &#34;&#34;&#34;
-    with segment(address, &#34;depacker&#34;) as s:
-        nop()
-        raise NotImplementedError()</code></pre>
+    nop()</code></pre>
 </details>
 </dd>
 </dl>

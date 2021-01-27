@@ -91,16 +91,16 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
         if segment.start_adr == start_adr and segment.name == seg.name:
             found = True
 
-            g.logger.info(f&#34;Removing segment {segment.name} to PROGRAM&#34;)
+            g.logger.debug(f&#34;Removing segment {segment.name} to PROGRAM&#34;)
             g._PROGRAM.segments.remove(segment)
 
-            g.logger.info(f&#34;Adding segment {segment.name} to PROGRAM&#34;)
+            g.logger.debug(f&#34;Adding segment {segment.name} to PROGRAM&#34;)
             g._PROGRAM.segments.append(seg)
 
             break
 
     if not found:
-        g.logger.info(f&#34;Adding new segment {seg.name} to PROGRAM&#34;)
+        g.logger.debug(f&#34;Adding new segment {seg.name} to PROGRAM&#34;)
         g._PROGRAM.segments.append(seg)
 
     g._CURRENT_CONTEXT.close()
@@ -135,7 +135,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER.close()
     g._CURRENT_RASTER = None
 
-def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -&gt; None:
+def gen_code(header: str = None, prefs: Alias = None) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -143,10 +143,7 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -&gt; None:
     &#34;&#34;&#34;
     global _PROGRAM
 
-    # TODO: check overlap
     overlaps = _check_segments_ovelap()
-
-    g._PROGRAM.set_name(prg_name)
 
     if header is None:
         header  = &#34;; Generated code using Shazzam py64gen\n&#34;
@@ -160,7 +157,7 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -&gt; None:
 
     for segment in g._PROGRAM.segments:
 
-        g.logger.info(f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
+        g.logger.debug(f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
         segment.change_format()
         code = segment.gen_code()
 
@@ -170,15 +167,13 @@ def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -&gt; None:
                 f.writelines(header)
                 f.writelines(code)
 
-def gen_listing(prg_name: str, header: str = None) -&gt; None:
+def gen_listing(header: str = None) -&gt; None:
     &#34;&#34;&#34;[summary] gen_listing
 
     Args:
         header (str, optional): [description]. Defaults to None.
     &#34;&#34;&#34;
     global _PROGRAM
-
-    g._PROGRAM.set_name(prg_name)
 
     if header is None:
         header  = &#34;; Generated listing using Shazzam py64gen\n&#34;
@@ -205,23 +200,21 @@ def gen_listing(prg_name: str, header: str = None) -&gt; None:
                 f.writelines(header)
                 f.writelines(code)
 
-def assemble_segment(assembler: Assembler, cruncher: Cruncher = None) -&gt; None:
+def assemble_segment(assembler: Assembler) -&gt; None:
     &#34;&#34;&#34;Assemble segment
 
     Args:
         assembler ([type]): [description]
         cruncher (None): [description]
     &#34;&#34;&#34;
-    global _CURRENT_CONTEXT
+    global _CURRENT_CONTEXT, _PROGRAM
 
-    output_file = assembler.assemble_segment(_CURRENT_CONTEXT)
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError(f&#34;No segment defined!&#34;)
 
-    if cruncher is not None:
-        try:
-            cruncher.crunch_incbin(output_file)
-        except AttributeError as e:
-            g.logger.error(f&#34;The cruncher class {cruncher.__class__} needs to implement crunch_incbin()!&#34;)
-            g.logger.error(e)
+    output_file = assembler.assemble_segment(g._PROGRAM, g._CURRENT_CONTEXT)
+
+    return output_file
 
 def assemble_prg(assembler: Assembler, start_address: int, cruncher: Cruncher = None) -&gt; None:
     &#34;&#34;&#34;Assemble listing
@@ -241,6 +234,31 @@ def assemble_prg(assembler: Assembler, start_address: int, cruncher: Cruncher = 
         except AttributeError as e:
             g.logger.error(f&#34;The cruncher class {cruncher.__class__} needs to implement crunch_prg()!&#34;)
             g.logger.error(e)
+
+def get_segment_addresses(name: str) -&gt; int:
+    &#34;&#34;&#34;get_segment_start_address
+
+    Args:
+        name (str): [description]
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        int: [description]
+    &#34;&#34;&#34;
+    global _PROGRAM
+
+    #TODO: how to make this works if a segment is defined after this call ?
+    for segment in g._PROGRAM.segments:
+
+        if segment.name.upper() == name.upper():
+            return Alias({
+                &#34;start_address&#34;: segment.start_adr,
+                &#34;end_address&#34;: segment.end_adr
+            })
+
+    raise ValueError(f&#34;Segment {name} not found!&#34;)
 
 def gen_sparkle_script():
     &#34;&#34;&#34;[summary]
@@ -411,6 +429,9 @@ def incbin(data: bytearray) -&gt; None:
     if g._CURRENT_CONTEXT is None:
         raise RuntimeError(f&#34;No segment defined!&#34;)
 
+    if not isinstance(data, bytearray):
+        raise ValueError(f&#34;incbin argument muust be a bytearray and not a {type(data)}&#34;)
+
     for b in data:
         g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
 
@@ -426,12 +447,15 @@ def get_current_address() -&gt; int:
 # Utils
 # ---------------------------------------------------------------------
 _funcs = {}
-def generate(func) -&gt; None:
+def generate(func, program_name: str) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
         func ([type]): [description]
     &#34;&#34;&#34;
+    global _PROGRAM
+    g._PROGRAM.set_name(program_name)
+
     for i in reloading(range(10)):
         src = dill.source.getsource(func.__dict__[&#39;__inner__&#39;])
         # src = dill.source.getsource(func)
@@ -445,8 +469,8 @@ def generate(func) -&gt; None:
                 _funcs[func.__name__] = h
                 func()
 
-        sleep(0.5)
-    generate(func)
+        sleep(1.0)
+    generate(func, program_name)
 
 def _create_a_function(*args, **kwargs):
     &#34;&#34;&#34;[summary]
@@ -490,8 +514,10 @@ def _create_a_function(*args, **kwargs):
                 address = args[0]
             elif isinstance(args[0], Immediate):
                 immediate = args[0]
+            elif isinstance(args[0], enum.EnumMeta):
+                index = args[0]
             else:
-                raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+                raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
         if len(args) == 2:
             index = args[1]
@@ -563,7 +589,7 @@ def _create_a_function(*args, **kwargs):
                 if address.value and address.value &lt;= 0x100:
                     return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-            if &#39;acc&#39; in modes and index is Register.A:
+            if &#39;acc&#39; in modes and index is RegisterACC:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
             if &#39;ind&#39; in modes:
@@ -759,8 +785,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -832,7 +860,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -878,8 +906,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -951,7 +981,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -997,8 +1027,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1070,7 +1102,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1116,8 +1148,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1189,7 +1223,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1235,8 +1269,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1308,7 +1344,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1354,8 +1390,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1427,7 +1465,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1473,8 +1511,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1546,7 +1586,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1592,8 +1632,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1665,7 +1707,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1711,8 +1753,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1784,7 +1828,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1830,8 +1874,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -1903,7 +1949,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -1949,8 +1995,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2022,7 +2070,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2068,8 +2116,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2141,7 +2191,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2187,8 +2237,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2260,7 +2312,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2306,8 +2358,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2379,7 +2433,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2425,8 +2479,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2498,7 +2554,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2544,8 +2600,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2617,7 +2675,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2663,8 +2721,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2736,7 +2796,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2782,8 +2842,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2855,7 +2917,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -2901,8 +2963,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -2974,7 +3038,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3020,8 +3084,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3093,7 +3159,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3139,8 +3205,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3212,7 +3280,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3258,8 +3326,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3331,7 +3401,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3377,8 +3447,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3450,7 +3522,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3496,8 +3568,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3569,7 +3643,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3615,8 +3689,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3688,7 +3764,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3734,8 +3810,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3807,7 +3885,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3853,8 +3931,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -3926,7 +4006,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -3972,8 +4052,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4045,7 +4127,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4091,8 +4173,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4164,7 +4248,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4210,8 +4294,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4283,7 +4369,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4329,8 +4415,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4402,7 +4490,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4448,8 +4536,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4521,7 +4611,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4567,8 +4657,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4640,7 +4732,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4686,8 +4778,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4759,7 +4853,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4805,8 +4899,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4878,7 +4974,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -4924,8 +5020,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -4997,7 +5095,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5043,8 +5141,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5116,7 +5216,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5162,8 +5262,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5235,7 +5337,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5281,8 +5383,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5354,7 +5458,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5400,8 +5504,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5473,7 +5579,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5519,8 +5625,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5592,7 +5700,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5638,8 +5746,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5711,7 +5821,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5757,8 +5867,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5830,7 +5942,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5876,8 +5988,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -5949,7 +6063,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -5995,8 +6109,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6068,7 +6184,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6114,8 +6230,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6187,7 +6305,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6233,8 +6351,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6306,7 +6426,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6352,8 +6472,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6425,7 +6547,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6471,8 +6593,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6544,7 +6668,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6590,8 +6714,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6663,7 +6789,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6709,8 +6835,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6782,7 +6910,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6828,8 +6956,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -6901,7 +7031,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -6947,8 +7077,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7020,7 +7152,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7066,8 +7198,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7139,7 +7273,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7185,8 +7319,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7258,7 +7394,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7304,8 +7440,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7377,7 +7515,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7423,8 +7561,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7496,7 +7636,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7542,8 +7682,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7615,7 +7757,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7661,8 +7803,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7734,7 +7878,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7795,7 +7939,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 </details>
 </dd>
 <dt id="shazzam.py64gen.assemble_segment"><code class="name flex">
-<span>def <span class="ident">assemble_segment</span></span>(<span>assembler: <a title="shazzam.Assembler.Assembler" href="Assembler.html#shazzam.Assembler.Assembler">Assembler</a>, cruncher: <a title="shazzam.Cruncher.Cruncher" href="Cruncher.html#shazzam.Cruncher.Cruncher">Cruncher</a> = None) ‑> NoneType</span>
+<span>def <span class="ident">assemble_segment</span></span>(<span>assembler: <a title="shazzam.Assembler.Assembler" href="Assembler.html#shazzam.Assembler.Assembler">Assembler</a>) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Assemble segment</p>
@@ -7810,23 +7954,21 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def assemble_segment(assembler: Assembler, cruncher: Cruncher = None) -&gt; None:
+<pre><code class="python">def assemble_segment(assembler: Assembler) -&gt; None:
     &#34;&#34;&#34;Assemble segment
 
     Args:
         assembler ([type]): [description]
         cruncher (None): [description]
     &#34;&#34;&#34;
-    global _CURRENT_CONTEXT
+    global _CURRENT_CONTEXT, _PROGRAM
 
-    output_file = assembler.assemble_segment(_CURRENT_CONTEXT)
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError(f&#34;No segment defined!&#34;)
 
-    if cruncher is not None:
-        try:
-            cruncher.crunch_incbin(output_file)
-        except AttributeError as e:
-            g.logger.error(f&#34;The cruncher class {cruncher.__class__} needs to implement crunch_incbin()!&#34;)
-            g.logger.error(e)</code></pre>
+    output_file = assembler.assemble_segment(g._PROGRAM, g._CURRENT_CONTEXT)
+
+    return output_file</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.at"><code class="name flex">
@@ -7871,8 +8013,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -7944,7 +8088,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -7990,8 +8134,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8063,7 +8209,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8109,8 +8255,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8182,7 +8330,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8228,8 +8376,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8301,7 +8451,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8347,8 +8497,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8420,7 +8572,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8466,8 +8618,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8539,7 +8693,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8585,8 +8739,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8658,7 +8814,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8704,8 +8860,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8777,7 +8935,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8823,8 +8981,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -8896,7 +9056,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -8942,8 +9102,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9015,7 +9177,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9103,8 +9265,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9176,7 +9340,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9222,8 +9386,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9295,7 +9461,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9341,8 +9507,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9414,7 +9582,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9460,8 +9628,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9533,7 +9703,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9579,8 +9749,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9652,7 +9824,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9698,8 +9870,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9771,7 +9945,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9817,8 +9991,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -9890,7 +10066,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -9936,8 +10112,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -10009,7 +10187,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -10055,8 +10233,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -10128,7 +10308,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -10174,8 +10354,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -10247,7 +10429,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -10293,8 +10475,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -10366,7 +10550,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -10389,7 +10573,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 </details>
 </dd>
 <dt id="shazzam.py64gen.gen_code"><code class="name flex">
-<span>def <span class="ident">gen_code</span></span>(<span>prg_name: str, header: str = None, prefs: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None) ‑> NoneType</span>
+<span>def <span class="ident">gen_code</span></span>(<span>header: str = None, prefs: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -10402,7 +10586,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def gen_code(prg_name: str, header: str = None, prefs: Alias = None) -&gt; None:
+<pre><code class="python">def gen_code(header: str = None, prefs: Alias = None) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -10410,10 +10594,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
     &#34;&#34;&#34;
     global _PROGRAM
 
-    # TODO: check overlap
     overlaps = _check_segments_ovelap()
-
-    g._PROGRAM.set_name(prg_name)
 
     if header is None:
         header  = &#34;; Generated code using Shazzam py64gen\n&#34;
@@ -10427,7 +10608,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     for segment in g._PROGRAM.segments:
 
-        g.logger.info(f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
+        g.logger.debug(f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
         segment.change_format()
         code = segment.gen_code()
 
@@ -10439,7 +10620,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 </details>
 </dd>
 <dt id="shazzam.py64gen.gen_listing"><code class="name flex">
-<span>def <span class="ident">gen_listing</span></span>(<span>prg_name: str, header: str = None) ‑> NoneType</span>
+<span>def <span class="ident">gen_listing</span></span>(<span>header: str = None) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary] gen_listing</p>
@@ -10452,15 +10633,13 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def gen_listing(prg_name: str, header: str = None) -&gt; None:
+<pre><code class="python">def gen_listing(header: str = None) -&gt; None:
     &#34;&#34;&#34;[summary] gen_listing
 
     Args:
         header (str, optional): [description]. Defaults to None.
     &#34;&#34;&#34;
     global _PROGRAM
-
-    g._PROGRAM.set_name(prg_name)
 
     if header is None:
         header  = &#34;; Generated listing using Shazzam py64gen\n&#34;
@@ -10517,7 +10696,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 </details>
 </dd>
 <dt id="shazzam.py64gen.generate"><code class="name flex">
-<span>def <span class="ident">generate</span></span>(<span>func) ‑> NoneType</span>
+<span>def <span class="ident">generate</span></span>(<span>func, program_name: str) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -10530,12 +10709,15 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def generate(func) -&gt; None:
+<pre><code class="python">def generate(func, program_name: str) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
         func ([type]): [description]
     &#34;&#34;&#34;
+    global _PROGRAM
+    g._PROGRAM.set_name(program_name)
+
     for i in reloading(range(10)):
         src = dill.source.getsource(func.__dict__[&#39;__inner__&#39;])
         # src = dill.source.getsource(func)
@@ -10549,8 +10731,8 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
                 _funcs[func.__name__] = h
                 func()
 
-        sleep(0.5)
-    generate(func)</code></pre>
+        sleep(1.0)
+    generate(func, program_name)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.get_anonymous_label"><code class="name flex">
@@ -10614,6 +10796,56 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
     return g._CURRENT_CONTEXT.next_position</code></pre>
 </details>
 </dd>
+<dt id="shazzam.py64gen.get_segment_addresses"><code class="name flex">
+<span>def <span class="ident">get_segment_addresses</span></span>(<span>name: str) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"><p>get_segment_start_address</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_segment_addresses(name: str) -&gt; int:
+    &#34;&#34;&#34;get_segment_start_address
+
+    Args:
+        name (str): [description]
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        int: [description]
+    &#34;&#34;&#34;
+    global _PROGRAM
+
+    #TODO: how to make this works if a segment is defined after this call ?
+    for segment in g._PROGRAM.segments:
+
+        if segment.name.upper() == name.upper():
+            return Alias({
+                &#34;start_address&#34;: segment.start_adr,
+                &#34;end_address&#34;: segment.end_adr
+            })
+
+    raise ValueError(f&#34;Segment {name} not found!&#34;)</code></pre>
+</details>
+</dd>
 <dt id="shazzam.py64gen.imm"><code class="name flex">
 <span>def <span class="ident">imm</span></span>(<span>value: Any) ‑> <a title="shazzam.Immediate.Immediate" href="Immediate.html#shazzam.Immediate.Immediate">Immediate</a></span>
 </code></dt>
@@ -10662,8 +10894,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -10735,7 +10969,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -10789,6 +11023,9 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
     if g._CURRENT_CONTEXT is None:
         raise RuntimeError(f&#34;No segment defined!&#34;)
 
+    if not isinstance(data, bytearray):
+        raise ValueError(f&#34;incbin argument muust be a bytearray and not a {type(data)}&#34;)
+
     for b in data:
         g._CURRENT_CONTEXT.add_byte(Immediate(value=b))</code></pre>
 </details>
@@ -10835,8 +11072,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -10908,7 +11147,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -10954,8 +11193,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11027,7 +11268,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11073,8 +11314,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11146,7 +11389,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11192,8 +11435,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11265,7 +11510,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11358,8 +11603,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11431,7 +11678,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11477,8 +11724,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11550,7 +11799,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11596,8 +11845,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11669,7 +11920,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11715,8 +11966,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11788,7 +12041,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11834,8 +12087,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -11907,7 +12162,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -11953,8 +12208,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12026,7 +12283,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12072,8 +12329,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12145,7 +12404,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12191,8 +12450,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12264,7 +12525,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12310,8 +12571,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12383,7 +12646,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12429,8 +12692,10 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12502,7 +12767,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12634,8 +12899,10 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12707,7 +12974,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12753,8 +13020,10 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12826,7 +13095,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12872,8 +13141,10 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -12945,7 +13216,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -12991,8 +13262,10 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13064,7 +13337,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -13110,8 +13383,10 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13183,7 +13458,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -13229,8 +13504,10 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13302,7 +13579,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -13348,8 +13625,10 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13421,7 +13700,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -13504,16 +13783,16 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
         if segment.start_adr == start_adr and segment.name == seg.name:
             found = True
 
-            g.logger.info(f&#34;Removing segment {segment.name} to PROGRAM&#34;)
+            g.logger.debug(f&#34;Removing segment {segment.name} to PROGRAM&#34;)
             g._PROGRAM.segments.remove(segment)
 
-            g.logger.info(f&#34;Adding segment {segment.name} to PROGRAM&#34;)
+            g.logger.debug(f&#34;Adding segment {segment.name} to PROGRAM&#34;)
             g._PROGRAM.segments.append(seg)
 
             break
 
     if not found:
-        g.logger.info(f&#34;Adding new segment {seg.name} to PROGRAM&#34;)
+        g.logger.debug(f&#34;Adding new segment {seg.name} to PROGRAM&#34;)
         g._PROGRAM.segments.append(seg)
 
     g._CURRENT_CONTEXT.close()
@@ -13544,8 +13823,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13617,7 +13898,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -13681,8 +13962,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13754,7 +14037,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -13800,8 +14083,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13873,7 +14158,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -13919,8 +14204,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -13992,7 +14279,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -14038,8 +14325,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -14111,7 +14400,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -14157,8 +14446,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -14230,7 +14521,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -14276,8 +14567,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -14349,7 +14642,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -14395,8 +14688,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -14468,7 +14763,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -14514,8 +14809,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -14587,7 +14884,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -14633,8 +14930,10 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             address = args[0]
         elif isinstance(args[0], Immediate):
             immediate = args[0]
+        elif isinstance(args[0], enum.EnumMeta):
+            index = args[0]
         else:
-            raise ValueError(&#34;1st operand must be an Address or an Immediate&#34;)
+            raise ValueError(f&#34;1st operand must be an Address or an Immediate, not a {type(args[0])}&#34;)
 
     if len(args) == 2:
         index = args[1]
@@ -14706,7 +15005,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
             if address.value and address.value &lt;= 0x100:
                 return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;iiy&#39;, address=address))
 
-        if &#39;acc&#39; in modes and index is Register.A:
+        if &#39;acc&#39; in modes and index is RegisterACC:
             return g._CURRENT_CONTEXT.add_instruction(Instruction(mnemonic, &#39;acc&#39;))
 
         if &#39;ind&#39; in modes:
@@ -14789,7 +15088,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 </ul>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
-<ul class="two-column">
+<ul class="">
 <li><code><a title="shazzam.py64gen.ADC" href="#shazzam.py64gen.ADC">ADC</a></code></li>
 <li><code><a title="shazzam.py64gen.AND" href="#shazzam.py64gen.AND">AND</a></code></li>
 <li><code><a title="shazzam.py64gen.ASL" href="#shazzam.py64gen.ASL">ASL</a></code></li>
@@ -14880,6 +15179,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 <li><code><a title="shazzam.py64gen.generate" href="#shazzam.py64gen.generate">generate</a></code></li>
 <li><code><a title="shazzam.py64gen.get_anonymous_label" href="#shazzam.py64gen.get_anonymous_label">get_anonymous_label</a></code></li>
 <li><code><a title="shazzam.py64gen.get_current_address" href="#shazzam.py64gen.get_current_address">get_current_address</a></code></li>
+<li><code><a title="shazzam.py64gen.get_segment_addresses" href="#shazzam.py64gen.get_segment_addresses">get_segment_addresses</a></code></li>
 <li><code><a title="shazzam.py64gen.imm" href="#shazzam.py64gen.imm">imm</a></code></li>
 <li><code><a title="shazzam.py64gen.inc" href="#shazzam.py64gen.inc">inc</a></code></li>
 <li><code><a title="shazzam.py64gen.incbin" href="#shazzam.py64gen.incbin">incbin</a></code></li>

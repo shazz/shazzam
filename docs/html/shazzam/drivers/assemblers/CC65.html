@@ -35,6 +35,8 @@ import subprocess
 import os
 import logging
 
+from typing import List
+
 class CC65(Assembler):
 
     features = \
@@ -130,7 +132,7 @@ class CC65(Assembler):
         cmd.append(segment_filename)
 
         self.logger.info(f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         output = data.communicate()
 
         self.logger.info(f&#34;{segment.name} assembled&#34;)
@@ -199,6 +201,8 @@ class CC65(Assembler):
         sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
         sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
 
+        all_segments_adr = sorted(sorted_non_default_segments_adr + sorted_default_segments_adr)
+
         if len(sorted_non_default_segments_adr) &gt; 0:
             # TODO: test with node default entry point
             # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
@@ -216,10 +220,14 @@ class CC65(Assembler):
             CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${end_adr:04X}&#34;)
 
         mem_lines = &#34;&#34;
-        for i, segment in enumerate(program.segments):
+
+        self.logger.debug(f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
+        for i, adr in enumerate(all_segments_adr):
+            segment = self._get_segment_by_address(adr, program.segments)
+
             if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
-                if i &lt; len(program.segments)-1:
-                    seg_size = program.segments[i+1].start_adr - segment.start_adr
+                if i != len(all_segments_adr)-1:
+                    seg_size = self._get_segment_by_address(all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
                 else:
                     seg_size = segment.end_adr-segment.start_adr
 
@@ -234,7 +242,7 @@ class CC65(Assembler):
             if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
                 seg_lines += f&#34;\t{segment.name}:\tload = {segment.name},\ttype = rw, optional = no, define = yes;\n&#34;
 
-        self.logger.debug(f&#34;Adding lines: {seg_lines}&#34;)
+        self.logger.debug(f&#34;Adding lines in configuration: {seg_lines}&#34;)
         CC65.segments = CC65.segments.replace(&#34;%%&#34;, seg_lines)
 
         with open(f&#34;generated/{program.name}/gen-c64-asm.cfg&#34;, &#34;w&#34;) as f:
@@ -243,7 +251,26 @@ class CC65(Assembler):
             f.write(CC65.memory)
             f.write(CC65.segments)
 
-        self.logger.info(&#34;CC65 configuration files written&#34;)</code></pre>
+        self.logger.debug(&#34;CC65 configuration files written&#34;)
+
+    def _get_segment_by_address(self, address: int, segments: List[Segment]) -&gt; Segment:
+        &#34;&#34;&#34;_get_segment_by_address
+
+        Args:
+            address (int): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        &#34;&#34;&#34;
+        for segment in segments:
+            if segment.start_adr == address:
+                return segment
+
+        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -360,7 +387,7 @@ class CC65(Assembler):
         cmd.append(segment_filename)
 
         self.logger.info(f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
         output = data.communicate()
 
         self.logger.info(f&#34;{segment.name} assembled&#34;)
@@ -429,6 +456,8 @@ class CC65(Assembler):
         sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
         sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
 
+        all_segments_adr = sorted(sorted_non_default_segments_adr + sorted_default_segments_adr)
+
         if len(sorted_non_default_segments_adr) &gt; 0:
             # TODO: test with node default entry point
             # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
@@ -446,10 +475,14 @@ class CC65(Assembler):
             CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${end_adr:04X}&#34;)
 
         mem_lines = &#34;&#34;
-        for i, segment in enumerate(program.segments):
+
+        self.logger.debug(f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
+        for i, adr in enumerate(all_segments_adr):
+            segment = self._get_segment_by_address(adr, program.segments)
+
             if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
-                if i &lt; len(program.segments)-1:
-                    seg_size = program.segments[i+1].start_adr - segment.start_adr
+                if i != len(all_segments_adr)-1:
+                    seg_size = self._get_segment_by_address(all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
                 else:
                     seg_size = segment.end_adr-segment.start_adr
 
@@ -464,7 +497,7 @@ class CC65(Assembler):
             if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
                 seg_lines += f&#34;\t{segment.name}:\tload = {segment.name},\ttype = rw, optional = no, define = yes;\n&#34;
 
-        self.logger.debug(f&#34;Adding lines: {seg_lines}&#34;)
+        self.logger.debug(f&#34;Adding lines in configuration: {seg_lines}&#34;)
         CC65.segments = CC65.segments.replace(&#34;%%&#34;, seg_lines)
 
         with open(f&#34;generated/{program.name}/gen-c64-asm.cfg&#34;, &#34;w&#34;) as f:
@@ -473,7 +506,26 @@ class CC65(Assembler):
             f.write(CC65.memory)
             f.write(CC65.segments)
 
-        self.logger.info(&#34;CC65 configuration files written&#34;)</code></pre>
+        self.logger.debug(&#34;CC65 configuration files written&#34;)
+
+    def _get_segment_by_address(self, address: int, segments: List[Segment]) -&gt; Segment:
+        &#34;&#34;&#34;_get_segment_by_address
+
+        Args:
+            address (int): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        &#34;&#34;&#34;
+        for segment in segments:
+            if segment.start_adr == address:
+                return segment
+
+        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -604,6 +656,8 @@ class CC65(Assembler):
     sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
     sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
 
+    all_segments_adr = sorted(sorted_non_default_segments_adr + sorted_default_segments_adr)
+
     if len(sorted_non_default_segments_adr) &gt; 0:
         # TODO: test with node default entry point
         # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
@@ -621,10 +675,14 @@ class CC65(Assembler):
         CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${end_adr:04X}&#34;)
 
     mem_lines = &#34;&#34;
-    for i, segment in enumerate(program.segments):
+
+    self.logger.debug(f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
+    for i, adr in enumerate(all_segments_adr):
+        segment = self._get_segment_by_address(adr, program.segments)
+
         if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
-            if i &lt; len(program.segments)-1:
-                seg_size = program.segments[i+1].start_adr - segment.start_adr
+            if i != len(all_segments_adr)-1:
+                seg_size = self._get_segment_by_address(all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
             else:
                 seg_size = segment.end_adr-segment.start_adr
 
@@ -639,7 +697,7 @@ class CC65(Assembler):
         if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
             seg_lines += f&#34;\t{segment.name}:\tload = {segment.name},\ttype = rw, optional = no, define = yes;\n&#34;
 
-    self.logger.debug(f&#34;Adding lines: {seg_lines}&#34;)
+    self.logger.debug(f&#34;Adding lines in configuration: {seg_lines}&#34;)
     CC65.segments = CC65.segments.replace(&#34;%%&#34;, seg_lines)
 
     with open(f&#34;generated/{program.name}/gen-c64-asm.cfg&#34;, &#34;w&#34;) as f:
@@ -648,7 +706,7 @@ class CC65(Assembler):
         f.write(CC65.memory)
         f.write(CC65.segments)
 
-    self.logger.info(&#34;CC65 configuration files written&#34;)</code></pre>
+    self.logger.debug(&#34;CC65 configuration files written&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.drivers.assemblers.CC65.CC65.get_bss_segment"><code class="name flex">

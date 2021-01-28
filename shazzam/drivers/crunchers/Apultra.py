@@ -67,7 +67,7 @@ class Apultra(Cruncher):
             bne(rel_at(skip))
             APL_INC_PAGE()
             label(skip)
-            nop()
+            # nop()
 
         label("apl_decompress", is_global=True)
 

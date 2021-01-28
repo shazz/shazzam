@@ -72,11 +72,10 @@ def code():
 
 
     # generate listing
-    gen_code("testpad", prefs=prefs)
-    gen_listing("testpad")
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code)
+    generate(code, "testpad")

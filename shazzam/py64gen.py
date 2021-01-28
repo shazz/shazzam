@@ -107,7 +107,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER.close()
     g._CURRENT_RASTER = None
 
-def gen_code(header: str = None, prefs: Alias = None) -> None:
+def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -> None:
     """[summary]
 
     Args:
@@ -123,9 +123,13 @@ def gen_code(header: str = None, prefs: Alias = None) -> None:
         header += "; \n"
         header += "; https://github.com/shazz/shazzam\n\n"
 
-    if prefs:
-        g.logger.debug(f"Setting assembler pref: {prefs}")
-        set_prefs(default_code_segment=prefs.default_code_segment, code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+    if format_code:
+        g.logger.debug(f"Setting assembler pref: {format_code}")
+        set_prefs(
+            default_code_segment=format_code.default_code_segment,
+            code_format=format_code.code,
+            comments_format=format_code.comments,
+            directive_prefix=format_code.directive)
 
     for segment in g._PROGRAM.segments:
 
@@ -139,38 +143,32 @@ def gen_code(header: str = None, prefs: Alias = None) -> None:
                 f.writelines(header)
                 f.writelines(code)
 
-def gen_listing(header: str = None) -> None:
-    """[summary] gen_listing
+    if gen_listing:
+        if format_listing is None:
+            g.logger.debug(f"Setting listing format: {format_code}")
+            format_listing = Alias( {
+                    "default_code_segment": "CODE",
+                    "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
+                    "comments": CommentsFormat.USE_SEMICOLON,
+                    "directive": DirectiveFormat.USE_DOT
+                })
 
-    Args:
-        header (str, optional): [description]. Defaults to None.
-    """
-    global _PROGRAM
+        set_prefs(
+            default_code_segment=format_listing.default_code_segment,
+            code_format=format_listing.code,
+            comments_format=format_listing.comments,
+            directive_prefix=format_listing.directive)
 
-    if header is None:
-        header  = "; Generated listing using Shazzam py64gen\n"
-        header += "; Copyright (C) 2021 TRSi\n"
-        header += "; \n"
-        header += "; https://github.com/shazz/shazzam\n\n"
+        for segment in g._PROGRAM.segments:
 
-    prefs = Alias( {
-            "default_code_segment": "CODE",
-            "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
-            "comments": CommentsFormat.USE_SEMICOLON,
-            "directive": DirectiveFormat.USE_DOT
-        })
-    set_prefs(default_code_segment=prefs.default_code_segment, code_format=prefs.code, comments_format=prefs.comments, directive_prefix=prefs.directive)
+                segment.change_format()
+                code = segment.gen_code(listing=True)
 
-    for segment in g._PROGRAM.segments:
-
-        segment.change_format()
-        code = segment.gen_code()
-
-        if code:
-            os.makedirs(f"generated/{g._PROGRAM.name}", exist_ok = True)
-            with open(f"generated/{g._PROGRAM.name}/{segment.name}.lst", "w") as f:
-                f.writelines(header)
-                f.writelines(code)
+                if code:
+                    os.makedirs(f"generated/{g._PROGRAM.name}", exist_ok = True)
+                    with open(f"generated/{g._PROGRAM.name}/{segment.name}.lst", "w") as f:
+                        f.writelines(header)
+                        f.writelines(code)
 
 def assemble_segment(assembler: Assembler) -> None:
     """Assemble segment
@@ -251,7 +249,6 @@ def get_segment_addresses(name: str) -> int:
 #                 not_found = False
 #                 break
 #         time.sleep(1)
-
 #     return info
 
 def gen_irqloader_script(irqloader, parts_definition: Dict):
@@ -428,9 +425,10 @@ def incbin(data: bytearray) -> None:
         raise RuntimeError(f"No segment defined!")
 
     if data is not None:
-        if not isinstance(data, bytearray):
-            raise ValueError(f"incbin argument muust be a bytearray and not a {type(data)}")
+        if not (isinstance(data, bytearray) or isinstance(data, bytes)):
+            raise ValueError(f"incbin argument must be a bytearray and not a {type(data)}")
 
+        g.logger.info(f"Incbin {len(data)} bytes of data")
         for b in data:
             g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
 

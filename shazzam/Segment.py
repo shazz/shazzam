@@ -314,7 +314,7 @@ class Segment():
 
                 self.logger.debug(f"Label {instr.address.name} replaced by absolute address {instr.address.value:04X}")
 
-    def gen_code(self) -> None:
+    def gen_code(self, listing: bool = False) -> None:
         """Generates assembly code.
 
         Returns:
@@ -347,60 +347,88 @@ class Segment():
             label_size = 10
 
         self.logger.debug(f"Label size: {label_size}")
-        code_template_index = {
-            "address": 0,
-            "bytecode": 8 if self.show_address else 0,
-            "label": 40 if self.show_bytecode else 8 if self.show_address else 0,
-            "instruction": 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
-            "cycles": 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
-        }
 
-        process_byte = True
-        for adr, instr in self.instructions.items():
+        if listing:
 
-            if self.use_uppercase:
-                instr.use_upper = True
-            if self.use_hex:
-                instr.use_hex = True
+            self.logger.info(f"Generating listing")
+            listing_template_index = {
+                "address": 0,
+                "bytecode": 8 if self.show_address else 0,
+                "label": 40 if self.show_bytecode else 8 if self.show_address else 0,
+                "instruction": 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
+                "cycles": 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
+            }
 
-            label = [k for k,v in self.labels.items() if v.value == adr]
+            process_byte = True
+            for adr, instr in self.instructions.items():
 
-            # substract start address if relative addressing
-            address_offset = self.start_adr if self.use_relative_addressing else 0
+                instr.show_labels = False
 
-            if isinstance(instr, ByteData):
-                if process_byte:
+                if self.use_uppercase:
+                    instr.use_upper = True
+                if self.use_hex:
+                    instr.use_hex = True
 
-                    process_byte = False
+                label = [k for k,v in self.labels.items() if v.value == adr]
 
-                    prefix = self.directive_prefix
+                # substract start address if relative addressing
+                address_offset = self.start_adr if self.use_relative_addressing else 0
 
-                    nb_bytes = 0
+                if isinstance(instr, ByteData):
+                    if process_byte:
+                        process_byte = False
+                        prefix = self.directive_prefix
 
-                    #TODO: break if a label is defined in the middle else won't be shown
-                    # won't work with process_byte bool
-                    try:
-                        while adr+nb_bytes in self.instructions and isinstance(self.instructions[adr+nb_bytes], ByteData):
-                            nb_bytes += 1
-                    except KeyError as e:
-                        self.logger.error(f"Could not find address {adr+nb_bytes} (${adr+nb_bytes:04X}) in {self.instructions.keys()}")
-                        raise
+                        nb_bytes = 0
+                        try:
+                            while adr+nb_bytes in self.instructions and isinstance(self.instructions[adr+nb_bytes], ByteData):
+                                nb_bytes += 1
+                        except KeyError as e:
+                            self.logger.error(f"Could not find address {adr+nb_bytes} (${adr+nb_bytes:04X}) in {self.instructions.keys()}")
+                            raise
 
-                    self.logger.debug(f"{nb_bytes} bytes of data before instruction")
-                    if nb_bytes > 8:
+                        self.logger.debug(f"{nb_bytes} bytes of data before instruction")
+                        if nb_bytes > 8:
 
-                        # manage the remaining bytes if not a multiple of 8
-                        nb_rows = nb_bytes // 8 + 1 if nb_bytes % 8 != 0 else nb_bytes // 8
+                            # manage the remaining bytes if not a multiple of 8
+                            nb_rows = nb_bytes // 8 + 1 if nb_bytes % 8 != 0 else nb_bytes // 8
 
-                        for row in range(nb_rows):
+                            for row in range(nb_rows):
 
-                            r_label = [k for k,v in self.labels.items() if v.value == adr+(row*8)]
+                                r_label = [k for k,v in self.labels.items() if v.value == adr+(row*8)]
+                                s_label = f"{r_label[0]}:" if r_label else ""
+
+                                s_address = f"{adr+(row*8)-address_offset:04X}:" if self.show_address else ""
+                                bcode = ""
+                                for b in range(min(8, nb_bytes-(8*row))):
+                                    bytedata = self.instructions[adr+(row*8)+b]
+                                    g_bcode = self.get_bytecode(bytedata)
+                                    bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+
+                                bcode1 = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
+                                bcode2 = '$'+", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
+
+                                line = ' '*100
+                                if self.show_address:
+                                    line = _insert(line, s_address, listing_template_index["address"])
+                                if self.show_bytecode:
+                                    line = _insert(line, bcode1, listing_template_index["bytecode"])
+
+                                line = _insert(line, s_label, listing_template_index["label"])
+                                line = _insert(line, f"{prefix}byte {bcode2}", listing_template_index["instruction"])
+                                line.strip()
+                                line  += '\n'
+
+                                code.append(line)
+                        else:
+                            s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
+
+                            r_label = [k for k,v in self.labels.items() if v.value == adr]
                             s_label = f"{r_label[0]}:" if r_label else ""
 
-                            s_address = f"{adr+(row*8)-address_offset:04X}:" if self.show_address else ""
                             bcode = ""
-                            for b in range(min(8, nb_bytes-(8*row))):
-                                bytedata = self.instructions[adr+(row*8)+b]
+                            for b in range(nb_bytes):
+                                bytedata = self.instructions[adr+b]
                                 g_bcode = self.get_bytecode(bytedata)
                                 bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
 
@@ -409,70 +437,155 @@ class Segment():
 
                             line = ' '*100
                             if self.show_address:
-                                line = _insert(line, s_address, code_template_index["address"])
+                                line = _insert(line, s_address, listing_template_index["address"])
                             if self.show_bytecode:
-                                line = _insert(line, bcode1, code_template_index["bytecode"])
+                                line = _insert(line, bcode1, listing_template_index["bytecode"])
 
+                            line = _insert(line, s_label, listing_template_index["label"])
+                            line = _insert(line, f"{prefix}byte {bcode2}", listing_template_index["instruction"])
+                            line.strip()
+                            line  += '\n'
+
+                            code.append(line)
+                else:
+                    process_byte = True
+                    s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
+
+                    if len(label) > 1:
+                        self.logger.warning(f"Mutiple labels ({label}) for the same address {adr:04X}")
+
+                    s_label = f"{label[0]}:" if label else ""
+                    g_bcode = self.get_bytecode(instr)
+
+                    bcode = str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()    # remove leading 'b and trailing '. Ex: bytearray(b'\xa9\x0b') A90B
+                    bcode = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
+
+                    s_bytecode = f"{bcode}" if self.show_bytecode else ""
+
+                    cycles = instr.get_cycle_count()
+                    s_cycles = f"{self.comment_char} {cycles}" if self.show_cycles and cycles > 0 else ""
+
+                    prefix = self.directive_prefix if isinstance(instr, ByteData) else ''
+
+                    line = ' '*100
+                    line = _insert(line, s_address, listing_template_index["address"])
+                    line = _insert(line, s_bytecode, listing_template_index["bytecode"])
+                    line = _insert(line, s_label, listing_template_index["label"])
+                    line = _insert(line, f"{prefix}{instr}", listing_template_index["instruction"])
+                    line = _insert(line, s_cycles, listing_template_index["cycles"])
+                    line.strip()
+                    line  += '\n'
+
+                    code.append(line)
+
+        else:
+            self.logger.info(f"Generating assembly code")
+            code_template_index = {
+                "label": 0,
+                "instruction": label_size,
+                "cycles": label_size+20,
+            }
+
+            process_byte = True
+            for adr, instr in self.instructions.items():
+
+                instr.show_labels = True
+
+                if self.use_uppercase:
+                    instr.use_upper = True
+                if self.use_hex:
+                    instr.use_hex = True
+
+                label = [k for k,v in self.labels.items() if v.value == adr]
+
+                # substract start address if relative addressing
+                address_offset = self.start_adr if self.use_relative_addressing else 0
+
+                if isinstance(instr, ByteData):
+                    if process_byte:
+
+                        process_byte = False
+                        prefix = self.directive_prefix
+                        nb_bytes = 0
+
+                        #TODO: break if a label is defined in the middle else won't be shown
+                        # won't work with process_byte bool
+                        try:
+                            while adr+nb_bytes in self.instructions and isinstance(self.instructions[adr+nb_bytes], ByteData):
+                                nb_bytes += 1
+                        except KeyError as e:
+                            self.logger.error(f"Could not find address {adr+nb_bytes} (${adr+nb_bytes:04X}) in {self.instructions.keys()}")
+                            raise
+
+                        self.logger.debug(f"{nb_bytes} bytes of data before instruction")
+                        if nb_bytes > 8:
+
+                            # manage the remaining bytes if not a multiple of 8
+                            nb_rows = nb_bytes // 8 + 1 if nb_bytes % 8 != 0 else nb_bytes // 8
+
+                            for row in range(nb_rows):
+
+                                r_label = [k for k,v in self.labels.items() if v.value == adr+(row*8)]
+                                s_label = f"{r_label[0]}:" if r_label else ""
+
+                                bcode = ""
+                                for b in range(min(8, nb_bytes-(8*row))):
+                                    bytedata = self.instructions[adr+(row*8)+b]
+                                    g_bcode = self.get_bytecode(bytedata)
+                                    bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+
+                                bcode2 = '$'+", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
+
+                                line = ' '*100
+                                line = _insert(line, s_label, code_template_index["label"])
+                                line = _insert(line, f"{prefix}byte {bcode2}", code_template_index["instruction"])
+                                line.strip()
+                                line  += '\n'
+
+                                code.append(line)
+                        else:
+                            r_label = [k for k,v in self.labels.items() if v.value == adr]
+                            s_label = f"{r_label[0]}:" if r_label else ""
+
+                            bcode = ""
+                            for b in range(nb_bytes):
+                                bytedata = self.instructions[adr+b]
+                                g_bcode = self.get_bytecode(bytedata)
+                                bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+
+                            line = ' '*100
                             line = _insert(line, s_label, code_template_index["label"])
                             line = _insert(line, f"{prefix}byte {bcode2}", code_template_index["instruction"])
                             line.strip()
                             line  += '\n'
 
                             code.append(line)
-                    else:
-                        s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
+                else:
+                    process_byte = True
+                    if len(label) > 1:
+                        self.logger.warning(f"Mutiple labels ({label}) for the same address {adr:04X}")
+                        for i in range(len(label)-1):
+                            s_label = f"{label[i]}:"
+                            line = ' '*100
+                            line = _insert(line, s_label, code_template_index["label"])
+                            line.strip()
+                            line  += '\n'
+                            code.append(line)
 
-                        r_label = [k for k,v in self.labels.items() if v.value == adr]
-                        s_label = f"{r_label[0]}:" if r_label else ""
+                    s_label = f"{label[-1]}:" if label else ""
+                    cycles = instr.get_cycle_count()
+                    s_cycles = f"{self.comment_char} {cycles}" if self.show_cycles and cycles > 0 else ""
 
-                        bcode = ""
-                        for b in range(nb_bytes):
-                            bytedata = self.instructions[adr+b]
-                            g_bcode = self.get_bytecode(bytedata)
-                            bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+                    prefix = self.directive_prefix if isinstance(instr, ByteData) else ''
 
-                        bcode1 = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
-                        bcode2 = '$'+", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
+                    line = ' '*100
+                    line = _insert(line, s_label, code_template_index["label"])
+                    line = _insert(line, f"{prefix}{instr}", code_template_index["instruction"])
+                    line = _insert(line, s_cycles, code_template_index["cycles"])
+                    line.strip()
+                    line  += '\n'
 
-                        line = ' '*100
-                        if self.show_address:
-                            line = _insert(line, s_address, code_template_index["address"])
-                        if self.show_bytecode:
-                            line = _insert(line, bcode1, code_template_index["bytecode"])
-
-                        line = _insert(line, s_label, code_template_index["label"])
-                        line = _insert(line, f"{prefix}byte {bcode2}", code_template_index["instruction"])
-                        line.strip()
-                        line  += '\n'
-
-                        code.append(line)
-            else:
-                process_byte = True
-                s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
-                s_label = f"{label[0]}:" if label else ""
-
-                g_bcode = self.get_bytecode(instr)
-
-                bcode = str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()    # remove leading 'b and trailing '. Ex: bytearray(b'\xa9\x0b') A90B
-                bcode = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
-
-                s_bytecode = f"{bcode}" if self.show_bytecode else ""
-
-                cycles = instr.get_cycle_count()
-                s_cycles = f"{self.comment_char} {cycles}" if self.show_cycles and cycles > 0 else ""
-
-                prefix = self.directive_prefix if isinstance(instr, ByteData) else ''
-
-                line = ' '*100
-                line = _insert(line, s_address, code_template_index["address"])
-                line = _insert(line, s_bytecode, code_template_index["bytecode"])
-                line = _insert(line, s_label, code_template_index["label"])
-                line = _insert(line, f"{prefix}{instr}", code_template_index["instruction"])
-                line = _insert(line, s_cycles, code_template_index["cycles"])
-                line.strip()
-                line  += '\n'
-
-                code.append(line)
+                    code.append(line)
 
         return code
 

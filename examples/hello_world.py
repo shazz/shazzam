@@ -67,11 +67,10 @@ def code():
         incbin(open("resources/aeg_collection_12.64c", "rb").read())
 
     # generate listing
-    gen_code("helloworld", prefs=prefs)
-    gen_listing("helloworld")
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code)
+    generate(code, "hello_world")

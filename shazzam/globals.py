@@ -23,9 +23,10 @@ def initialize():
     _COMMENTS_FORMAT = CommentsFormat.USE_SEMICOLON
     _DIRECTIVE_PREFIX = DirectiveFormat.NO_PREFIX
     _DEFAULT_CODE_SEGMENT = "CODE"
+    _LISTING_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX ]
 
     logger = logging.getLogger("shazzam")
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # formatter = logging.Formatter('%(levelname)s : %(funcName)s : %(message)s')
     formatter = logging.Formatter('%(levelname)s :%(message)s')

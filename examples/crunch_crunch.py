@@ -151,8 +151,7 @@ def code():
         data_cruncher.generate_depacker_routine(s.get_stats().start_address)
 
     # generate listing and code
-    gen_code(prefs=prefs)
-    gen_listing()
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801, cruncher=prg_cruncher)

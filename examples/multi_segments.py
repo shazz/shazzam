@@ -73,13 +73,13 @@ def code():
         print(f"{s.get_stats()}")
 
     # generate listing
-    gen_code()
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801, cruncher=cruncher)
 
 if __name__ == "__main__":
-    generate(code)
+    generate(code, "multi_segments")
 
 
 

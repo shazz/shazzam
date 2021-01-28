@@ -99,14 +99,13 @@ def code():
         incbin(sid.data)
 
     # generate listing and code
-    gen_code("musicplease", prefs=prefs)
-    gen_listing("musicplease")
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code)
+    generate(code, "music_please")
 
 
 

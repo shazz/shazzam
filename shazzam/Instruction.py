@@ -101,16 +101,16 @@ class Instruction():
                 self.opcode = idx
 
         if self.mode not in Instruction.addressing_modes:
-            raise ValueError(f"Unknwon addressing {mode} for instruction {instruction_name}")
+            raise ValueError(f"Unknown addressing {mode} for instruction {instruction_name}")
 
         if self.opcode is None:
-            raise ValueError(f"Unknwon instruction {instruction_name} with addressing mode {mode}")
+            raise ValueError(f"Unknown instruction {instruction_name} with addressing mode {mode}")
 
         if immediate and not isinstance(immediate, Immediate):
-            raise ValueError("immediate has to be a Immediate object")
+            raise ValueError("Immediate has to be a Immediate object")
 
         if address and not isinstance(address, Address):
-            raise ValueError("address has to be a Address object")
+            raise ValueError("Address has to be a Address object")
 
         self.address = address
         self.immediate = immediate
@@ -119,7 +119,7 @@ class Instruction():
         self.end_address = None
         self.bytecode = None
 
-        self.logger.debug(f"instruction created: {self.instruction_name} / {self.opcode} / {self.mode}")
+        self.logger.debug(f"Instruction created: {self.instruction_name} / {self.opcode} / {self.mode}")
 
     def check_constraints(self) -> None:
         """[summary]
@@ -224,6 +224,7 @@ class Instruction():
         val = None
         if self.mode == 'imp':
             val = ""
+
         elif self.mode == 'imm':
             if self.immediate.name and self.show_labels:
                 if self.immediate.high_byte:
@@ -293,8 +294,8 @@ class Instruction():
         elif self.mode == 'acc':
             val = "a"
 
-        else:
-            raise NotImplementedError(f"Model {self.mode}")
+        # else:
+        #     raise NotImplementedError(f"Model {self.mode}")
 
         if val is None:
             raise NotImplementedError(f"Model {self.mode}")

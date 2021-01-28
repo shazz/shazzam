@@ -266,6 +266,12 @@ class Segment():
             ValueError: [description]
             ValueError: [description]
         """
+        # move end of segment labels
+        for label, adr in self.labels.items():
+            if adr.value == self.end_adr:
+                adr.value = max(list(self.instructions.keys()))
+                self.logger.info(f"Label {label} moved to address ${adr.value:04X}")
+
         # check labels
         self.logger.debug(f"Required labels: {self.required_labels}")
         for label, params in self.required_labels.items():

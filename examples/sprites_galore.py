@@ -2,12 +2,13 @@
 import sys
 sys.path.append(".")
 
-from reloading import reloading
-from shazzam.py64gen import *
-from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
-from shazzam.macros.aliases import color, vic
-import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
+import shazzam.plugins.plugins as p
+from shazzam.macros.aliases import color, vic
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+from shazzam.py64gen import *
+import shazzam.macros.sys as m
+from reloading import reloading
 
 # define your cross assembler
 assembler = CC65("cc65", "/home/shazz/projects/c64/bin/cl65")
@@ -22,11 +23,50 @@ def code():
 
     # define here or anywhere, doesn't matter, your variables
     spd = p.read_spd("resources/ball.spd")
+    nb_sprites = 8
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
 
-        print(f"{s.get_stats()}")
+        sei()
+
+        lda(imm(0x35))                                      # Bank out kernal and basic 00110 101
+        sta(at(0x01))                                       # $e000-$ffff
+
+        label("start")
+        lda(imm(0))
+        for i in range(nb_sprites):
+            sta(at(vic.sprite0_x+(2*i)))
+            sta(at(vic.sprite0_y+(2*i)))
+
+        # set up irq to replace the kernal IRQ
+        m.setup_irq('top_irq', 10)
+        cli()
+
+    # irq segment
+    with segment(0x3000, "IRQ") as s:
+
+        label("top_irq", is_global=True)
+        m.double_irq('end', 'irq_stable')
+
+        label("irq_stable")
+        y_scroll = 0
+
+        txs()                                           # we're now at cycle 25 (+/- jitter) after txs
+        m.waste_cycles(58)                              # we're now at cycle 8 of the first picture rasterline
+
+        for y in range(40, 50):
+            with rasterline(nb_sprites=8, y_pos=y, y_scroll=y_scroll):
+                if (y & 7) == y_scroll:
+                    nop()
+                    nop()
+                    nop()
+                else:
+                    nop()
+
+        m.irq_end('top_irq', 10, True, False)
+        label('end')
+
 
     # generate listing and code
     gen_code(format_code=prefs, gen_listing=True)
@@ -36,6 +76,4 @@ def code():
 
 if __name__ == "__main__":
     generate(code, "sprites_galore")
-
-
 

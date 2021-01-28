@@ -32,7 +32,7 @@ def initialize():
     logger.setLevel(logging.INFO)
 
     # formatter = logging.Formatter('%(levelname)s : %(funcName)s : %(message)s')
-    formatter = logging.Formatter('%(levelname)s :%(message)s')
+    formatter = logging.Formatter('%(levelname)s: %(message)s')
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(formatter)

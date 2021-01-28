@@ -27,7 +27,7 @@ set_prefs(default_code_segment=assembler.get_code_segment(),
 prg_cruncher  = Exomizer("/home/shazz/projects/c64/bin/exomizer")
 prg_cruncher  = Nucrunch("/home/shazz/projects/c64/bin/nucrunch")
 prg_cruncher  = Pucrunch("/home/shazz/projects/c64/bin/pucrunch")
-data_cruncher = Apultra("/home/shazz/projects/c64/bin/apultra", mode = PackingMode.BACKWARD)
+data_cruncher = Apultra("/home/shazz/projects/c64/bin/apultra", mode = PackingMode.FORWARD)
 
 @reloading
 def code():
@@ -36,47 +36,20 @@ def code():
     sidfile = "resources/Meetro.sid"
     segments = {
         assembler.get_code_segment(): 0x0801,
-        "init_sid": 0x0900,
         "packedata": 0x3000,
         "depacker": 0xA000,
     }
 
-    with segment(segments["depacker"], "depacker") as s:
-        data_cruncher.generate_depacker_routine(s.get_stats().start_address)
+    with segment(segments["packedata"], "packedata") as s:
+        incbin(data_cruncher.crunch_incbin(sidfile))
+        print(s.get_stats())
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(segments[assembler.get_code_segment()], assembler.get_code_segment()) as s:
 
+        # zp locations where to store src and dst addresses
         apl_srcptr = 0xFC
         apl_dstptr = 0xFE
-
-        # set packed data src / dst
-        packed_data_end = get_segment_addresses("depacker").end_address
-        print(f"Packed data ends at {packed_data_end:04X}")
-
-        lda(imm(packed_data_end & 0xff))
-        sta(at(apl_srcptr))
-
-        lda(imm(packed_data_end >> 8))
-        sta(at(apl_srcptr)+1)
-
-        lda(imm(0x1000 & 0xff))
-        sta(at(apl_dstptr))
-
-        lda(imm(0x1000 >> 8))
-        sta(at(apl_dstptr)+1)
-
-        # unpack data backwards.
-        # in:
-        # * apl_srcptr (low and high byte) = last byte of compressed data
-        # * apl_dstptr (low and high byte) = last byte of decompression buffer
-        # out:
-        # * apl_dstptr (low and high byte) = first byte of decompressed data
-        jsr(at("apl_decompress"))
-
-        print(f"{s.get_stats()}")
-
-    with segment(segments["init_sid"], "init_sid") as s:
 
         sei()
 
@@ -109,14 +82,16 @@ def code():
         lda(at(0xdd0d))     # read interrupt control register 2 in a
         asl(at(0xd019))     # Ack raster interrupt
 
-        # init player
         lda(imm(0x36))      # TURN OFF BASIC ROM to access addres behind the BASIC ROM ($A000-$BFFF)
         sta(at(0x01))
 
+        jsr(at("depack"))
+
+        # init player
         lda(imm(0))
         tax()
         tay()
-        jsr(at(0x1000))   # jump to SID player init, song 0,...
+        jsr(at(0x1000))     # jump to SID player init, song 0,...
 
         lda(imm(0x37))      # TURN BASIC ROM BACK ON
         sta(at(0x001))
@@ -126,7 +101,9 @@ def code():
         label("loop")       # infinite loop
         jmp(at("loop"))
 
+        # -------------------------------------------------
         # IRQ routine
+        # -------------------------------------------------
         label("irq")
         lda(imm(0x01))
         sta(at(0xd019))
@@ -143,9 +120,35 @@ def code():
 
         jmp(at(0x0ea81))    # Others can be ended with JMP 0xEA81, which simply goes to the end of the kernel handler.
 
-    with segment(segments["packedata"], "packedata") as s:
-        incbin(data_cruncher.crunch_incbin(sidfile))
-        print(s.get_stats())
+        # -------------------------------------------------
+        # Depacking caller routine, need access to zp
+        # -------------------------------------------------
+        label("depack")
+        packed_data = get_segment_addresses("packedata").start_address
+        print(f"Packed data ends at {packed_data:04X}")
+
+        # set packed data src / dst
+        lda(imm(packed_data & 0xff))
+        sta(at(apl_srcptr))
+
+        lda(imm(packed_data >> 8))
+        sta(at(apl_srcptr)+1)
+
+        # depacked data are located at apl_dstptr+126 bytes
+        lda(imm(0x1000-126 & 0xff))
+        sta(at(apl_dstptr))
+
+        lda(imm(0x1000-126 >> 8))
+        sta(at(apl_dstptr)+1)
+
+        # unpack data forward.
+        # Args: apl_srcptr = ptr to compessed data
+        # Args: apl_dstptr = ptr to output buffer (126 first bytes used for buffer)
+        jsr(at("apl_decompress"))
+        rts()
+
+    with segment(segments["depacker"], "depacker") as s:
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address)
 
     # generate listing and code
     gen_code(prefs=prefs)

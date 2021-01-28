@@ -169,16 +169,16 @@ lzsa2_unpack:   ldy     #0                      ; Initialize source index.
                 inc     <lzsa_srcptr + 1
                 bne     .resume_src1            ; always taken
 
-                !if     LZSA_SHORT_CP {
-.incsrc2:
-                inc     <lzsa_srcptr + 1
-                bne     .resume_src2            ; always taken
+                        !if     LZSA_SHORT_CP {
+        .incsrc2:
+                        inc     <lzsa_srcptr + 1
+                        bne     .resume_src2            ; always taken
 
-.incdst:
-                inc     <lzsa_dstptr + 1
-                bne     .resume_dst             ; always taken
+        .incdst:
+                        inc     <lzsa_dstptr + 1
+                        bne     .resume_dst             ; always taken
 
-                }
+                        }
 
                 }
 
@@ -212,6 +212,7 @@ lzsa2_unpack:   ldy     #0                      ; Initialize source index.
                 bne     .got_cp_len
 
                 jsr     .get_length             ; X=0 table index for literals.
+
 
                 !if     LZSA_SHORT_CP {
 
@@ -288,7 +289,7 @@ lzsa2_unpack:   ldy     #0                      ; Initialize source index.
                 }
 
                 ; ================================
-                ; xyz  
+                ; xyz
                 ; 00z  5-bit offset
                 ; 01z  9-bit offset
                 ; 10z  13-bit offset
@@ -439,7 +440,7 @@ lzsa2_unpack:   ldy     #0                      ; Initialize source index.
                 pla
                 rts
 
-lzsa2_get_byte: 
+lzsa2_get_byte:
                 lda     (lzsa_srcptr),y         ; Subroutine version for when
                 inc     <lzsa_srcptr + 0        ; inlining isn't advantageous.
                 beq     lzsa2_next_page

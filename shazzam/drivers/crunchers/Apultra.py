@@ -67,6 +67,7 @@ class Apultra(Cruncher):
             bne(rel_at(skip))
             APL_INC_PAGE()
             label(skip)
+            nop()
 
         label("apl_decompress", is_global=True)
 
@@ -239,7 +240,6 @@ class Apultra(Cruncher):
         sta(at(apl_bitbuf))
 
         rts()
-
 
     def _backward_depacker(self, address: int) -> None:
 

@@ -221,6 +221,9 @@ def get_segment_addresses(name: str) -> int:
     """
     global _PROGRAM
 
+    # import threading
+    # x = threading.Thread(target=_watch_segment, args=(name,))
+
     #TODO: how to make this works if a segment is defined after this call ?
     for segment in g._PROGRAM.segments:
 
@@ -230,10 +233,33 @@ def get_segment_addresses(name: str) -> int:
                 "end_address": segment.end_adr
             })
 
-    raise ValueError(f"Segment {name} not found!")
+    raise ValueError(f"Segment {name} not (yet?) found!")
 
-def gen_sparkle_script():
-    """[summary]
+# def _watch_segment(name):
+#     import time
+#     print(f"Looking for segment {name}")
+
+#     not_found = True
+
+#     while not_found:
+#         for segment in g._PROGRAM.segments:
+#             if segment.name.upper() == name.upper():
+#                 info = Alias({
+#                     "start_address": segment.start_adr,
+#                     "end_address": segment.end_adr
+#                 })
+#                 not_found = False
+#                 break
+#         time.sleep(1)
+
+#     return info
+
+def gen_irqloader_script(irqloader, parts_definition: Dict):
+    """gen_irqloader_script
+
+    Args:
+        irqloader ([type]): [description]
+        parts_definition (Dict): [description]
 
     Raises:
         NotImplementedError: [description]
@@ -401,11 +427,12 @@ def incbin(data: bytearray) -> None:
     if g._CURRENT_CONTEXT is None:
         raise RuntimeError(f"No segment defined!")
 
-    if not isinstance(data, bytearray):
-        raise ValueError(f"incbin argument muust be a bytearray and not a {type(data)}")
+    if data is not None:
+        if not isinstance(data, bytearray):
+            raise ValueError(f"incbin argument muust be a bytearray and not a {type(data)}")
 
-    for b in data:
-        g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
+        for b in data:
+            g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
 
 def get_current_address() -> int:
 

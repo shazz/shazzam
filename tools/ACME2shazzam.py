@@ -1,3 +1,6 @@
+import sys
+sys.path.append("..")
+
 from shazzam.Instruction import Instruction
 import argparse
 import re

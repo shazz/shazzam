@@ -249,6 +249,9 @@ def get_segment_addresses(name: str) -&gt; int:
     &#34;&#34;&#34;
     global _PROGRAM
 
+    # import threading
+    # x = threading.Thread(target=_watch_segment, args=(name,))
+
     #TODO: how to make this works if a segment is defined after this call ?
     for segment in g._PROGRAM.segments:
 
@@ -258,10 +261,33 @@ def get_segment_addresses(name: str) -&gt; int:
                 &#34;end_address&#34;: segment.end_adr
             })
 
-    raise ValueError(f&#34;Segment {name} not found!&#34;)
+    raise ValueError(f&#34;Segment {name} not (yet?) found!&#34;)
 
-def gen_sparkle_script():
-    &#34;&#34;&#34;[summary]
+# def _watch_segment(name):
+#     import time
+#     print(f&#34;Looking for segment {name}&#34;)
+
+#     not_found = True
+
+#     while not_found:
+#         for segment in g._PROGRAM.segments:
+#             if segment.name.upper() == name.upper():
+#                 info = Alias({
+#                     &#34;start_address&#34;: segment.start_adr,
+#                     &#34;end_address&#34;: segment.end_adr
+#                 })
+#                 not_found = False
+#                 break
+#         time.sleep(1)
+
+#     return info
+
+def gen_irqloader_script(irqloader, parts_definition: Dict):
+    &#34;&#34;&#34;gen_irqloader_script
+
+    Args:
+        irqloader ([type]): [description]
+        parts_definition (Dict): [description]
 
     Raises:
         NotImplementedError: [description]
@@ -429,11 +455,12 @@ def incbin(data: bytearray) -&gt; None:
     if g._CURRENT_CONTEXT is None:
         raise RuntimeError(f&#34;No segment defined!&#34;)
 
-    if not isinstance(data, bytearray):
-        raise ValueError(f&#34;incbin argument muust be a bytearray and not a {type(data)}&#34;)
+    if data is not None:
+        if not isinstance(data, bytearray):
+            raise ValueError(f&#34;incbin argument muust be a bytearray and not a {type(data)}&#34;)
 
-    for b in data:
-        g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
+        for b in data:
+            g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
 
 def get_current_address() -&gt; int:
 
@@ -10619,6 +10646,45 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
                 f.writelines(code)</code></pre>
 </details>
 </dd>
+<dt id="shazzam.py64gen.gen_irqloader_script"><code class="name flex">
+<span>def <span class="ident">gen_irqloader_script</span></span>(<span>irqloader, parts_definition: Dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>gen_irqloader_script</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>irqloader</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>parts_definition</code></strong> :&ensp;<code>Dict</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>NotImplementedError</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def gen_irqloader_script(irqloader, parts_definition: Dict):
+    &#34;&#34;&#34;gen_irqloader_script
+
+    Args:
+        irqloader ([type]): [description]
+        parts_definition (Dict): [description]
+
+    Raises:
+        NotImplementedError: [description]
+    &#34;&#34;&#34;
+    global _PROGRAM
+
+    for segment in _PROGRAM:
+
+        if code:
+            raise NotImplementedError()</code></pre>
+</details>
+</dd>
 <dt id="shazzam.py64gen.gen_listing"><code class="name flex">
 <span>def <span class="ident">gen_listing</span></span>(<span>header: str = None) ‑> NoneType</span>
 </code></dt>
@@ -10665,34 +10731,6 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             with open(f&#34;generated/{g._PROGRAM.name}/{segment.name}.lst&#34;, &#34;w&#34;) as f:
                 f.writelines(header)
                 f.writelines(code)</code></pre>
-</details>
-</dd>
-<dt id="shazzam.py64gen.gen_sparkle_script"><code class="name flex">
-<span>def <span class="ident">gen_sparkle_script</span></span>(<span>)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>[summary]</p>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>NotImplementedError</code></dt>
-<dd>[description]</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def gen_sparkle_script():
-    &#34;&#34;&#34;[summary]
-
-    Raises:
-        NotImplementedError: [description]
-    &#34;&#34;&#34;
-    global _PROGRAM
-
-    for segment in _PROGRAM:
-
-        if code:
-            raise NotImplementedError()</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.generate"><code class="name flex">
@@ -10834,6 +10872,9 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
     &#34;&#34;&#34;
     global _PROGRAM
 
+    # import threading
+    # x = threading.Thread(target=_watch_segment, args=(name,))
+
     #TODO: how to make this works if a segment is defined after this call ?
     for segment in g._PROGRAM.segments:
 
@@ -10843,7 +10884,7 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
                 &#34;end_address&#34;: segment.end_adr
             })
 
-    raise ValueError(f&#34;Segment {name} not found!&#34;)</code></pre>
+    raise ValueError(f&#34;Segment {name} not (yet?) found!&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.imm"><code class="name flex">
@@ -11023,11 +11064,12 @@ def _check_segments_ovelap(code_segment: str = &#34;CODE&#34;) -&gt; None:
     if g._CURRENT_CONTEXT is None:
         raise RuntimeError(f&#34;No segment defined!&#34;)
 
-    if not isinstance(data, bytearray):
-        raise ValueError(f&#34;incbin argument muust be a bytearray and not a {type(data)}&#34;)
+    if data is not None:
+        if not isinstance(data, bytearray):
+            raise ValueError(f&#34;incbin argument muust be a bytearray and not a {type(data)}&#34;)
 
-    for b in data:
-        g._CURRENT_CONTEXT.add_byte(Immediate(value=b))</code></pre>
+        for b in data:
+            g._CURRENT_CONTEXT.add_byte(Immediate(value=b))</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.ind_at"><code class="name flex">
@@ -15174,8 +15216,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 <li><code><a title="shazzam.py64gen.dey" href="#shazzam.py64gen.dey">dey</a></code></li>
 <li><code><a title="shazzam.py64gen.eor" href="#shazzam.py64gen.eor">eor</a></code></li>
 <li><code><a title="shazzam.py64gen.gen_code" href="#shazzam.py64gen.gen_code">gen_code</a></code></li>
+<li><code><a title="shazzam.py64gen.gen_irqloader_script" href="#shazzam.py64gen.gen_irqloader_script">gen_irqloader_script</a></code></li>
 <li><code><a title="shazzam.py64gen.gen_listing" href="#shazzam.py64gen.gen_listing">gen_listing</a></code></li>
-<li><code><a title="shazzam.py64gen.gen_sparkle_script" href="#shazzam.py64gen.gen_sparkle_script">gen_sparkle_script</a></code></li>
 <li><code><a title="shazzam.py64gen.generate" href="#shazzam.py64gen.generate">generate</a></code></li>
 <li><code><a title="shazzam.py64gen.get_anonymous_label" href="#shazzam.py64gen.get_anonymous_label">get_anonymous_label</a></code></li>
 <li><code><a title="shazzam.py64gen.get_current_address" href="#shazzam.py64gen.get_current_address">get_current_address</a></code></li>

@@ -1,9 +1,13 @@
-from shazzam.defs import *
-from shazzam.Segment import Segment
-
 import logging
 
+from shazzam.Segment import Segment
+
+
 class Assembler():
+    """
+    This class defines the interface to be implemented by cross-assembler drivers.
+    The default one is CC65.
+    """
 
     def __init__(self, name: str, exe_path: str):
         self.path = exe_path
@@ -44,5 +48,3 @@ class Assembler():
             str: [description]
         """
         pass
-
-

@@ -3,27 +3,28 @@ import logging
 from shazzam.Address import Address
 from shazzam.Immediate import Immediate
 
+
 class Instruction():
     """6502 Instruction class"""
     cycle_counts = [
-       # 0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
-         7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6, # 0
-         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 1
-         6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6, # 2
-         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 3
-         6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6, # 4
-         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 5
-         6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6, # 6
-         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # 7
-         2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, # 8
-         2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5, # 9
-         2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4, # A
-         2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4, # B
-         2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, # C
-         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7, # D
-         2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6, # E
-         2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7  # F
-      ]
+    #   0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
+        7, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 4, 4, 6, 6,  # 0
+        2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,  # 1
+        6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 4, 4, 6, 6,  # 2
+        2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,  # 3
+        6, 6, 2, 8, 3, 3, 5, 5, 3, 2, 2, 2, 3, 4, 6, 6,  # 4
+        2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,  # 5
+        6, 6, 2, 8, 3, 3, 5, 5, 4, 2, 2, 2, 5, 4, 6, 6,  # 6
+        2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,  # 7
+        2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,  # 8
+        2, 6, 2, 6, 4, 4, 4, 4, 2, 5, 2, 5, 5, 5, 5, 5,  # 9
+        2, 6, 2, 6, 3, 3, 3, 3, 2, 2, 2, 2, 4, 4, 4, 4,  # A
+        2, 5, 2, 5, 4, 4, 4, 4, 2, 4, 2, 4, 4, 4, 4, 4,  # B
+        2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,  # C
+        2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7,  # D
+        2, 6, 2, 8, 3, 3, 5, 5, 2, 2, 2, 2, 4, 4, 6, 6,  # E
+        2, 5, 2, 8, 4, 4, 6, 6, 2, 4, 2, 7, 4, 4, 7, 7   # F
+    ]
 
     opcodes = [
         #     0,8           1,9           2,A           3,B           4,C           5,D           6,E           7,F  */
@@ -77,7 +78,6 @@ class Instruction():
         'acc': 1,
     }
 
-
     addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
     instructions = list(set([opcode[0] for opcode in opcodes]))
 
@@ -107,8 +107,8 @@ class Instruction():
             raise ValueError(f"Unknwon instruction {instruction_name} with addressing mode {mode}")
 
         if immediate and not isinstance(immediate, Immediate):
-            raise ValueError("immediate has to be a Immediate object"
-                             )
+            raise ValueError("immediate has to be a Immediate object")
+
         if address and not isinstance(address, Address):
             raise ValueError("address has to be a Address object")
 
@@ -141,7 +141,6 @@ class Instruction():
 
         elif self.mode in ['rel'] and self.address.relative and self.address.relative > 0xff:
             raise ValueError(f"Relative address value cannot be bigger then a byte! Got: {self.address.relative:04X}")
-
 
     def get_instruction_name(self) -> str:
         """[summary]
@@ -185,10 +184,10 @@ class Instruction():
             str: [description]
         """
         if self.address and self.address.value is None and self.address.relative is None:
-            raise RuntimeError(f"Relative address is managed by segment gen_code to find the label value")
+            raise RuntimeError("Relative address is managed by segment gen_code to find the label value")
 
         if self.immediate and self.immediate.value is None:
-            raise RuntimeError(f"Immediate value is managed by segment gen_code to find the label value")
+            raise RuntimeError("Immediate value is managed by segment gen_code to find the label value")
 
         def_address_value = self.address.value if self.address and self.address.value is not None else 0
         def_immediate_value = self.immediate.value if self.immediate and self.immediate.value is not None else 0
@@ -206,8 +205,7 @@ class Instruction():
 
         elif self.mode in ['rel']:
             if self.address.relative is None:
-                raise RuntimeError(f"Relative address is managed by segment gen_code to find the label value")
-                # return (0 & 0xffff)
+                raise RuntimeError("Relative address is managed by segment gen_code to find the label value")
             else:
                 return (self.address.relative & 0xff)
 
@@ -267,6 +265,7 @@ class Instruction():
                 val = f"{self.address.name},Y" if self.use_upper else f"{self.address.name},y"
             else:
                 val = f"${self.address.value:02X},Y" if self.use_upper else f"${self.address.value:02x},y"
+
         elif self.mode == 'abx':
             if self.address.name and self.show_labels:
                 val = f"{self.address.name},X" if self.use_upper else f"{self.address.name},x"

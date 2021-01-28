@@ -7,7 +7,7 @@ class Immediate():
             raise ValueError("Immediate is void")
 
         if name and high_byte is None:
-            raise ValueError(f"high_byte not specified")
+            raise ValueError("high_byte not specified")
 
         if value and value > 0xff:
             raise ValueError(f"Immediate value {value} exceeds 1 byte")
@@ -32,11 +32,11 @@ class Immediate():
         return self._value
 
     @value.setter
-    def value(self, val):
-         if(val > 0xff):
+    def value(self, val: int) -> None:
+        if(val > 0xff):
             raise ValueError(f"Immediate value {val} exceeds 1 byte")
 
-         self._value = val
+        self._value = val
 
     def __add__(self, adder):
         self._add_modifier = adder

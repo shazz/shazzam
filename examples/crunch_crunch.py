@@ -1,8 +1,9 @@
+from reloading import reloading
+
 # if shazzam not installed
 import sys
 sys.path.append(".")
 
-from reloading import reloading
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
@@ -27,7 +28,7 @@ set_prefs(default_code_segment=assembler.get_code_segment(),
 prg_cruncher  = Exomizer("/home/shazz/projects/c64/bin/exomizer")
 prg_cruncher  = Nucrunch("/home/shazz/projects/c64/bin/nucrunch")
 prg_cruncher  = Pucrunch("/home/shazz/projects/c64/bin/pucrunch")
-data_cruncher = Apultra("/home/shazz/projects/c64/bin/apultra", mode = PackingMode.FORWARD)
+data_cruncher = Apultra("/home/shazz/projects/c64/bin/apultra", mode=PackingMode.FORWARD)
 
 @reloading
 def code():

@@ -1,8 +1,10 @@
 from shazzam.Instruction import Instruction
 from shazzam.Immediate import Immediate
 
+
 class ByteData(Instruction):
     """ByteData class"""
+
     def __init__(self, immediate: Immediate):
         """[summary]
 

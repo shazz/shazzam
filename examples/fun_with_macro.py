@@ -5,7 +5,7 @@ sys.path.append(".")
 from reloading import reloading
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
-import shazzam.macros.macros_math as m
+import shazzam.macros.math as m
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
 
@@ -25,23 +25,24 @@ def code():
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
-        m.add16(get_label("res"), get_label("n1"), get_label("n2"))
+        m.add16("var1", "var2", "result")
+        brk()
+
+        label("var1")
+        byte(0)
+        byte(1)
+        nop()
+        label("var2")
+        byte(10)
+        byte(0)
+        nop()
+        label("result")
+        byte(0)
+        byte(0)
+
         cpu, mmu = s.emulate()
         print(f"Address: {get_current_address():04X}")
-        print(mmu.read(get_current_address()+4), mmu.read(get_current_address()+5) )
-        # assert mmu.read(get_current_address()-1) + 255*mmu.read(get_current_address()-2) == 20
-
-        ldata = label("n1")
-        byte(0)
-        byte(10)
-        ldata = label("n2")
-        byte(0)
-        byte(10)
-        ldata = label("res")
-        byte(0)
-        byte(0)
-
-
+        print(f"Result: {mmu.read(get_current_address()-1)*256 + mmu.read(get_current_address()-2)}")
 
 
     # generate listing

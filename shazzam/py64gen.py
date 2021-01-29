@@ -60,8 +60,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
         # check segments with same base address
         if segment.start_adr == start_adr and segment.name != seg.name and check_address_dups:
-            raise ValueError(
-                f"Multiple segments have the same start address {start_adr:04X}: {segment.name} and {seg.name}")
+            raise ValueError(f"Multiple segments have the same start address {start_adr:04X}: {segment.name} and {seg.name}")
 
         # else
         if segment.start_adr == start_adr and segment.name == seg.name:
@@ -72,7 +71,6 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 
             g.logger.debug(f"Adding segment {segment.name} to PROGRAM")
             g._PROGRAM.segments.append(seg)
-
             break
 
     if not found:
@@ -118,6 +116,9 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
 
     Args:
         header (str, optional): [description]. Defaults to None.
+        format_code (Alias, optional): [description]. Defaults to None.
+        gen_listing (bool, optional): [description]. Defaults to True.
+        format_listing (Alias, optional): [description]. Defaults to None.
     """
     global _PROGRAM
 
@@ -179,11 +180,16 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
 
 
 def assemble_segment(assembler: Assembler) -> None:
-    """Assemble segment
+    """[summary]
 
     Args:
-        assembler ([type]): [description]
-        cruncher (None): [description]
+        assembler (Assembler): [description]
+
+    Raises:
+        RuntimeError: [description]
+
+    Returns:
+        [type]: [description]
     """
     global _CURRENT_CONTEXT, _PROGRAM
 

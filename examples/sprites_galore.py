@@ -24,6 +24,7 @@ def code():
     # define here or anywhere, doesn't matter, your variables
     spd = p.read_spd("resources/ball.spd")
     nb_sprites = 8
+    top_irq = 38
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
@@ -40,7 +41,7 @@ def code():
             sta(at(vic.sprite0_y+(2*i)))
 
         # set up irq to replace the kernal IRQ
-        m.setup_irq('top_irq', 10)
+        m.setup_irq('top_irq', top_irq)
         cli()
 
     # irq segment
@@ -50,12 +51,12 @@ def code():
         m.double_irq('end', 'irq_stable')
 
         label("irq_stable")
-        y_scroll = 0
+        y_scroll = top_irq + 2                          # stable raster takes 2 rasterlines
 
         txs()                                           # we're now at cycle 25 (+/- jitter) after txs
         m.waste_cycles(58)                              # we're now at cycle 8 of the first picture rasterline
 
-        for y in range(40, 50):
+        for y in range(y_scroll, y_scroll+10):
             with rasterline(nb_sprites=8, y_pos=y, y_scroll=y_scroll):
                 if (y & 7) == y_scroll:
                     nop()
@@ -64,7 +65,7 @@ def code():
                 else:
                     nop()
 
-        m.irq_end('top_irq', 10, True, False)
+        m.irq_end('top_irq', top_irq, True, False)
         label('end')
 
 

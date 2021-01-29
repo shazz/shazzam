@@ -372,7 +372,7 @@ class Segment():
         # get longest label
 
         if len(locals_labels) > 0:
-            label_size = max(10, len(max(locals_labels)) + 6)
+            label_size = max(10, len(max(locals_labels)) + 8)
         else:
             label_size = 10
 
@@ -380,7 +380,7 @@ class Segment():
 
         if listing:
 
-            self.logger.info("Generating listing")
+            self.logger.debug("Generating listing")
             listing_template_index = {
                 "address": 0,
                 "bytecode": 8 if self.show_address else 0,
@@ -427,8 +427,7 @@ class Segment():
 
                             for row in range(nb_rows):
 
-                                r_label = [
-                                    k for k, v in self.labels.items() if v.value == adr+(row*8)]
+                                r_label = [k for k, v in self.labels.items() if v.value == adr+(row*8)]
                                 s_label = f"{r_label[0]}:" if r_label else ""
 
                                 s_address = f"{adr+(row*8)-address_offset:04X}:" if self.show_address else ""
@@ -439,24 +438,17 @@ class Segment():
                                     bcode += str(binascii.hexlify(g_bcode)
                                                  )[2:].replace("'", "").upper()
 
-                                bcode1 = " ".join(bcode[i:i+2]
-                                                  for i in range(0, len(bcode), 2))
-                                bcode2 = '$' + \
-                                    ", $".join(bcode[i:i+2]
-                                               for i in range(0, len(bcode), 2))
+                                bcode1 = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
+                                bcode2 = '$' + ", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
                                 line = ' '*100
                                 if self.show_address:
-                                    line = _insert(
-                                        line, s_address, listing_template_index["address"])
+                                    line = _insert(line, s_address, listing_template_index["address"])
                                 if self.show_bytecode:
-                                    line = _insert(
-                                        line, bcode1, listing_template_index["bytecode"])
+                                    line = _insert(line, bcode1, listing_template_index["bytecode"])
 
-                                line = _insert(
-                                    line, s_label, listing_template_index["label"])
-                                line = _insert(
-                                    line, f"{prefix}byte {bcode2}", listing_template_index["instruction"])
+                                line = _insert(line, s_label, listing_template_index["label"])
+                                line = _insert(line, f"{prefix}byte {bcode2}", listing_template_index["instruction"])
                                 line.strip()
                                 line += '\n'
 
@@ -464,35 +456,26 @@ class Segment():
                         else:
                             s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
 
-                            r_label = [
-                                k for k, v in self.labels.items() if v.value == adr]
+                            r_label = [k for k, v in self.labels.items() if v.value == adr]
                             s_label = f"{r_label[0]}:" if r_label else ""
 
                             bcode = ""
                             for b in range(nb_bytes):
                                 bytedata = self.instructions[adr+b]
                                 g_bcode = self.get_bytecode(bytedata)
-                                bcode += str(binascii.hexlify(g_bcode)
-                                             )[2:].replace("'", "").upper()
+                                bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
 
-                            bcode1 = " ".join(bcode[i:i+2]
-                                              for i in range(0, len(bcode), 2))
-                            bcode2 = '$' + \
-                                ", $".join(bcode[i:i+2]
-                                           for i in range(0, len(bcode), 2))
+                            bcode1 = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
+                            bcode2 = '$' + ", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
                             line = ' '*100
                             if self.show_address:
-                                line = _insert(
-                                    line, s_address, listing_template_index["address"])
+                                line = _insert(line, s_address, listing_template_index["address"])
                             if self.show_bytecode:
-                                line = _insert(
-                                    line, bcode1, listing_template_index["bytecode"])
+                                line = _insert(line, bcode1, listing_template_index["bytecode"])
 
-                            line = _insert(
-                                line, s_label, listing_template_index["label"])
-                            line = _insert(
-                                line, f"{prefix}byte {bcode2}", listing_template_index["instruction"])
+                            line = _insert(line, s_label, listing_template_index["label"])
+                            line = _insert(line, f"{prefix}byte {bcode2}", listing_template_index["instruction"])
                             line.strip()
                             line += '\n'
 
@@ -502,44 +485,35 @@ class Segment():
                     s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
 
                     if len(label) > 1:
-                        self.logger.warning(
-                            f"Mutiple labels ({label}) for the same address {adr:04X}")
+                        self.logger.warning(f"Mutiple labels ({label}) for the same address {adr:04X}")
 
                     s_label = f"{label[0]}:" if label else ""
                     g_bcode = self.get_bytecode(instr)
 
                     # remove leading 'b and trailing '. Ex: bytearray(b'\xa9\x0b') A90B
-                    bcode = str(binascii.hexlify(g_bcode))[
-                        2:].replace("'", "").upper()
-                    bcode = " ".join(bcode[i:i+2]
-                                     for i in range(0, len(bcode), 2))
+                    bcode = str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+                    bcode = " ".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
                     s_bytecode = f"{bcode}" if self.show_bytecode else ""
 
                     cycles = instr.get_cycle_count()
                     s_cycles = f"{self.comment_char} {cycles}" if self.show_cycles and cycles > 0 else ""
 
-                    prefix = self.directive_prefix if isinstance(
-                        instr, ByteData) else ''
+                    prefix = self.directive_prefix if isinstance(instr, ByteData) else ''
 
                     line = ' '*100
-                    line = _insert(line, s_address,
-                                   listing_template_index["address"])
-                    line = _insert(line, s_bytecode,
-                                   listing_template_index["bytecode"])
-                    line = _insert(
-                        line, s_label, listing_template_index["label"])
-                    line = _insert(
-                        line, f"{prefix}{instr}", listing_template_index["instruction"])
-                    line = _insert(
-                        line, s_cycles, listing_template_index["cycles"])
+                    line = _insert(line, s_address, listing_template_index["address"])
+                    line = _insert(line, s_bytecode, listing_template_index["bytecode"])
+                    line = _insert(line, s_label, listing_template_index["label"])
+                    line = _insert(line, f"{prefix}{instr}", listing_template_index["instruction"])
+                    line = _insert(line, s_cycles, listing_template_index["cycles"])
                     line.strip()
                     line += '\n'
 
                     code.append(line)
 
         else:
-            self.logger.info("Generating assembly code")
+            self.logger.debug("Generating assembly code")
             code_template_index = {
                 "label": 0,
                 "instruction": label_size,
@@ -587,47 +561,39 @@ class Segment():
 
                             for row in range(nb_rows):
 
-                                r_label = [
-                                    k for k, v in self.labels.items() if v.value == adr+(row*8)]
+                                r_label = [k for k, v in self.labels.items() if v.value == adr+(row*8)]
                                 s_label = f"{r_label[0]}:" if r_label else ""
 
                                 bcode = ""
                                 for b in range(min(8, nb_bytes-(8*row))):
                                     bytedata = self.instructions[adr+(row*8)+b]
                                     g_bcode = self.get_bytecode(bytedata)
-                                    bcode += str(binascii.hexlify(g_bcode)
-                                                 )[2:].replace("'", "").upper()
+                                    bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
 
-                                bcode2 = '$' + \
-                                    ", $".join(bcode[i:i+2]
-                                               for i in range(0, len(bcode), 2))
+                                bcode2 = '$' + ", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
                                 line = ' '*100
-                                line = _insert(
-                                    line, s_label, code_template_index["label"])
-                                line = _insert(
-                                    line, f"{prefix}byte {bcode2}", code_template_index["instruction"])
+                                line = _insert(line, s_label, code_template_index["label"])
+                                line = _insert(line, f"{prefix}byte {bcode2}", code_template_index["instruction"])
                                 line.strip()
                                 line += '\n'
 
                                 code.append(line)
                         else:
-                            r_label = [
-                                k for k, v in self.labels.items() if v.value == adr]
+                            r_label = [k for k, v in self.labels.items() if v.value == adr]
                             s_label = f"{r_label[0]}:" if r_label else ""
 
                             bcode = ""
                             for b in range(nb_bytes):
                                 bytedata = self.instructions[adr+b]
                                 g_bcode = self.get_bytecode(bytedata)
-                                bcode += str(binascii.hexlify(g_bcode)
-                                             )[2:].replace("'", "").upper()
+                                bcode += str(binascii.hexlify(g_bcode))[2:].replace("'", "").upper()
+
+                            bcode2 = '$' + ", $".join(bcode[i:i+2] for i in range(0, len(bcode), 2))
 
                             line = ' '*100
-                            line = _insert(
-                                line, s_label, code_template_index["label"])
-                            line = _insert(
-                                line, f"{prefix}byte {bcode2}", code_template_index["instruction"])
+                            line = _insert(line, s_label, code_template_index["label"])
+                            line = _insert(line, f"{prefix}byte {bcode2}", code_template_index["instruction"])
                             line.strip()
                             line += '\n'
 
@@ -635,13 +601,11 @@ class Segment():
                 else:
                     process_byte = True
                     if len(label) > 1:
-                        self.logger.warning(
-                            f"Mutiple labels ({label}) for the same address {adr:04X}")
+                        self.logger.warning(f"Mutiple labels ({label}) for the same address {adr:04X}")
                         for i in range(len(label)-1):
                             s_label = f"{label[i]}:"
                             line = ' '*100
-                            line = _insert(
-                                line, s_label, code_template_index["label"])
+                            line = _insert(line, s_label, code_template_index["label"])
                             line.strip()
                             line += '\n'
                             code.append(line)
@@ -650,15 +614,12 @@ class Segment():
                     cycles = instr.get_cycle_count()
                     s_cycles = f"{self.comment_char} {cycles}" if self.show_cycles and cycles > 0 else ""
 
-                    prefix = self.directive_prefix if isinstance(
-                        instr, ByteData) else ''
+                    prefix = self.directive_prefix if isinstance(instr, ByteData) else ''
 
                     line = ' '*100
                     line = _insert(line, s_label, code_template_index["label"])
-                    line = _insert(
-                        line, f"{prefix}{instr}", code_template_index["instruction"])
-                    line = _insert(
-                        line, s_cycles, code_template_index["cycles"])
+                    line = _insert(line, f"{prefix}{instr}", code_template_index["instruction"])
+                    line = _insert(line, s_cycles, code_template_index["cycles"])
                     line.strip()
                     line += '\n'
 

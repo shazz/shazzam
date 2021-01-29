@@ -24,6 +24,41 @@ So the usage of non assembler tooling became more important than the assembly co
 
 This is the magic of shazzam, write Python code as usual, to process your images, create your lookup tables, read your SID files.... no limit to your creativity then, generate the assembly code required to use this data as you would do with the cross-assembler.
 
+## Installation
+
+### From pypi
+
+Requirements
+
+- Python 3.7+ with pip
+- `nox` (`pip install nox`) in your base Python installation if you want to build from sources
+
+````bash
+pip install shazzam
+````
+
+Then, if you're not using `nox`, you'll have to install the various mandatory and optional tools manually:
+
+- CC65 (mandatory)
+- Exomizer (optional)
+- Apultra (optional)
+- lzsa (optional)
+- Dyonamite (optional)
+- pucrunch (optional)
+- nucrunch (optional)
+- Sparkle (optional)
+
+### From sources
+
+Shazzam provides a `noxfile` to automate the creation of the various virtual environments and install the various tools
+
+````bash
+git clone https://github.com/shazz/shazzam
+cd shazzam
+nox -s install
+nox -s install_3rd_party
+````
+
 ## 4 lines example
 
 As Shazzam is just a Python library, everything is Python. So even your generated assembly code looks like Python.

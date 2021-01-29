@@ -121,10 +121,11 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
     """
     global _PROGRAM
 
-    _check_segments_ovelap()
+    _check_segments_overlap()
 
     if header is None:
-        header = "; Generated code using Shazzam py64gen\n"
+        header  = "; Generated code using Shazzam py64gen\n"
+        header += "; DO NOT EDIT, MODIFICATIONS WILL BE LOST\n"
         header += "; Copyright (C) 2021 TRSi\n"
         header += "; \n"
         header += "; https://github.com/shazz/shazzam\n\n"
@@ -790,9 +791,7 @@ tya = _create_a_function(mnemonic="tya")
 # -----------------------------------------------------------
 # Private functions
 # -----------------------------------------------------------
-
-
-def _check_segments_ovelap(code_segment: str = "CODE") -> None:
+def _check_segments_overlap(code_segment: str = "CODE") -> None:
 
     intervals = []
     for segment in g._PROGRAM.segments:

@@ -9,11 +9,19 @@ nox.options.reuse_existing_virtualenvs = True
 version = os.getenv("version_number", "0.0.1")
 
 """
+This session will install the library
+"""
+@nox.session(python=false)
+def install(session):
+    """Install the library."""
+    session.run("pip", "install", ".")
+
+"""
 This session will run the unit tests.
 """
 @nox.session(python=["3.8"])
 def tests(session):
-    """Launchs the tests and coverage."""
+    """Run the tests and coverage."""
     session.install("-r", "deployments/requirements_run.txt")
     session.install("-r", "deployments/requirements_test.txt")
     session.run("pytest", "-rs", "tests/")

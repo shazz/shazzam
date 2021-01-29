@@ -28,38 +28,38 @@ class Instruction():
 
     opcodes = [
         #     0,8           1,9           2,A           3,B           4,C           5,D           6,E           7,F  */
-        ["brk","imp"],["ora","iix"],["___","___"],["___","___"],["___","___"],["ora","zpg"],["asl","zpg"],["___","___"],  # 00
-        ["php","imp"],["ora","imm"],["asl","acc"],["___","___"],["___","___"],["ora","abs"],["asl","abs"],["___","___"],  # 08
-        ["bpl","rel"],["ora","iiy"],["___","___"],["___","___"],["___","___"],["ora","zpx"],["asl","zpx"],["___","___"],  # 10
-        ["clc","imp"],["ora","aby"],["___","___"],["___","___"],["___","___"],["ora","abx"],["asl","abx"],["___","___"],  # 18
-        ["jsr","abs"],["and","iix"],["___","___"],["___","___"],["bit","zpg"],["and","zpg"],["rol","zpg"],["___","___"],  # 20
-        ["plp","imp"],["and","imm"],["rol","acc"],["___","___"],["bit","abs"],["and","abs"],["rol","abs"],["___","___"],  # 28
-        ["bmi","rel"],["and","iiy"],["___","___"],["___","___"],["___","___"],["and","zpx"],["rol","zpx"],["___","___"],  # 30
-        ["sec","imp"],["and","aby"],["___","___"],["___","___"],["___","___"],["and","abx"],["rol","abx"],["___","___"],  # 38
-        ["rti","imp"],["eor","iix"],["___","___"],["___","___"],["___","___"],["eor","zpg"],["lsr","zpg"],["___","___"],  # 40
-        ["pha","imp"],["eor","imm"],["lsr","acc"],["___","___"],["jmp","abs"],["eor","abs"],["lsr","abs"],["___","___"],  # 48
-        ["bvc","rel"],["eor","iiy"],["___","___"],["___","___"],["___","___"],["eor","zpx"],["lsr","zpx"],["___","___"],  # 50
-        ["cli","imp"],["eor","aby"],["___","___"],["___","___"],["___","___"],["eor","abx"],["lsr","abx"],["___","___"],  # 58
-        ["rts","imp"],["adc","iix"],["___","___"],["___","___"],["___","___"],["adc","zpg"],["ror","zpg"],["___","___"],  # 60
-        ["pla","imp"],["adc","imm"],["ror","acc"],["___","___"],["jmp","ind"],["adc","abs"],["ror","abs"],["___","___"],  # 68
-        ["bvs","rel"],["adc","iiy"],["___","___"],["___","___"],["___","___"],["adc","zpx"],["ror","zpx"],["___","___"],  # 70
-        ["sei","imp"],["adc","aby"],["___","___"],["___","___"],["___","___"],["adc","abx"],["ror","abx"],["___","___"],  # 78
-        ["___","___"],["sta","iix"],["___","___"],["___","___"],["sty","zpg"],["sta","zpg"],["stx","zpg"],["___","___"],  # 80
-        ["dey","imp"],["___","___"],["txa","imp"],["___","___"],["sty","abs"],["sta","abs"],["stx","abs"],["___","___"],  # 88
-        ["bcc","rel"],["sta","iiy"],["___","___"],["___","___"],["sty","zpx"],["sta","zpx"],["stx","zpy"],["___","___"],  # 90
-        ["tya","imp"],["sta","aby"],["txs","imp"],["___","___"],["___","___"],["sta","abx"],["___","___"],["___","___"],  # 98
-        ["ldy","imm"],["lda","iix"],["ldx","imm"],["___","___"],["ldy","zpg"],["lda","zpg"],["ldx","zpg"],["___","___"],  # A0
-        ["tay","imp"],["lda","imm"],["tax","imp"],["___","___"],["ldy","abs"],["lda","abs"],["ldx","abs"],["___","___"],  # A8
-        ["bcs","rel"],["lda","iiy"],["___","___"],["___","___"],["ldy","zpx"],["lda","zpx"],["ldx","zpy"],["___","___"],  # B0
-        ["clv","imp"],["lda","aby"],["tsx","imp"],["___","___"],["ldy","abx"],["lda","abx"],["ldx","aby"],["___","___"],  # B8
-        ["cpy","imm"],["cmp","iix"],["___","___"],["___","___"],["cpy","zpg"],["cmp","zpg"],["dec","zpg"],["___","___"],  # C0
-        ["iny","imp"],["cmp","imm"],["dex","imp"],["___","___"],["cpy","abs"],["cmp","abs"],["dec","abs"],["___","___"],  # C8
-        ["bne","rel"],["cmp","iiy"],["___","___"],["___","___"],["___","___"],["cmp","zpx"],["dec","zpx"],["___","___"],  # D0
-        ["cld","imp"],["cmp","aby"],["___","___"],["___","___"],["___","___"],["cmp","abx"],["dec","abx"],["___","___"],  # D8
-        ["cpx","imm"],["sbc","iix"],["___","___"],["___","___"],["cpx","zpg"],["sbc","zpg"],["inc","zpg"],["___","___"],  # E0
-        ["inx","imp"],["sbc","imm"],["nop","imp"],["___","___"],["cpx","abs"],["sbc","abs"],["inc","abs"],["___","___"],  # E8
-        ["beq","rel"],["sbc","iiy"],["___","___"],["___","___"],["___","___"],["sbc","zpx"],["inc","zpx"],["___","___"],  # F0
-        ["sed","imp"],["sbc","aby"],["___","___"],["___","___"],["___","___"],["sbc","abx"],["inc","abx"],["___","___"]   # F8
+        ["brk","imp"],["ora","iix"],["___","___"],["slo","iix"],["___","___"],["ora","zpg"],["asl","zpg"],["slo","zpg"],  # 00
+        ["php","imp"],["ora","imm"],["asl","acc"],["anc","imm"],["___","___"],["ora","abs"],["asl","abs"],["slo","abs"],  # 08
+        ["bpl","rel"],["ora","iiy"],["___","___"],["slo","iiy"],["___","___"],["ora","zpx"],["asl","zpx"],["slo","zpx"],  # 10
+        ["clc","imp"],["ora","aby"],["___","___"],["slo","aby"],["___","___"],["ora","abx"],["asl","abx"],["slo","abx"],  # 18
+        ["jsr","abs"],["and","iix"],["___","___"],["rla","iix"],["bit","zpg"],["and","zpg"],["rol","zpg"],["rla","zpg"],  # 20
+        ["plp","imp"],["and","imm"],["rol","acc"],["anc","imm"],["bit","abs"],["and","abs"],["rol","abs"],["rla","abs"],  # 28
+        ["bmi","rel"],["and","iiy"],["___","___"],["rla","iiy"],["___","___"],["and","zpx"],["rol","zpx"],["rla","zpx"],  # 30
+        ["sec","imp"],["and","aby"],["___","___"],["rla","aby"],["___","___"],["and","abx"],["rol","abx"],["rla","abx"],  # 38
+        ["rti","imp"],["eor","iix"],["___","___"],["sre","iix"],["___","___"],["eor","zpg"],["lsr","zpg"],["sre","zpg"],  # 40
+        ["pha","imp"],["eor","imm"],["lsr","acc"],["alr","imm"],["jmp","abs"],["eor","abs"],["lsr","abs"],["sre","abs"],  # 48
+        ["bvc","rel"],["eor","iiy"],["___","___"],["sre","iiy"],["___","___"],["eor","zpx"],["lsr","zpx"],["sre","zpx"],  # 50
+        ["cli","imp"],["eor","aby"],["___","___"],["sre","aby"],["___","___"],["eor","abx"],["lsr","abx"],["sre","abx"],  # 58
+        ["rts","imp"],["adc","iix"],["___","___"],["rra","iix"],["___","___"],["adc","zpg"],["ror","zpg"],["rra","zpg"],  # 60
+        ["pla","imp"],["adc","imm"],["ror","acc"],["arr","imm"],["jmp","ind"],["adc","abs"],["ror","abs"],["rra","abs"],  # 68
+        ["bvs","rel"],["adc","iiy"],["___","___"],["rra","iiy"],["___","___"],["adc","zpx"],["ror","zpx"],["rra","zpx"],  # 70
+        ["sei","imp"],["adc","aby"],["___","___"],["rra","aby"],["___","___"],["adc","abx"],["ror","abx"],["rra","abx"],  # 78
+        ["___","___"],["sta","iix"],["___","___"],["sax","iiy"],["sty","zpg"],["sta","zpg"],["stx","zpg"],["sax","zpg"],  # 80
+        ["dey","imp"],["___","___"],["txa","imp"],["xaa","imm"],["sty","abs"],["sta","abs"],["stx","abs"],["sax","abs"],  # 88
+        ["bcc","rel"],["sta","iiy"],["___","___"],["ahx","iiy"],["sty","zpx"],["sta","zpx"],["stx","zpy"],["sax","zpy"],  # 90
+        ["tya","imp"],["sta","aby"],["txs","imp"],["tas","aby"],["___","___"],["sta","abx"],["shx","aby"],["ahx","aby"],  # 98
+        ["ldy","imm"],["lda","iix"],["ldx","imm"],["lax","iix"],["ldy","zpg"],["lda","zpg"],["ldx","zpg"],["lax","zpg"],  # A0
+        ["tay","imp"],["lda","imm"],["tax","imp"],["lax","imm"],["ldy","abs"],["lda","abs"],["ldx","abs"],["lax","abs"],  # A8
+        ["bcs","rel"],["lda","iiy"],["___","___"],["lax","iiy"],["ldy","zpx"],["lda","zpx"],["ldx","zpy"],["lax","zpy"],  # B0
+        ["clv","imp"],["lda","aby"],["tsx","imp"],["las","aby"],["ldy","abx"],["lda","abx"],["ldx","aby"],["lax","aby"],  # B8
+        ["cpy","imm"],["cmp","iix"],["___","___"],["dcp","iix"],["cpy","zpg"],["cmp","zpg"],["dec","zpg"],["dcp","zpg"],  # C0
+        ["iny","imp"],["cmp","imm"],["dex","imp"],["sbx","imm"],["cpy","abs"],["cmp","abs"],["dec","abs"],["dcp","abs"],  # C8
+        ["bne","rel"],["cmp","iiy"],["___","___"],["dcp","iiy"],["___","___"],["cmp","zpx"],["dec","zpx"],["dcp","zpx"],  # D0
+        ["cld","imp"],["cmp","aby"],["___","___"],["dcp","aby"],["___","___"],["cmp","abx"],["dec","abx"],["dcp","abx"],  # D8
+        ["cpx","imm"],["sbc","iix"],["___","___"],["isc","iix"],["cpx","zpg"],["sbc","zpg"],["inc","zpg"],["isc","zpg"],  # E0
+        ["inx","imp"],["sbc","imm"],["nop","imp"],["sbc","imm"],["cpx","abs"],["sbc","abs"],["inc","abs"],["isc","abs"],  # E8
+        ["beq","rel"],["sbc","iiy"],["___","___"],["isc","iiy"],["___","___"],["sbc","zpx"],["inc","zpx"],["isc","zpx"],  # F0
+        ["sed","imp"],["sbc","aby"],["___","___"],["isc","aby"],["___","___"],["sbc","abx"],["inc","abx"],["isc","abx"]   # F8
     ]
 
     operand_sizes = {

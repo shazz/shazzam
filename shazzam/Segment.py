@@ -64,7 +64,6 @@ class Segment():
         self.start_adr = start_adr
         self.end_adr = start_adr
         self.fixed_start_address = start_adr if fixed_address else None
-        print(fixed_address, self.fixed_start_address)
 
         self.instructions = {}
         self.next_position = start_adr

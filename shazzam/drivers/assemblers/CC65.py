@@ -20,7 +20,7 @@ APP = %1.prg
 all: $(APP)
 
 %1.prg: %2
-	$(CL65) -v -g -d -t c64 -C gen-c64-asm.cfg -u __EXEHDR__ $^ -o $@
+	$(CL65) -v -g -d -t c64 --cpu 6502X -C gen-c64-asm.cfg -u __EXEHDR__ $^ -o $@
 
 clean:
 	rm -f *.o *.prg
@@ -113,8 +113,7 @@ clean:
         segment_filename = f'generated/{program.name}/{segment.name}.o'
 
         # seg_lines
-        cmd = [self.path, '-t', 'c64',
-               f"generated/{program.name}/{segment.name}.asm"]
+        cmd = [self.path, '-t', 'c64', '--cpu', '6502X', f"generated/{program.name}/{segment.name}.asm"]
 
         cmd.append('-o')
         cmd.append(segment_filename)
@@ -143,8 +142,7 @@ clean:
         self._generate_makefile(program)
 
         # seg_lines
-        cmd = [self.path, '-v', '-g', '-d', '-t', 'c64', '-C',
-               f'generated/{program.name}/gen-c64-asm.cfg', '-u', '__EXEHDR__']
+        cmd = [self.path, '-v', '-g', '-d', '-t', 'c64', '--cpu', '6502X', '-C', f'generated/{program.name}/gen-c64-asm.cfg', '-u', '__EXEHDR__']
         for segment in program.segments:
             cmd.append(f"generated/{program.name}/{segment.name}.asm")
 

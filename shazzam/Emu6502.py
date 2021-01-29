@@ -24,8 +24,7 @@ class Emu6502():
         Returns:
             CPU: [description]
         """
-        self.logger.info(
-            f"Loading code from {seg_start_address:04X} to {seg_stop_address:04X}")
+        self.logger.info(f"Loading code from {seg_start_address:04X} to {seg_stop_address:04X}")
         self.logger.debug(f"Set PC at {seg_entry_address:04X}")
 
         # bytecode copy for debugging as read() advances the buffer
@@ -50,18 +49,14 @@ class Emu6502():
         # for i in range(seg_stop_address - seg_start_address):
         #     self.logger.debug(f"{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}")
 
-        self.logger.debug(
-            f"Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}")
+        self.logger.debug(f"Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}")
 
         current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
         current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
         current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-        current_operand = debug_bytecode[cpu.r.pc-seg_start_address +
-                                         1:cpu.r.pc-seg_start_address+current_operand_size]
-        self.logger.debug(
-            f"Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
-        self.logger.debug(
-            f"{current_instruction} operand: {hex(int.from_bytes(current_operand, 'big'))}")
+        current_operand = debug_bytecode[cpu.r.pc-seg_start_address+1:cpu.r.pc-seg_start_address+current_operand_size]
+        self.logger.debug(f"Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
+        self.logger.debug(f"{current_instruction} operand: {hex(int.from_bytes(current_operand, 'big'))}")
         self.logger.debug(cpu.r)
 
         while(cpu.r.pc < seg_stop_address and current_instruction[0] != 'brk'):
@@ -72,12 +67,9 @@ class Emu6502():
                 current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
                 current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
                 current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-                current_operand = debug_bytecode[cpu.r.pc-seg_start_address +
-                                                 1:cpu.r.pc-seg_start_address+current_operand_size]
-                self.logger.debug(
-                    f"Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
-                self.logger.debug(
-                    f"{current_instruction} operand: {hex(int.from_bytes(current_operand, 'big'))}")
+                current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
+                self.logger.debug(f"Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
+                self.logger.debug(f"{current_instruction} operand: {hex(int.from_bytes(current_operand, 'big'))}")
                 self.logger.debug(cpu.r)
 
             except Exception as e:

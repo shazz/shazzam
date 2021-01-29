@@ -25,7 +25,7 @@ def code():
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
 
-        jsr(at(0x0e544))        # ROM routine to clear the screen Clear screen.Input: – Output: – Used registers: A, X, Y.
+        jsr(at(0xe544))        # ROM routine to clear the screen Clear screen.Input: – Output: – Used registers: A, X, Y.
 
         lda(imm(0))
         sta(at(vic.border_col)) # set border color

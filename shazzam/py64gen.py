@@ -491,12 +491,32 @@ def get_current_address() -> int:
     return g._CURRENT_CONTEXT.next_position
 
 
+# -----------------------------------------------------------
+# Private functions
+# -----------------------------------------------------------
+def _check_segments_overlap(code_segment: str = "CODE") -> None:
+
+    intervals = []
+    for segment in g._PROGRAM.segments:
+        if segment.name == code_segment:
+            # adding basic header 13 bytes
+            intervals.append((segment.start_adr, segment.end_adr+13))
+        else:
+            intervals.append((segment.start_adr, segment.end_adr))
+
+    intervals.sort()
+    g.logger.info(
+        f"Checking overlapping intervals: {[(hex(interval[0]), hex(interval[1])) for interval in intervals]}")
+
+    for i in range(1, len(intervals)):
+        if intervals[i][0] <= intervals[i-1][1]:
+            raise ValueError(
+                f"The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!")
+
 # ---------------------------------------------------------------------
 # Utils
 # ---------------------------------------------------------------------
 _funcs = {}
-
-
 def generate(func, program_name: str) -> None:
     """[summary]
 
@@ -508,6 +528,7 @@ def generate(func, program_name: str) -> None:
 
     for i in reloading(range(10)):
         src = dill.source.getsource(func.__dict__['__inner__'])
+
         # src = dill.source.getsource(func)
         h = hashlib.md5(src.encode()).hexdigest()
 
@@ -658,7 +679,7 @@ def _create_a_function(*args, **kwargs):
 
             frame = callerframerecord[0]
             info = inspect.getframeinfo(frame)
-            print(info)
+            print(f"Error: {info}")
 
             raise
 
@@ -674,138 +695,72 @@ def _create_a_function(*args, **kwargs):
 
 g.initialize()
 
-ADC = _create_a_function(mnemonic="adc")
-AND = _create_a_function(mnemonic="and")
-ASL = _create_a_function(mnemonic="asl")
-BCC = _create_a_function(mnemonic="bcc")
-BCS = _create_a_function(mnemonic="bcs")
-BEQ = _create_a_function(mnemonic="beq")
-BIT = _create_a_function(mnemonic="bit")
-BMI = _create_a_function(mnemonic="bmi")
-BNE = _create_a_function(mnemonic="bne")
-BPL = _create_a_function(mnemonic="bpl")
-BRK = _create_a_function(mnemonic="brk")
-BVC = _create_a_function(mnemonic="bvc")
-BVS = _create_a_function(mnemonic="bvs")
-CLC = _create_a_function(mnemonic="clc")
-CLD = _create_a_function(mnemonic="cld")
-CLI = _create_a_function(mnemonic="cli")
-CLV = _create_a_function(mnemonic="clv")
-CMP = _create_a_function(mnemonic="cmp")
-CPX = _create_a_function(mnemonic="cpx")
-CPY = _create_a_function(mnemonic="cpy")
-DEC = _create_a_function(mnemonic="dec")
-DEX = _create_a_function(mnemonic="dex")
-DEY = _create_a_function(mnemonic="dey")
-EOR = _create_a_function(mnemonic="eor")
-INC = _create_a_function(mnemonic="inc")
-INX = _create_a_function(mnemonic="inx")
-INY = _create_a_function(mnemonic="iny")
-JMP = _create_a_function(mnemonic="jmp")
-JSR = _create_a_function(mnemonic="jsr")
-LDA = _create_a_function(mnemonic="lda")
-LDX = _create_a_function(mnemonic="ldx")
-LDY = _create_a_function(mnemonic="ldy")
-LSR = _create_a_function(mnemonic="lsr")
-NOP = _create_a_function(mnemonic="nop")
-ORA = _create_a_function(mnemonic="ora")
-PHA = _create_a_function(mnemonic="pha")
-PHP = _create_a_function(mnemonic="php")
-PLA = _create_a_function(mnemonic="pla")
-PLP = _create_a_function(mnemonic="plp")
-ROL = _create_a_function(mnemonic="rol")
-ROR = _create_a_function(mnemonic="ror")
-RTI = _create_a_function(mnemonic="rti")
-RTS = _create_a_function(mnemonic="rts")
-SBC = _create_a_function(mnemonic="sbc")
-SEC = _create_a_function(mnemonic="sec")
-SED = _create_a_function(mnemonic="sed")
-SEI = _create_a_function(mnemonic="sei")
-STA = _create_a_function(mnemonic="sta")
-STX = _create_a_function(mnemonic="stx")
-STY = _create_a_function(mnemonic="sty")
-TAX = _create_a_function(mnemonic="tax")
-TAY = _create_a_function(mnemonic="tay")
-TSX = _create_a_function(mnemonic="tsx")
-TXA = _create_a_function(mnemonic="txa")
-TXS = _create_a_function(mnemonic="txs")
-TYA = _create_a_function(mnemonic="tya")
+adc = ADC = _create_a_function(mnemonic="adc")
+alr = ALR = _create_a_function(mnemonic="alr")
+anc = ANC = _create_a_function(mnemonic="anc")
+andr= AND = _create_a_function(mnemonic="and")
+arr = ARR = _create_a_function(mnemonic="arr")
+asl = ASL = _create_a_function(mnemonic="asl")
+bcc = BCC = _create_a_function(mnemonic="bcc")
+bcs = BCS = _create_a_function(mnemonic="bcs")
+beq = BEQ = _create_a_function(mnemonic="beq")
+bit = BIT = _create_a_function(mnemonic="bit")
+bmi = BMI = _create_a_function(mnemonic="bmi")
+bne = BNE = _create_a_function(mnemonic="bne")
+bpl = BPL = _create_a_function(mnemonic="bpl")
+brk = BRK = _create_a_function(mnemonic="brk")
+bvc = BVC = _create_a_function(mnemonic="bvc")
+bvs = BVS = _create_a_function(mnemonic="bvs")
+clc = CLC = _create_a_function(mnemonic="clc")
+cld = CLD = _create_a_function(mnemonic="cld")
+cli = CLI = _create_a_function(mnemonic="cli")
+clv = CLV = _create_a_function(mnemonic="clv")
+cmp = CMP = _create_a_function(mnemonic="cmp")
+cpx = CPX = _create_a_function(mnemonic="cpx")
+cpy = CPY = _create_a_function(mnemonic="cpy")
+dcp = DCP = _create_a_function(mnemonic="dcp")
+dec = DEC = _create_a_function(mnemonic="dec")
+dex = DEX = _create_a_function(mnemonic="dex")
+dey = DEY = _create_a_function(mnemonic="dey")
+eor = EOR = _create_a_function(mnemonic="eor")
+inc = INC = _create_a_function(mnemonic="inc")
+inx = INX = _create_a_function(mnemonic="inx")
+isc = ISC = _create_a_function(mnemonic="isc")
+iny = INY = _create_a_function(mnemonic="iny")
+jmp = JMP = _create_a_function(mnemonic="jmp")
+jsr = JSR = _create_a_function(mnemonic="jsr")
+lax = LAX = _create_a_function(mnemonic="lax")
+lda = LDA = _create_a_function(mnemonic="lda")
+ldx = LDX = _create_a_function(mnemonic="ldx")
+ldy = LDY = _create_a_function(mnemonic="ldy")
+lsr = LSR = _create_a_function(mnemonic="lsr")
+nop = NOP = _create_a_function(mnemonic="nop")
+ora = ORA = _create_a_function(mnemonic="ora")
+pha = PHA = _create_a_function(mnemonic="pha")
+php = PHP = _create_a_function(mnemonic="php")
+pla = PLA = _create_a_function(mnemonic="pla")
+plp = PLP = _create_a_function(mnemonic="plp")
+rla = RLA = _create_a_function(mnemonic="rla")
+rol = ROL = _create_a_function(mnemonic="rol")
+ror = ROR = _create_a_function(mnemonic="ror")
+rra = RRA = _create_a_function(mnemonic="rra")
+rti = RTI = _create_a_function(mnemonic="rti")
+rts = RTS = _create_a_function(mnemonic="rts")
+sax = SAX = _create_a_function(mnemonic="sax")
+sbc = SBC = _create_a_function(mnemonic="sbc")
+sbx = SBX = _create_a_function(mnemonic="sbx")
+sec = SEC = _create_a_function(mnemonic="sec")
+sed = SED = _create_a_function(mnemonic="sed")
+sei = SEI = _create_a_function(mnemonic="sei")
+slo = SLO = _create_a_function(mnemonic="slo")
+sre = SRE = _create_a_function(mnemonic="sre")
+sta = STA = _create_a_function(mnemonic="sta")
+stx = STX = _create_a_function(mnemonic="stx")
+sty = STY = _create_a_function(mnemonic="sty")
+tax = TAX = _create_a_function(mnemonic="tax")
+tay = TAY = _create_a_function(mnemonic="tay")
+tsx = TSX = _create_a_function(mnemonic="tsx")
+txa = TXA = _create_a_function(mnemonic="txa")
+txs = TXS = _create_a_function(mnemonic="txs")
+tya = TYA = _create_a_function(mnemonic="tya")
 
-adc = _create_a_function(mnemonic="adc")
-andr = _create_a_function(mnemonic="and")
-asl = _create_a_function(mnemonic="asl")
-bcc = _create_a_function(mnemonic="bcc")
-bcs = _create_a_function(mnemonic="bcs")
-beq = _create_a_function(mnemonic="beq")
-bit = _create_a_function(mnemonic="bit")
-bmi = _create_a_function(mnemonic="bmi")
-bne = _create_a_function(mnemonic="bne")
-bpl = _create_a_function(mnemonic="bpl")
-brk = _create_a_function(mnemonic="brk")
-bvc = _create_a_function(mnemonic="bvc")
-bvs = _create_a_function(mnemonic="bvs")
-clc = _create_a_function(mnemonic="clc")
-cld = _create_a_function(mnemonic="cld")
-cli = _create_a_function(mnemonic="cli")
-clv = _create_a_function(mnemonic="clv")
-cmp = _create_a_function(mnemonic="cmp")
-cpx = _create_a_function(mnemonic="cpx")
-cpy = _create_a_function(mnemonic="cpy")
-dec = _create_a_function(mnemonic="dec")
-dex = _create_a_function(mnemonic="dex")
-dey = _create_a_function(mnemonic="dey")
-eor = _create_a_function(mnemonic="eor")
-inc = _create_a_function(mnemonic="inc")
-inx = _create_a_function(mnemonic="inx")
-iny = _create_a_function(mnemonic="iny")
-jmp = _create_a_function(mnemonic="jmp")
-jsr = _create_a_function(mnemonic="jsr")
-lda = _create_a_function(mnemonic="lda")
-ldx = _create_a_function(mnemonic="ldx")
-ldy = _create_a_function(mnemonic="ldy")
-lsr = _create_a_function(mnemonic="lsr")
-nop = _create_a_function(mnemonic="nop")
-ora = _create_a_function(mnemonic="ora")
-pha = _create_a_function(mnemonic="pha")
-php = _create_a_function(mnemonic="php")
-pla = _create_a_function(mnemonic="pla")
-plp = _create_a_function(mnemonic="plp")
-rol = _create_a_function(mnemonic="rol")
-ror = _create_a_function(mnemonic="ror")
-rti = _create_a_function(mnemonic="rti")
-rts = _create_a_function(mnemonic="rts")
-sbc = _create_a_function(mnemonic="sbc")
-sec = _create_a_function(mnemonic="sec")
-sed = _create_a_function(mnemonic="sed")
-sei = _create_a_function(mnemonic="sei")
-sta = _create_a_function(mnemonic="sta")
-stx = _create_a_function(mnemonic="stx")
-sty = _create_a_function(mnemonic="sty")
-tax = _create_a_function(mnemonic="tax")
-tay = _create_a_function(mnemonic="tay")
-tsx = _create_a_function(mnemonic="tsx")
-txa = _create_a_function(mnemonic="txa")
-txs = _create_a_function(mnemonic="txs")
-tya = _create_a_function(mnemonic="tya")
-
-# -----------------------------------------------------------
-# Private functions
-# -----------------------------------------------------------
-def _check_segments_overlap(code_segment: str = "CODE") -> None:
-
-    intervals = []
-    for segment in g._PROGRAM.segments:
-        if segment.name == code_segment:
-            # adding basic header 13 bytes
-            intervals.append((segment.start_adr, segment.end_adr+13))
-        else:
-            intervals.append((segment.start_adr, segment.end_adr))
-
-    intervals.sort()
-    g.logger.info(
-        f"Checking overlapping intervals: {[(hex(interval[0]), hex(interval[1])) for interval in intervals]}")
-
-    for i in range(1, len(intervals)):
-        if intervals[i][0] <= intervals[i-1][1]:
-            raise ValueError(
-                f"The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!")

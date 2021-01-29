@@ -24,7 +24,7 @@ def code():
 
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
-    with segment(0x0801, assembler.get_code_segment()) as s:
+    with segment(0x0801, assembler.get_code_segment(), fixed_address=True) as s:
         m.add16("var1", "var2", "result")
         brk()
 
@@ -50,6 +50,9 @@ def code():
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
+
+    # optimize segments
+    optimize_segments()
 
 if __name__ == "__main__":
     generate(code, "fun_with_macro")

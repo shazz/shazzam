@@ -196,6 +196,8 @@ class CC65(Assembler):
             for segment in default_segments:
                 end_adr = max(end_adr, segment.end_adr)
 
+            self.logger.info("Adding basic header to default segment")
+            end_adr += CC65.basic_header_size
             # main_size = start_address + CC65.basic_header_size + (program.segments[0].size)
             # main_size = end_adr - start_adr
             # self.logger.info(f"Only one CODE segment of size: {program.segments[0].size} + {CC65.basic_header_size} + 0x{start_address:04X} = {main_size:04X}")

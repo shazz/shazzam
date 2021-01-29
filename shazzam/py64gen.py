@@ -33,7 +33,7 @@ def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments
 
 
 @contextmanager
-def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True) -> Segment:
+def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False) -> Segment:
     """[summary]
 
     Args:
@@ -49,8 +49,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
     """
     global _CURRENT_CONTEXT, _PROGRAM
 
-    seg = Segment(start_adr=start_adr, name=name.upper(),
-                  use_relative_addressing=use_relative_addressing)
+    seg = Segment(start_adr=start_adr, name=name.upper(), use_relative_addressing=use_relative_addressing, fixed_address=fixed_address)
     g._CURRENT_CONTEXT = seg
 
     yield seg
@@ -281,6 +280,26 @@ def gen_irqloader_script(irqloader, parts_definition: Dict):
     """
     global _PROGRAM
     raise NotImplementedError()
+
+def optimize_segments():
+
+    global _PROGRAM
+
+    from shazzam.heuristics import SegmentOptimizer, C64Mode, Part, Segment
+    optimizer = SegmentOptimizer()
+    optimizer.select_bank(C64Mode.IO_VISIBLE)
+
+    optimizer.add_memory_segment(0x0200, 0x3FFF, Segment.SegmentType.UserRAM)
+    optimizer.add_memory_segment(0x4000, 0x7FFF, Segment.SegmentType.UserRAM)
+    optimizer.add_memory_segment(0x8000, 0xBFFF, Segment.SegmentType.UserRAM)
+    optimizer.add_memory_segment(0xC000, 0xCFFF, Segment.SegmentType.UserRAM)
+    optimizer.add_memory_segment(0xD000, 0xDFFF, Segment.SegmentType.IO)
+    optimizer.add_memory_segment(0xE000, 0xFFFF, Segment.SegmentType.UserRAM)
+
+    for segment in g._PROGRAM.segments:
+        optimizer.add_code_segment(size=segment.size, name=segment.name, part_type=Part.PartType.CODE, fixed_address=segment.fixed_start_address)
+
+    results = optimizer.run_best_fit_decreasing()
 
 # ---------------------------------------------------------------------
 # Assembler directives

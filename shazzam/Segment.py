@@ -50,7 +50,7 @@ class Segment():
         DirectiveFormat.USE_EXCLAMATION: '!'
     }
 
-    def __init__(self, start_adr: int, name: str, code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None, directive_prefix: DirectiveFormat = None, use_relative_addressing: bool = False):
+    def __init__(self, start_adr: int, name: str, code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None, directive_prefix: DirectiveFormat = None, use_relative_addressing: bool = False, fixed_address: bool = False):
         """[summary]
 
         Args:
@@ -60,8 +60,12 @@ class Segment():
             comments_format (CommentsFormat, optional): [description]. Defaults to CommentsFormat.USE_SEMICOLON.
             directive_prefix (DirectiveFormat, optional): [description]. Defaults to DirectiveFormat.USE_DOT.
         """
+        self.logger = logging.getLogger("shazzam")
         self.start_adr = start_adr
         self.end_adr = start_adr
+        self.fixed_start_address = start_adr if fixed_address else None
+        print(fixed_address, self.fixed_start_address)
+
         self.instructions = {}
         self.next_position = start_adr
         self.name = name
@@ -69,7 +73,6 @@ class Segment():
         self.labels = {}
         self.required_labels = {}
         self.use_relative_addressing = use_relative_addressing
-        self.logger = logging.getLogger("shazzam")
 
         if code_format is None:
             code_format = g._CODE_FORMAT

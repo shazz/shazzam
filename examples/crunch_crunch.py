@@ -18,17 +18,19 @@ from shazzam.drivers.crunchers.Doynamite import Doynamite
 from shazzam.drivers.crunchers.Lzsa import Lzsa
 
 # define your cross assembler
-assembler = CC65("cc65", "/home/shazz/projects/c64/bin/cl65")
+assembler = CC65("cc65", "third_party/cc65/bin/cl65")
 prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,
           comments_format=prefs.comments,
           directive_prefix=prefs.directive)
 
-prg_cruncher  = Exomizer("/home/shazz/projects/c64/bin/exomizer")
-prg_cruncher  = Nucrunch("/home/shazz/projects/c64/bin/nucrunch")
-prg_cruncher  = Pucrunch("/home/shazz/projects/c64/bin/pucrunch")
-data_cruncher = Apultra("/home/shazz/projects/c64/bin/apultra", mode=PackingMode.FORWARD)
+prg_cruncher  = Exomizer("third_party/exomizer/exomizer")
+prg_cruncher  = Nucrunch("third_party/nucrunch/nucrunch")
+prg_cruncher  = Pucrunch("third_party/pucrunch/pucrunch")
+
+data_cruncher = Apultra("third_party/lzsa/lzsa", mode=PackingMode.FORWARD)
+data_cruncher = Apultra("third_party/apultra/apultra", mode=PackingMode.FORWARD)
 
 @reloading
 def code():

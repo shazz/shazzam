@@ -10,7 +10,7 @@ import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
 
 # define your cross assembler
-assembler = CC65("cc65", "/home/shazz/projects/c64/bin/cl65")
+assembler = CC65("cc65", "third_party/cc65/bin/cl65")
 prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,

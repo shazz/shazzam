@@ -11,7 +11,7 @@ version = os.getenv("version_number", "0.0.1")
 """
 This session will install the library
 """
-@nox.session(python=false)
+@nox.session(python=False)
 def install(session):
     """Install the library."""
     session.run("pip", "install", ".")
@@ -55,7 +55,7 @@ def install_3rd_party(session):
     session.run("cargo", "--version")
     session.run("wget", "--version")
     session.run("tar", "--version")
-    session.run("unzip", "--version")
+    session.run("unzip", "-h")
     session.run("gcc", "--version")
 
     shutil.rmtree('third_party', ignore_errors=True)
@@ -63,55 +63,62 @@ def install_3rd_party(session):
     os.makedirs("third_party", exist_ok = True)
     session.cd("third_party")
 
-    # cc65
-    session.run("git", "clone", "https://github.com/cc65/cc65.git")
-    session.cd("cc65")
-    session.run("make", "all")
-
     # exomizer
-    session.cd("..")
     os.makedirs("exomizer", exist_ok = True)
     session.cd("exomizer")
     session.run("wget", "https://bitbucket.org/magli143/exomizer/wiki/downloads/exomizer-3.1.0.zip")
     session.run("unzip", "exomizer-3.1.0.zip")
+    session.cd("src")
+    session.run("make")
+    session.run("cp", "exomizer", "..")
+    session.cd("..")
+    session.run("rm", "exomizer-3.1.0.zip")
+    session.cd("..")
 
     # apultra
-    session.cd("..")
     session.run("git", "clone", "https://github.com/emmanuel-marty/apultra.git")
     session.cd("apultra")
     session.run("make", "all")
-
-    # apultra
     session.cd("..")
+
+    # lzsa
     session.run("git", "clone", "https://github.com/emmanuel-marty/lzsa.git")
     session.cd("lzsa")
     session.run("make", "all")
+    session.cd("..")
 
     # pucrunch
-    session.cd("..")
     session.run("git", "clone", "https://github.com/mist64/pucrunch.git")
     session.cd("pucrunch")
     session.run("make", "all")
+    session.cd("..")
 
     # nucrunch
-    session.cd("..")
     session.run("wget", "https://csdb.dk/release/download.php?id=206619", "-O", "nucrunch.tgz")
     session.run("tar", "-xvzf", "nucrunch.tgz")
     session.run("mv", "nucrunch-1.0.1", "nucrunch")
     session.cd("nucrunch")
     session.run("make")
+    session.run("cp", "target/release/nucrunch", ".")
+    session.cd("..")
+    session.run("rm", "nucrunch.tgz")
 
     # doynamite
-    session.cd("..")
     session.run("wget", "https://csdb.dk/release/download.php?id=160764", "-O", "doynamite.tar.gz")
     session.run("tar", "-xvzf", "doynamite.tar.gz")
     session.run("mv", "doynamite1.1", "doynamite")
     session.cd("doynamite")
     session.run("gcc", "lz.c", "-o", "lz")
+    session.cd("..")
+    session.run("rm", "doynamite.tar.gz")
 
     # Sparkle
-    session.cd("..")
     session.run("wget", "https://csdb.dk/release/download.php?id=241780", "-O", "sparkle.zip")
     session.run("unzip", "sparkle.zip", "-d", "sparkle")
+    session.run("rm", "sparkle.zip")
 
-
+    # cc65
+    session.run("git", "clone", "https://github.com/cc65/cc65.git")
+    session.cd("cc65")
+    session.run("make", "all")
+    session.cd("..")

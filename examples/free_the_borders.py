@@ -68,7 +68,6 @@ def code():
         m.irq_end('top_irq', top_irq, True, False)
         label('end')
 
-
     # generate listing and code
     gen_code(format_code=prefs, gen_listing=True)
 
@@ -76,5 +75,5 @@ def code():
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code, "sprites_galore")
+    generate(code, "free_the_borders")
 

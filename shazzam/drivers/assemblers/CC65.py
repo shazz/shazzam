@@ -10,6 +10,22 @@ from typing import List
 
 class CC65(Assembler):
 
+    makefile = \
+        """CA65   = ca65
+CL65   = cl65
+LD65   = ld65
+
+APP = %1.prg
+
+all: $(APP)
+
+%1.prg: %2
+	$(CL65) -v -g -d -t c64 -C gen-c64-asm.cfg -u __EXEHDR__ $^ -o $@
+
+clean:
+	rm -f *.o *.prg
+"""
+
     features = \
         """FEATURES {
     STARTADDRESS: default = %%;
@@ -122,7 +138,9 @@ class CC65(Assembler):
         """
         program_filename = f'generated/{program.name}/{program.name}.prg'
 
-        self.generate_config(start_address, program)
+        self._generate_config(start_address, program)
+
+        self._generate_makefile(program)
 
         # seg_lines
         cmd = [self.path, '-v', '-g', '-d', '-t', 'c64', '-C',
@@ -148,8 +166,8 @@ class CC65(Assembler):
 
         return program_filename
 
-    def generate_config(self, start_address, program):
-        """generate_config
+    def _generate_config(self, start_address, program):
+        """_generate_config
 
         Args:
             start_address ([type]): [description]
@@ -257,3 +275,22 @@ class CC65(Assembler):
                 return segment
 
         raise ValueError(f"No Segment found starting at {address:04X}")
+
+    def _generate_makefile(self, program):
+        """_generate_makefile
+
+        Args:
+            program ([type]): [description]
+        """
+        makefile = CC65.makefile.replace("%1", program.name)
+
+        asm_files = []
+        for segment in program.segments:
+            asm_files.append(f"{segment.name}.asm")
+
+        makefile = makefile.replace("%2", ' '.join(asm_files))
+
+        with open(f"generated/{program.name}/Makefile", "w") as f:
+                f.write(makefile)
+
+        self.logger.debug("CC65 Makefile file written")

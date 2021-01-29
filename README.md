@@ -17,6 +17,7 @@ And where it took its inspiration from multiple famous C64 tools:
 - `C64jasm`: a Cross Assembler supporting inline extensions using pure Javacript.
 - `bass`: an ACME-like cross assembler using Lua for scripting and internal emulator for testing.
 - `Sparkle`: an IRQ Loader managing on time loading of data and code segments.
+- `Raistlin's C++ code generator`: Raistlin/G*P's top secret framework to code awesome demos
 
 As a result, by using all those great modern C64 Development tools, I found out that state of the art demo effects are mostly based on code generation, most of the time using cross-assembler macros and external tools.
 
@@ -39,14 +40,22 @@ pip install shazzam
 
 Then, if you're not using `nox`, you'll have to install the various mandatory and optional tools manually:
 
-- CC65 (mandatory)
-- Exomizer (optional)
-- Apultra (optional)
-- lzsa (optional)
-- Dyonamite (optional)
-- pucrunch (optional)
-- nucrunch (optional)
-- Sparkle (optional)
+#### Cross-Assemblers
+
+- [CC65](https://github.com/cc65/cc65) (mandatory)
+
+#### Packers
+
+- [Exomizer](https://bitbucket.org/magli143/exomizer/wiki/downloads/exomizer-3.1.0.zip) (optional)
+- [Apultra](https://github.com/emmanuel-marty/apultra.git) (optional)
+- [lzsa](https://github.com/emmanuel-marty/lzsa.git) (optional)
+- [Dyonamite](https://csdb.dk/release/download.php?id=160764) (optional)
+- [pucrunch](https://github.com/mist64/pucrunch.git) (optional)
+- [nucrunch](https://csdb.dk/release/download.php?id=206619) (optional)
+
+#### IRQ Loaders
+
+- [Sparkle](https://csdb.dk/release/download.php?id=241780) (optional)
 
 ### From sources
 

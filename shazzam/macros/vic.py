@@ -30,7 +30,7 @@ def clear_screen(clear_byte: int, screen: int, use_ptr: bool):
 # Setup VIC bacnk
 # Usind dd00 or dd02
 # ------------------------------------------------------------------------------------------
-def setup_vic_bank(bank_start, use_dd02):
+def setup_vic_bank(bank_start, use_dd02: bool = False):
 
     def generate_dd00(bank_start):
         if bank_start == 0:
@@ -75,15 +75,17 @@ def setup_vic_bank(bank_start, use_dd02):
         return reg
 
     if use_dd02:
-        dd02 = utils.generate_full_dd02(bank_start)
+        dd02 = generate_full_dd02(bank_start)
 
-        logger.info("bank", bank_start, BITMAP_ADDR, SCREEN_MEM_ADDR, "dd02", dd02, "d018", utils.generate_d018(CHAR_MEM_ADDR, BITMAP_ADDR, SCREEN_MEM_ADDR), d018, "mixed", (dd02 | d018))
+        logger.info(f"Bank start: ${bank_start:04X} using dd02 register: %{dd02:08b}")
         lda(imm(dd02))
-        sta(at(dd02))
+        sta(at(0xdd02))
     else:
-        dd00 = utils.generate_dd00(bank_start)
+        dd00 = generate_dd00(bank_start)
+
+        logger.info(f"Bank start: ${bank_start:04X} using dd00 register: %{dd00:08b}")
         lda(imm(dd00))
-        sta(at(dd00))
+        sta(at(0xdd00))
 
 # ------------------------------------------------------------------------------------------
 # Generate d018 register
@@ -121,12 +123,8 @@ def generate_d018(charmem, bitmap, screenmem):
         0x3800: 0b1110,
         0x3C00: 0b1111
     }
-
-    logger.debug(charmem, mapping_charmem[parseInt(charmem)])
-    logger.debug(bitmap, mapping_bitmap[bitmap])
-    logger.debug(screenmem, mapping_screenmem[screenmem])
-
     reg = ((mapping_charmem[charmem] << 1) | (mapping_bitmap[bitmap] << 1) | (mapping_screenmem[screenmem] << 4))
+    logger.info(f"VIC memory setup: %{reg:08b} for char mem at ${charmem:04X}, bitmap at ${bitmap:04X} and screen mem at ${screenmem:04X}")
     return reg
 
 # ------------------------------------------------------------------------

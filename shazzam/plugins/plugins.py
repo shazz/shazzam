@@ -1,6 +1,39 @@
 from shazzam.defs import *
 
 # ---------------------------------------------------------------------
+# Koala file parser
+#
+# KLA file format information
+# bytes 0000-0001 = Load address (2 bytes)
+# bytes 0002-1F42 = bitmap data  (8000 bytes)
+# bytes 1F43-232A = screen memory data (1000 bytes)
+# bytes 232B-2711 = color ram data (1000 bytes)
+# bytes 2712      = background color (1 byte)
+
+# ---------------------------------------------------------------------
+def read_kla(filename: str) -> Alias:
+
+    def readWord(buf, offs):
+        return buf[offs] + (buf[offs+1] << 8)
+
+    with open(filename, "rb") as f:
+        buf = f.read()
+        address = readWord(buf, 0)
+
+        bitmap = buf[2:8002]
+        scrmem = buf[8002:9002]
+        colorram = buf[9002:10002]
+        bg_color = buf[10002]
+
+        return Alias({
+            "address": address,
+            "bg_color": bg_color,
+            "bitmap": bitmap,
+            "scrmem": scrmem,
+            "colorram": colorram,
+        })
+
+# ---------------------------------------------------------------------
 # SPD Sprites file parser
 #
 # SPD file format information

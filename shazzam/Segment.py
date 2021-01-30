@@ -93,12 +93,10 @@ class Segment():
         if directive_prefix is None:
             directive_prefix = g._DIRECTIVE_PREFIX
 
-        self.logger.info(
-            f"Prefs: {code_format} / {comments_format} / {directive_prefix}")
+        self.logger.debug("Prefs: {code_format} / {comments_format} / {directive_prefix}")
 
         self.show_address = True if CodeFormat.ADDRESS in code_format else False
         self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
-        self.logger.error(f"format: {code_format}")
         self.show_cycles = True if CodeFormat.CYCLES in code_format else False
         self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
         self.use_hex = True if CodeFormat.USE_HEX in code_format else False
@@ -120,8 +118,7 @@ class Segment():
         comments_format = g._COMMENTS_FORMAT
         directive_prefix = g._DIRECTIVE_PREFIX
 
-        self.logger.debug(
-            f"Reset Prefs: {code_format} / {comments_format} / {directive_prefix}")
+        self.logger.debug(f"Reset Prefs: {code_format} / {comments_format} / {directive_prefix}")
 
         self.show_address = True if CodeFormat.ADDRESS in code_format else False
         self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False

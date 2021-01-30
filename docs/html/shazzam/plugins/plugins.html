@@ -29,6 +29,39 @@
 <pre><code class="python">from shazzam.defs import *
 
 # ---------------------------------------------------------------------
+# Koala file parser
+#
+# KLA file format information
+# bytes 0000-0001 = Load address (2 bytes)
+# bytes 0002-1F42 = bitmap data  (8000 bytes)
+# bytes 1F43-232A = screen memory data (1000 bytes)
+# bytes 232B-2711 = color ram data (1000 bytes)
+# bytes 2712      = background color (1 byte)
+
+# ---------------------------------------------------------------------
+def read_kla(filename: str) -&gt; Alias:
+
+    def readWord(buf, offs):
+        return buf[offs] + (buf[offs+1] &lt;&lt; 8)
+
+    with open(filename, &#34;rb&#34;) as f:
+        buf = f.read()
+        address = readWord(buf, 0)
+
+        bitmap = buf[2:8002]
+        scrmem = buf[8002:9002]
+        colorram = buf[9002:10002]
+        bg_color = buf[10002]
+
+        return Alias({
+            &#34;address&#34;: address,
+            &#34;bg_color&#34;: bg_color,
+            &#34;bitmap&#34;: bitmap,
+            &#34;scrmem&#34;: scrmem,
+            &#34;colorram&#34;: colorram,
+        })
+
+# ---------------------------------------------------------------------
 # SPD Sprites file parser
 #
 # SPD file format information
@@ -166,6 +199,38 @@ def ascii_to_byte(text, offset):
     return fade</code></pre>
 </details>
 </dd>
+<dt id="shazzam.plugins.plugins.read_kla"><code class="name flex">
+<span>def <span class="ident">read_kla</span></span>(<span>filename: str) ‑> <a title="shazzam.defs.Alias" href="../defs.html#shazzam.defs.Alias">Alias</a></span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_kla(filename: str) -&gt; Alias:
+
+    def readWord(buf, offs):
+        return buf[offs] + (buf[offs+1] &lt;&lt; 8)
+
+    with open(filename, &#34;rb&#34;) as f:
+        buf = f.read()
+        address = readWord(buf, 0)
+
+        bitmap = buf[2:8002]
+        scrmem = buf[8002:9002]
+        colorram = buf[9002:10002]
+        bg_color = buf[10002]
+
+        return Alias({
+            &#34;address&#34;: address,
+            &#34;bg_color&#34;: bg_color,
+            &#34;bitmap&#34;: bitmap,
+            &#34;scrmem&#34;: scrmem,
+            &#34;colorram&#34;: colorram,
+        })</code></pre>
+</details>
+</dd>
 <dt id="shazzam.plugins.plugins.read_sid"><code class="name flex">
 <span>def <span class="ident">read_sid</span></span>(<span>filename: str) ‑> <a title="shazzam.defs.Alias" href="../defs.html#shazzam.defs.Alias">Alias</a></span>
 </code></dt>
@@ -256,6 +321,7 @@ def ascii_to_byte(text, offset):
 <ul class="">
 <li><code><a title="shazzam.plugins.plugins.ascii_to_byte" href="#shazzam.plugins.plugins.ascii_to_byte">ascii_to_byte</a></code></li>
 <li><code><a title="shazzam.plugins.plugins.get_fade_table" href="#shazzam.plugins.plugins.get_fade_table">get_fade_table</a></code></li>
+<li><code><a title="shazzam.plugins.plugins.read_kla" href="#shazzam.plugins.plugins.read_kla">read_kla</a></code></li>
 <li><code><a title="shazzam.plugins.plugins.read_sid" href="#shazzam.plugins.plugins.read_sid">read_sid</a></code></li>
 <li><code><a title="shazzam.plugins.plugins.read_spd" href="#shazzam.plugins.plugins.read_spd">read_spd</a></code></li>
 </ul>

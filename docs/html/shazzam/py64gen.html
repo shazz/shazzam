@@ -582,15 +582,28 @@ def _check_segments_overlap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 # ---------------------------------------------------------------------
 _funcs = {}
 def generate(func, program_name: str) -&gt; None:
-    &#34;&#34;&#34;[summary]
+    &#34;&#34;&#34;generate
 
     Args:
         func ([type]): [description]
+        program_name (str): [description]
+
+    Raises:
+        RuntimeError: [description]
     &#34;&#34;&#34;
     global _PROGRAM
     g._PROGRAM.set_name(program_name)
 
     for i in reloading(range(10)):
+
+        # check mnemonic mistakes like rts, nop...
+        src_lines = dill.source.getsourcelines(func.__dict__[&#39;__inner__&#39;])[0]
+        for line in src_lines:
+            for opcode in Instruction.opcodes:
+                if opcode[0] in line and len(line.strip()) == 3:
+                    raise RuntimeError(f&#34;Mnemonic &#39;{opcode[0]}&#39;&#39; cannot be called without () ! Should be {opcode[0]}()&#34;)
+
+        # check source has changed
         src = dill.source.getsource(func.__dict__[&#39;__inner__&#39;])
 
         # src = dill.source.getsource(func)
@@ -13110,10 +13123,17 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 <span>def <span class="ident">generate</span></span>(<span>func, program_name: str) ‑> NoneType</span>
 </code></dt>
 <dd>
-<div class="desc"><p>[summary]</p>
+<div class="desc"><p>generate</p>
 <h2 id="args">Args</h2>
 <dl>
 <dt><strong><code>func</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>program_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>RuntimeError</code></dt>
 <dd>[description]</dd>
 </dl></div>
 <details class="source">
@@ -13121,15 +13141,28 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def generate(func, program_name: str) -&gt; None:
-    &#34;&#34;&#34;[summary]
+    &#34;&#34;&#34;generate
 
     Args:
         func ([type]): [description]
+        program_name (str): [description]
+
+    Raises:
+        RuntimeError: [description]
     &#34;&#34;&#34;
     global _PROGRAM
     g._PROGRAM.set_name(program_name)
 
     for i in reloading(range(10)):
+
+        # check mnemonic mistakes like rts, nop...
+        src_lines = dill.source.getsourcelines(func.__dict__[&#39;__inner__&#39;])[0]
+        for line in src_lines:
+            for opcode in Instruction.opcodes:
+                if opcode[0] in line and len(line.strip()) == 3:
+                    raise RuntimeError(f&#34;Mnemonic &#39;{opcode[0]}&#39;&#39; cannot be called without () ! Should be {opcode[0]}()&#34;)
+
+        # check source has changed
         src = dill.source.getsource(func.__dict__[&#39;__inner__&#39;])
 
         # src = dill.source.getsource(func)

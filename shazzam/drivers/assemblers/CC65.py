@@ -96,7 +96,7 @@ clean:
         """
         return Alias({
             # "code": [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
-            "code": [CodeFormat.USE_HEX],
+            "code": [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             "comments": CommentsFormat.USE_SEMICOLON,
             "directive": DirectiveFormat.USE_DOT
         })

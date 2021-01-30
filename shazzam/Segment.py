@@ -93,11 +93,12 @@ class Segment():
         if directive_prefix is None:
             directive_prefix = g._DIRECTIVE_PREFIX
 
-        self.logger.debug(
+        self.logger.info(
             f"Prefs: {code_format} / {comments_format} / {directive_prefix}")
 
         self.show_address = True if CodeFormat.ADDRESS in code_format else False
         self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
+        self.logger.error(f"format: {code_format}")
         self.show_cycles = True if CodeFormat.CYCLES in code_format else False
         self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
         self.use_hex = True if CodeFormat.USE_HEX in code_format else False
@@ -404,7 +405,7 @@ class Segment():
                 "cycles": 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
             }
 
-            process_byte = True
+            remaining_bytes_to_process = 0
             for adr, instr in self.instructions.items():
 
                 instr.show_labels = False
@@ -420,21 +421,24 @@ class Segment():
                 address_offset = self.start_adr if self.use_relative_addressing else 0
 
                 if isinstance(instr, ByteData):
-                    if process_byte:
-                        process_byte = False
+                    if remaining_bytes_to_process != 0:
+                        remaining_bytes_to_process -= 1
+                    else:
                         prefix = self.directive_prefix
 
                         nb_bytes = 0
+                        nolabel = True
                         try:
-                            while adr+nb_bytes in self.instructions and isinstance(self.instructions[adr+nb_bytes], ByteData):
+                            while adr+nb_bytes in self.instructions and nolabel and isinstance(self.instructions[adr+nb_bytes], ByteData):
                                 nb_bytes += 1
+                                nolabel = len([k for k, v in self.labels.items() if v.value == adr+nb_bytes]) == 0
                         except KeyError:
-                            self.logger.error(
-                                f"Could not find address {adr+nb_bytes} (${adr+nb_bytes:04X}) in {self.instructions.keys()}")
+                            self.logger.error(f"Could not find address {adr+nb_bytes} (${adr+nb_bytes:04X}) in {self.instructions.keys()}")
                             raise
 
-                        self.logger.debug(
-                            f"{nb_bytes} bytes of data before instruction")
+
+                        remaining_bytes_to_process = nb_bytes - 1
+                        self.logger.debug(f"{nb_bytes} bytes of data before instruction")
                         if nb_bytes > 8:
 
                             # manage the remaining bytes if not a multiple of 8
@@ -496,7 +500,6 @@ class Segment():
 
                             code.append(line)
                 else:
-                    process_byte = True
                     s_address = f"{adr-address_offset:04X}:" if self.show_address else ""
 
                     if len(label) > 1:
@@ -512,7 +515,8 @@ class Segment():
                     s_bytecode = f"{bcode}" if self.show_bytecode else ""
 
                     cycles = instr.get_cycle_count()
-                    s_cycles = f"{self.comment_char} {cycles}" if self.show_cycles and cycles > 0 else ""
+                    bytes_used = instr.get_size()
+                    s_cycles = f"{self.comment_char} #{cycles} - {bytes_used}" if self.show_cycles and cycles > 0 else ""
 
                     prefix = self.directive_prefix if isinstance(instr, ByteData) else ''
 
@@ -535,7 +539,7 @@ class Segment():
                 "cycles": label_size+20,
             }
 
-            process_byte = True
+            remaining_bytes_to_process = 0
             for adr, instr in self.instructions.items():
 
                 instr.show_labels = True
@@ -551,24 +555,23 @@ class Segment():
                 address_offset = self.start_adr if self.use_relative_addressing else 0
 
                 if isinstance(instr, ByteData):
-                    if process_byte:
-
-                        process_byte = False
+                    if remaining_bytes_to_process != 0:
+                        remaining_bytes_to_process -= 1
+                    else:
+                        self.logger.debug(f"Starting processing bytes at ${adr:04X}")
                         prefix = self.directive_prefix
                         nb_bytes = 0
-
-                        # TODO: break if a label is defined in the middle else won't be shown
-                        # won't work with process_byte bool
+                        nolabel = True
                         try:
-                            while adr+nb_bytes in self.instructions and isinstance(self.instructions[adr+nb_bytes], ByteData):
+                            while adr+nb_bytes in self.instructions and nolabel and isinstance(self.instructions[adr+nb_bytes], ByteData):
                                 nb_bytes += 1
+                                nolabel = len([k for k, v in self.labels.items() if v.value == adr+nb_bytes]) == 0
                         except KeyError:
-                            self.logger.error(
-                                f"Could not find address {adr+nb_bytes} (${adr+nb_bytes:04X}) in {self.instructions.keys()}")
+                            self.logger.error(f"Could not find address {adr+nb_bytes} (${adr+nb_bytes:04X}) in {self.instructions.keys()}")
                             raise
 
-                        self.logger.debug(
-                            f"{nb_bytes} bytes of data before instruction")
+                        remaining_bytes_to_process = nb_bytes - 1
+                        self.logger.debug(f"{nb_bytes} bytes ({remaining_bytes_to_process}) of data before instruction")
                         if nb_bytes > 8:
 
                             # manage the remaining bytes if not a multiple of 8
@@ -577,6 +580,7 @@ class Segment():
                             for row in range(nb_rows):
 
                                 r_label = [k for k, v in self.labels.items() if v.value == adr+(row*8)]
+                                self.logger.debug(f"labels found at {adr+(row*8):04X} : {r_label}")
                                 s_label = f"{r_label[0]}:" if r_label else ""
 
                                 bcode = ""
@@ -596,6 +600,7 @@ class Segment():
                                 code.append(line)
                         else:
                             r_label = [k for k, v in self.labels.items() if v.value == adr]
+                            self.logger.debug(f"labels found at {adr:04X} : {r_label}")
                             s_label = f"{r_label[0]}:" if r_label else ""
 
                             bcode = ""
@@ -614,7 +619,6 @@ class Segment():
 
                             code.append(line)
                 else:
-                    process_byte = True
                     if len(label) > 1:
                         self.logger.warning(f"Mutiple labels ({label}) for the same address {adr:04X}")
                         for i in range(len(label)-1):
@@ -627,7 +631,9 @@ class Segment():
 
                     s_label = f"{label[-1]}:" if label else ""
                     cycles = instr.get_cycle_count()
-                    s_cycles = f"{self.comment_char} {cycles}" if self.show_cycles and cycles > 0 else ""
+                    bytes_used = instr.get_size()
+                    s_cycles = f"{self.comment_char} #{cycles} - {bytes_used}" if self.show_cycles and cycles > 0 else ""
+
 
                     prefix = self.directive_prefix if isinstance(instr, ByteData) else ''
 
@@ -662,10 +668,9 @@ class Segment():
         self.logger.info(
             f"Emulating from {self.start_adr:04X}, to {self.next_position:04X} starting at {start_address:04X}")
 
-        cpu_state, mmu_state = emu.load_and_run(
-            ram, self.start_adr, self.next_position, start_address)
+        cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address)
 
-        return cpu_state, mmu_state
+        return cpu_state, mmu_state, cycles_used
 
     def get_last_instruction(self) -> Instruction:
         """[summary]
@@ -691,7 +696,7 @@ class Segment():
         last_instr = self.get_last_instruction()
         return Alias({
             "size": self.next_position - self.start_adr,
-            "cycles_used": self.total_cycles_used,
+            "cycles": self.total_cycles_used,
             "instructions": len(self.instructions),
             "start_address": hex(self.start_adr),
             "current_address": hex(self.next_position),

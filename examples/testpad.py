@@ -26,9 +26,21 @@ def code():
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
 
+        label("test1")
         nop()
         nop()
         nop()
+        label("data1")
+        for i in range(9):
+            byte(i)
+        label("data2")
+        for i in range(7):
+            byte(i)
+        label("code")
+        nop()
+        byte(0)
+        label("end_of_data")
+
         # bcc(rel_at(0x0810))
 
         # val = 5
@@ -61,14 +73,14 @@ def code():
         # sta(at("test"),x)
         # sta(at("test"),y)
 
-    with segment(0x0812, assembler.get_data_segment()) as s:
-        label("test", is_global=True)
-        for i in range(10):
-            byte(i)
-        nop()   # else label won't be seen... to fixed
-        label("test2")
-        for i in range(3):
-            byte(i)
+    # with segment(0x0812, assembler.get_data_segment()) as s:
+    #     label("test", is_global=True)
+    #     for i in range(10):
+    #         byte(i)
+    #     nop()   # else label won't be seen... to fixed
+    #     label("test2")
+    #     for i in range(3):
+    #         byte(i)
 
 
     # generate listing

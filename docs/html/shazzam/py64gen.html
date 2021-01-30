@@ -190,7 +190,7 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
             g.logger.debug(f&#34;Setting listing format: {format_code}&#34;)
             format_listing = Alias({
                 &#34;default_code_segment&#34;: &#34;CODE&#34;,
-                &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
+                &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
                 &#34;directive&#34;: DirectiveFormat.USE_DOT
             })
@@ -13048,7 +13048,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
             g.logger.debug(f&#34;Setting listing format: {format_code}&#34;)
             format_listing = Alias({
                 &#34;default_code_segment&#34;: &#34;CODE&#34;,
-                &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
+                &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
                 &#34;directive&#34;: DirectiveFormat.USE_DOT
             })

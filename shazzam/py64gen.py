@@ -162,7 +162,7 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
             g.logger.debug(f"Setting listing format: {format_code}")
             format_listing = Alias({
                 "default_code_segment": "CODE",
-                "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
+                "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 "comments": CommentsFormat.USE_SEMICOLON,
                 "directive": DirectiveFormat.USE_DOT
             })

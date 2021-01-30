@@ -40,9 +40,10 @@ def code():
         byte(0)
         byte(0)
 
-        cpu, mmu = s.emulate()
+        cpu, mmu, cc = s.emulate()
         print(f"Address: {get_current_address():04X}")
         print(f"Result: {mmu.read(get_current_address()-1)*256 + mmu.read(get_current_address()-2)}")
+        print(f"Cycles used: {cc}")
 
 
     # generate listing

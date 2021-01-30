@@ -59,6 +59,7 @@ class Emu6502():
         self.logger.debug(f"{current_instruction} operand: {hex(int.from_bytes(current_operand, 'big'))}")
         self.logger.debug(cpu.r)
 
+        nb_cycles_used = 0
         while(cpu.r.pc < seg_stop_address and current_instruction[0] != 'brk'):
             try:
                 cpu.step()
@@ -71,6 +72,8 @@ class Emu6502():
                 self.logger.debug(f"Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
                 self.logger.debug(f"{current_instruction} operand: {hex(int.from_bytes(current_operand, 'big'))}")
                 self.logger.debug(cpu.r)
+                self.logger.debug(cpu.cc)
+                nb_cycles_used += cpu.cc
 
             except Exception as e:
                 self.logger.critical(
@@ -78,4 +81,4 @@ class Emu6502():
                 # self.logger.debug(traceback.format_exc())
                 break
 
-        return cpu, mmu
+        return cpu, mmu, nb_cycles_used

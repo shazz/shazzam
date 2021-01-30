@@ -20,13 +20,11 @@ def initialize():
     _CURRENT_RASTER = None
 
     # _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS ]
-    _CODE_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS,
-                    CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
+    _CODE_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
     _COMMENTS_FORMAT = CommentsFormat.USE_SEMICOLON
     _DIRECTIVE_PREFIX = DirectiveFormat.NO_PREFIX
     _DEFAULT_CODE_SEGMENT = "CODE"
-    _LISTING_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS,
-                       CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
+    _LISTING_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
 
     logger = logging.getLogger("shazzam")
     logger.setLevel(logging.INFO)

@@ -554,15 +554,28 @@ def _check_segments_overlap(code_segment: str = "CODE") -> None:
 # ---------------------------------------------------------------------
 _funcs = {}
 def generate(func, program_name: str) -> None:
-    """[summary]
+    """generate
 
     Args:
         func ([type]): [description]
+        program_name (str): [description]
+
+    Raises:
+        RuntimeError: [description]
     """
     global _PROGRAM
     g._PROGRAM.set_name(program_name)
 
     for i in reloading(range(10)):
+
+        # check mnemonic mistakes like rts, nop...
+        src_lines = dill.source.getsourcelines(func.__dict__['__inner__'])[0]
+        for line in src_lines:
+            for opcode in Instruction.opcodes:
+                if opcode[0] in line and len(line.strip()) == 3:
+                    raise RuntimeError(f"Mnemonic '{opcode[0]}'' cannot be called without () ! Should be {opcode[0]}()")
+
+        # check source has changed
         src = dill.source.getsource(func.__dict__['__inner__'])
 
         # src = dill.source.getsource(func)

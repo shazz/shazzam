@@ -28,6 +28,7 @@
 </summary>
 <pre><code class="python">from shazzam.Address import Address
 
+
 class Program():
 
     def __init__(self):
@@ -54,12 +55,23 @@ class Program():
         &#34;&#34;&#34;
         for existing_label_name, existing_label in self.global_labels.items():
             if existing_label_name == label.name and existing_label.value != label.value:
-                raise ValueError(f&#34;The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.address:04X}&#34;)
+                raise ValueError(
+                    f&#34;The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.address:04X}&#34;)
 
         self.global_labels[label.name] = label
 
     def get_label(self, name: str) -&gt; Address:
+        &#34;&#34;&#34;[summary]
 
+        Args:
+            name (str): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Address: [description]
+        &#34;&#34;&#34;
         if name not in self.global_labels:
             raise ValueError(f&#34;Cannot find the label &#39;{name}&#39; globally&#34;)
 
@@ -110,12 +122,23 @@ class Program():
         &#34;&#34;&#34;
         for existing_label_name, existing_label in self.global_labels.items():
             if existing_label_name == label.name and existing_label.value != label.value:
-                raise ValueError(f&#34;The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.address:04X}&#34;)
+                raise ValueError(
+                    f&#34;The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.address:04X}&#34;)
 
         self.global_labels[label.name] = label
 
     def get_label(self, name: str) -&gt; Address:
+        &#34;&#34;&#34;[summary]
 
+        Args:
+            name (str): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Address: [description]
+        &#34;&#34;&#34;
         if name not in self.global_labels:
             raise ValueError(f&#34;Cannot find the label &#39;{name}&#39; globally&#34;)
 
@@ -153,7 +176,8 @@ class Program():
     &#34;&#34;&#34;
     for existing_label_name, existing_label in self.global_labels.items():
         if existing_label_name == label.name and existing_label.value != label.value:
-            raise ValueError(f&#34;The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.address:04X}&#34;)
+            raise ValueError(
+                f&#34;The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.address:04X}&#34;)
 
     self.global_labels[label.name] = label</code></pre>
 </details>
@@ -162,13 +186,38 @@ class Program():
 <span>def <span class="ident">get_label</span></span>(<span>self, name: str) ‑> <a title="shazzam.Address.Address" href="Address.html#shazzam.Address.Address">Address</a></span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>name</code></strong> :&ensp;<code>str</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Address</code></dt>
+<dd>[description]</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def get_label(self, name: str) -&gt; Address:
+    &#34;&#34;&#34;[summary]
 
+    Args:
+        name (str): [description]
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        Address: [description]
+    &#34;&#34;&#34;
     if name not in self.global_labels:
         raise ValueError(f&#34;Cannot find the label &#39;{name}&#39; globally&#34;)
 

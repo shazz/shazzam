@@ -33,12 +33,12 @@ sys.path.append(&#34;.&#34;)
 from reloading import reloading
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
-import shazzam.macros.macros_math as m
+import shazzam.macros.math as m
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
 
 # define your cross assembler
-assembler = CC65(&#34;cc65&#34;, &#34;/home/shazz/projects/c64/bin/cl65&#34;)
+assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
 prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,
@@ -52,34 +52,38 @@ def code():
 
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
-    with segment(0x0801, assembler.get_code_segment()) as s:
-        m.add16(get_label(&#34;res&#34;), get_label(&#34;n1&#34;), get_label(&#34;n2&#34;))
+    with segment(0x0801, assembler.get_code_segment(), fixed_address=True) as s:
+        m.add16(&#34;var1&#34;, &#34;var2&#34;, &#34;result&#34;)
+        brk()
+
+        label(&#34;var1&#34;)
+        byte(0)
+        byte(1)
+        nop()
+        label(&#34;var2&#34;)
+        byte(10)
+        byte(0)
+        nop()
+        label(&#34;result&#34;)
+        byte(0)
+        byte(0)
+
         cpu, mmu = s.emulate()
         print(f&#34;Address: {get_current_address():04X}&#34;)
-        print(mmu.read(get_current_address()+4), mmu.read(get_current_address()+5) )
-        # assert mmu.read(get_current_address()-1) + 255*mmu.read(get_current_address()-2) == 20
-
-        ldata = label(&#34;n1&#34;)
-        byte(0)
-        byte(10)
-        ldata = label(&#34;n2&#34;)
-        byte(0)
-        byte(10)
-        ldata = label(&#34;res&#34;)
-        byte(0)
-        byte(0)
-
-
+        print(f&#34;Result: {mmu.read(get_current_address()-1)*256 + mmu.read(get_current_address()-2)}&#34;)
 
 
     # generate listing
-    gen_code(&#34;helloworld&#34;)
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
+    # optimize segments
+    optimize_segments()
+
 if __name__ == &#34;__main__&#34;:
-    generate(code)</code></pre>
+    generate(code, &#34;fun_with_macro&#34;)</code></pre>
 </details>
 </section>
 <section>

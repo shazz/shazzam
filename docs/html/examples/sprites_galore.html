@@ -30,15 +30,16 @@
 import sys
 sys.path.append(&#34;.&#34;)
 
-from reloading import reloading
-from shazzam.py64gen import *
-from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
-from shazzam.macros.aliases import color, vic
-import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
+import shazzam.plugins.plugins as p
+from shazzam.macros.aliases import color, vic
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+from shazzam.py64gen import *
+import shazzam.macros.sys as m
+from reloading import reloading
 
 # define your cross assembler
-assembler = CC65(&#34;cc65&#34;, &#34;/home/shazz/projects/c64/bin/cl65&#34;)
+assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
 prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,
@@ -50,21 +51,60 @@ def code():
 
     # define here or anywhere, doesn&#39;t matter, your variables
     spd = p.read_spd(&#34;resources/ball.spd&#34;)
+    nb_sprites = 8
+    top_irq = 38
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
 
-        print(f&#34;{s.get_stats()}&#34;)
+        sei()
+
+        lda(imm(0x35))                                      # Bank out kernal and basic 00110 101
+        sta(at(0x01))                                       # $e000-$ffff
+
+        label(&#34;start&#34;)
+        lda(imm(0))
+        for i in range(nb_sprites):
+            sta(at(vic.sprite0_x+(2*i)))
+            sta(at(vic.sprite0_y+(2*i)))
+
+        # set up irq to replace the kernal IRQ
+        m.setup_irq(&#39;top_irq&#39;, top_irq)
+        cli()
+
+    # irq segment
+    with segment(0x3000, &#34;IRQ&#34;) as s:
+
+        label(&#34;top_irq&#34;, is_global=True)
+        m.double_irq(&#39;end&#39;, &#39;irq_stable&#39;)
+
+        label(&#34;irq_stable&#34;)
+        y_scroll = top_irq + 2                          # stable raster takes 2 rasterlines
+
+        txs()                                           # we&#39;re now at cycle 25 (+/- jitter) after txs
+        m.waste_cycles(58)                              # we&#39;re now at cycle 8 of the first picture rasterline
+
+        for y in range(y_scroll, y_scroll+10):
+            with rasterline(nb_sprites=8, y_pos=y, y_scroll=y_scroll):
+                if (y &amp; 7) == y_scroll:
+                    nop()
+                    nop()
+                    nop()
+                else:
+                    nop()
+
+        m.irq_end(&#39;top_irq&#39;, top_irq, True, False)
+        label(&#39;end&#39;)
+
 
     # generate listing and code
-    gen_code(&#34;spritegalore&#34;, prefs=prefs)
-    gen_listing(&#34;spritegalore&#34;)
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == &#34;__main__&#34;:
-    generate(code)</code></pre>
+    generate(code, &#34;sprites_galore&#34;)</code></pre>
 </details>
 </section>
 <section>

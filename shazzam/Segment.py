@@ -8,6 +8,7 @@ from shazzam.Rasterline import Rasterline
 from shazzam.Emu6502 import Emu6502
 from shazzam.Immediate import Immediate
 
+from enum import Enum
 import binascii
 from typing import List
 import io
@@ -34,6 +35,14 @@ def _insert(source_str, insert_str, pos):
 # ---------------------------------------------------------------------
 # Segment class
 # ---------------------------------------------------------------------
+class SegmentType(Enum):
+    CODE = 0
+    REGISTERS = 1
+    SPRITE = 2
+    CHARACTERS = 3
+    SCREEN_MEM = 4
+    BITMAP = 5
+    GENERIC_DATA = 6
 
 
 class Segment():
@@ -50,7 +59,10 @@ class Segment():
         DirectiveFormat.USE_EXCLAMATION: '!'
     }
 
-    def __init__(self, start_adr: int, name: str, code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None, directive_prefix: DirectiveFormat = None, use_relative_addressing: bool = False, fixed_address: bool = False):
+    def __init__(self, start_adr: int, name: str,
+                code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None,
+                directive_prefix: DirectiveFormat = None, use_relative_addressing: bool = False,
+                fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None):
         """[summary]
 
         Args:
@@ -64,7 +76,6 @@ class Segment():
         self.start_adr = start_adr
         self.end_adr = start_adr
         self.fixed_start_address = start_adr if fixed_address else None
-
         self.instructions = {}
         self.next_position = start_adr
         self.name = name
@@ -72,6 +83,8 @@ class Segment():
         self.labels = {}
         self.required_labels = {}
         self.use_relative_addressing = use_relative_addressing
+        self.segment_type = segment_type
+        self.group = group
 
         if code_format is None:
             code_format = g._CODE_FORMAT

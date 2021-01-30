@@ -7,7 +7,7 @@ from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
-import shazzam.macros.macros_math as m
+import shazzam.macros.math as m
 
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")

@@ -11,11 +11,17 @@ from shazzam.Instruction import Instruction
 from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, System, DetectMode, Alias
 from shazzam.defs import RegisterACC, RegisterX, RegisterY
 from shazzam.Rasterline import Rasterline
-from shazzam.Segment import Segment
+from shazzam.Segment import Segment, SegmentType
 from shazzam.Address import Address
 from shazzam.Immediate import Immediate
 from shazzam.Cruncher import Cruncher
 from shazzam.Assembler import Assembler
+
+from shazzam.optimizer.SegmentOptimizer import SegmentOptimizer, SegmentOptimizerType
+from shazzam.optimizer.C64Mode import C64Mode
+from shazzam.optimizer.Part import Part
+from shazzam.optimizer.MemorySegment import MemorySegment
+
 import enum
 from typing import List, Any, Dict
 
@@ -33,7 +39,7 @@ def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments
 
 
 @contextmanager
-def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False) -> Segment:
+def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -> Segment:
     """[summary]
 
     Args:
@@ -49,7 +55,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
     """
     global _CURRENT_CONTEXT, _PROGRAM
 
-    seg = Segment(start_adr=start_adr, name=name.upper(), use_relative_addressing=use_relative_addressing, fixed_address=fixed_address)
+    seg = Segment(start_adr=start_adr, name=name.upper(), use_relative_addressing=use_relative_addressing, fixed_address=fixed_address, segment_type=segment_type, group=group)
     g._CURRENT_CONTEXT = seg
 
     yield seg
@@ -282,25 +288,55 @@ def gen_irqloader_script(irqloader, parts_definition: Dict):
     global _PROGRAM
     raise NotImplementedError()
 
-def optimize_segments():
+def optimize_segments(specific_memory_org: List = None, bank_setup: C64Mode = C64Mode.IO_VISIBLE, optimizer_type: SegmentOptimizerType = SegmentOptimizerType.BFD):
+    """[summary]
 
+    Args:
+        specific_memory_org (List, optional): [description]. Defaults to None.
+        bank_setup (C64Mode, optional): [description]. Defaults to C64Mode.IO_VISIBLE.
+        optimizer_type (SegmentOptimizerType, optional): [description]. Defaults to SegmentOptimizerType.BFD.
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        [type]: [description]
+    """
     global _PROGRAM
 
-    from shazzam.heuristics import SegmentOptimizer, C64Mode, Part, Segment
     optimizer = SegmentOptimizer()
-    optimizer.select_bank(C64Mode.IO_VISIBLE)
+    optimizer.select_bank(bank_setup)
 
-    optimizer.add_memory_segment(0x0200, 0x3FFF, Segment.SegmentType.UserRAM)
-    optimizer.add_memory_segment(0x4000, 0x7FFF, Segment.SegmentType.UserRAM)
-    optimizer.add_memory_segment(0x8000, 0xBFFF, Segment.SegmentType.UserRAM)
-    optimizer.add_memory_segment(0xC000, 0xCFFF, Segment.SegmentType.UserRAM)
-    optimizer.add_memory_segment(0xD000, 0xDFFF, Segment.SegmentType.IO)
-    optimizer.add_memory_segment(0xE000, 0xFFFF, Segment.SegmentType.UserRAM)
+    if specific_memory_org and len(specific_memory_org) > 0:
+        for location in specific_memory_org:
+            optimizer.add_memory_segment(location.start_address, location.end_address, location.type)
+    else:
+        optimizer.add_memory_segment(0x0200, 0x3FFF, MemorySegment.SegmentType.UserRAM)
+        optimizer.add_memory_segment(0x4000, 0x7FFF, MemorySegment.SegmentType.UserRAM)
+        optimizer.add_memory_segment(0x8000, 0xBFFF, MemorySegment.SegmentType.UserRAM)
+        optimizer.add_memory_segment(0xC000, 0xCFFF, MemorySegment.SegmentType.UserRAM)
+        optimizer.add_memory_segment(0xD000, 0xDFFF, MemorySegment.SegmentType.IO)
+        optimizer.add_memory_segment(0xE000, 0xFFFF, MemorySegment.SegmentType.UserRAM)
 
     for segment in g._PROGRAM.segments:
-        optimizer.add_code_segment(size=segment.size, name=segment.name, part_type=Part.PartType.CODE, fixed_address=segment.fixed_start_address)
+        optimizer.add_code_segment(size=segment.size, name=segment.name, part_type=segment.segment_type, fixed_address=segment.fixed_start_address, group=segment.group)
 
-    results = optimizer.run_best_fit_decreasing()
+    if optimizer_type is SegmentOptimizerType.FF:
+        results = optimizer.run_first_fit()
+    elif optimizer_type is SegmentOptimizerType.NF:
+        results = optimizer.run_next_fit()
+    elif optimizer_type is SegmentOptimizerType.BF:
+        results = optimizer.run_best_fit()
+    elif optimizer_type is SegmentOptimizerType.FFD:
+        results = optimizer.run_first_fit_decreasing()
+    elif optimizer_type is SegmentOptimizerType.NFD:
+        results = optimizer.run_next_fit_decreasing()
+    elif optimizer_type is SegmentOptimizerType.BFD:
+        results = optimizer.run_best_fit_decreasing()
+    else:
+        raise ValueError(f"Unknown optimizer: {optimizer_type}")
+
+    return results
 
 # ---------------------------------------------------------------------
 # Assembler directives

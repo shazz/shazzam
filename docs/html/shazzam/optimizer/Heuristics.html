@@ -1,0 +1,1303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>shazzam.optimizer.Heuristics API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>shazzam.optimizer.Heuristics</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from shazzam.optimizer.MemorySegment import MemorySegment
+from shazzam.optimizer.Part import Part
+from shazzam.optimizer.Bank import Bank
+
+import copy
+from enum import Enum
+from typing import List, Tuple
+import logging
+
+
+class Heuristics():
+
+    def __init__(self, segments: List[MemorySegment], parts: List[Part], banks: List[Bank]):
+
+        self.logger = logging.getLogger(&#34;shazzam&#34;)
+
+        self.segments = copy.deepcopy(segments)
+        self.parts = copy.deepcopy(parts)
+        self.is_fitted = False
+        self.banks = banks
+
+        self.groups = self._get_parts_groups()
+
+        self._sort_parts_by_priority()
+        self.best_banks = self._select_best_bank()
+
+        self.logger.debug(f&#34;MemorySegments reorganized in:&#34;)
+        for segment in self.segments:
+            self.logger.debug(f&#34; - {segment}&#34;)
+
+    def best_fit(self) -&gt; List[MemorySegment]:
+        &#34;&#34;&#34;allocate memory to blocks as per Best fit algorithm
+
+        Returns:
+            List[MemorySegment]: [description]
+        &#34;&#34;&#34;
+        if self.is_fitted:
+            raise RuntimeError(&#34;Already fitted!&#34;)
+
+        # pick each process and find suitable blocks according to its size and assign to it
+        for part in self.parts:
+
+            if part.fixed_address is not None:
+                try:
+                    segment = self._get_segment(start_address=part.fixed_address)
+                    self._allocate(segment, part)
+                except ValueError as e:
+                    self.logger.error(e)
+            else:
+                segments = self.segments
+
+                # restrict to best bank segments
+                if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+                # Find the best fit block within all segments
+                best_segment = None
+                for segment in segments:
+                    if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                        if best_segment is None:
+                            best_segment = segment
+                        elif best_segment.remaining_size &gt; segment.remaining_size:
+                            best_segment = segment
+
+                # If we could find a block for current process
+                if best_segment is not None:
+                    self._allocate(best_segment, part)
+                else:
+                    self.logger.warning(f&#34;Warning! No segment found for part {part}!&#34;)
+
+        self.is_fitted = True
+
+        return self.segments
+
+    def next_fit(self) -&gt; List[MemorySegment]:
+        &#34;&#34;&#34;allocate memory to blocks as per Next fit algorithm
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            List[MemorySegment]: [description]
+        &#34;&#34;&#34;
+        if self.is_fitted:
+            raise RuntimeError(&#34;Already fitted!&#34;)
+
+        previous_idx = 0
+
+        # pick each process and find suitable blocks according to its size ad assign to it
+        for part in self.parts:
+
+            if part.fixed_address is None:
+                segments = self.segments
+
+                # restrict to best bank segments
+                if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+                # Do not start from beginning
+                for idx in range(previous_idx, len(segments)):
+                    segment = segments[idx]
+                    if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                        self._allocate(segment, part)
+
+                        previous_idx = idx if idx &lt; len(segments) else 0
+                        break
+            else:
+                try:
+                    segment = self._get_segment(start_address=part.fixed_address)
+                    self._allocate(segment, part)
+                except ValueError as e:
+                    raise e
+                    self.logger.error(e)
+
+        self.is_fitted = True
+
+        return self.segments
+
+    def first_fit(self) -&gt; List[MemorySegment]:
+        &#34;&#34;&#34;[summary]
+
+        Raises:
+            RuntimeError: [description]
+
+        Returns:
+            List[MemorySegment]: [description]
+        &#34;&#34;&#34;
+        if self.is_fitted:
+            raise RuntimeError(&#34;Already fitted!&#34;)
+
+        # Initially no block is assigned to any process pick each process and find suitable blocks according to its size ad assign to it
+        for part in self.parts:
+
+            if part.fixed_address is None:
+                segments = self.segments
+
+                # restrict to best bank segments
+                if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+                for segment in segments:
+                    if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                        self._allocate(segment, part)
+                        break
+            else:
+                try:
+                    segment = self._get_segment(start_address=part.fixed_address)
+                    self.logger.debug(f&#34;For part {part}, targetted segment is {segment}&#34;)
+                    self._allocate(segment, part)
+                except ValueError as e:
+                    self.logger.error(e)
+
+        self.is_fitted = True
+
+        return self.segments
+
+    def first_fit_decreasing(self) -&gt; None:
+        &#34;&#34;&#34;allocate memory to blocks as per First Fit Decreasing algorithm&#34;&#34;&#34;
+
+        # reorder parts by size decreasing and priority
+        self._sort_parts_by_size()
+
+        # fit as usual
+        self.first_fit()
+
+    def best_fit_decreasing(self) -&gt; None:
+        &#34;&#34;&#34;allocate memory to blocks as per Best Fit Decreasing algorithm&#34;&#34;&#34;
+
+        # reorder parts by size decreasing and priority
+        self._sort_parts_by_size()
+
+        # fit as usual
+        self.best_fit()
+
+    def next_fit_decreasing(self) -&gt; None:
+        &#34;&#34;&#34;allocate memory to blocks as per Next Fit Decreasing algorithm&#34;&#34;&#34;
+
+        # reorder parts by size decreasing and priority
+        self._sort_parts_by_size()
+
+        # fit as usual
+        self.next_fit()
+
+    def generate_c64jasm_segments(self) -&gt; None:
+        &#34;&#34;&#34;Generate segments file to be used in c64jasm&#34;&#34;&#34;
+
+        with open(&#34;segments.jasm&#34;, &#34;w&#34;) as f:
+            for i, segment in enumerate(self.segments):
+                for alloc in segment.allocations:
+                    line = f&#34;!segment {alloc.part.name.upper()} {{ from: ${alloc.start_address:04x}, to: ${alloc.end_address:04x} }}\n&#34;
+                    f.write(line)
+
+        #TODO: add Bank and d018 information
+
+    def print_results(self, validate_results: bool = True) -&gt; None:
+        &#34;&#34;&#34;Print results&#34;&#34;&#34;
+
+        # stats
+        allocated = 0
+        used = 0
+        not_allocated = 0
+        free = 0
+
+        for i, segment in enumerate(self.segments):
+            self.logger.info(f&#34;Segment {i} [${segment.start_address:04x} - ${segment.end_address:04x}] of size {segment.initial_size} has {segment.remaining_size} bytes remaining ({round(100*segment.remaining_size/segment.initial_size, 2)}%)&#34;)
+
+            used_in_segment = (segment.initial_size - segment.remaining_size)
+            used += used_in_segment
+            free += segment.remaining_size
+
+            if used_in_segment &gt; 0:
+                not_allocated += segment.remaining_size
+
+            for alloc in segment.allocations:
+                self.logger.info(f&#34; - Part {alloc.part} is allocated at [${alloc.start_address:04x} - ${alloc.end_address:04x}]&#34;)
+                allocated += alloc.initial_size
+
+        self.logger.info(f&#34;Total allocated      : {allocated} bytes&#34;)
+        self.logger.info(f&#34;Total not allocated  : {not_allocated} bytes&#34;)
+        self.logger.info(f&#34;Total free           : {free} bytes&#34;)
+
+        if validate_results:
+            self._validate_results()
+            self.logger.info(&#34;Segments allocation validated&#34;)
+
+        assert allocated == used, f&#34;Total allocated {allocated} should be equal to total used in segment {used}&#34;
+
+    def _split_segments(self, part) -&gt; None:
+        &#34;&#34;&#34;Split a segment in 2 parts to support fixed allocation
+
+        Args:
+            part ([type]): [description]
+        &#34;&#34;&#34;
+
+        segment = self._get_segment(part.fixed_address)
+
+        if part.fixed_address &gt; segment.start_address:
+
+            low_segment = MemorySegment(
+                start_address = segment.start_address,
+                end_address = part.fixed_address - 1,
+                segment_type = segment.segment_type)
+
+            self.segments.insert(self.segments.index(segment), low_segment)
+
+            segment.start_address = part.fixed_address
+
+        # print(&#34;\nMemorySegments updated&#34;)
+        # for segment in self.segments:
+        #     print(f&#34;\t - {segment}&#34;)
+
+    def _select_best_bank(self) -&gt; None:
+        &#34;&#34;&#34;Select best VIC bank based on gfx parts to store&#34;&#34;&#34;
+
+        self.gfx_banks = {}
+        banks_used = []
+        for group in self.groups:
+
+            gfx_mem_required = 0
+            for part in self.parts:
+                gfx_mem_required += part.size if part.group == group and part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM] else 0
+
+            bank_used_mem = []
+            for bank in self.banks:
+                available_mem = bank.size - gfx_mem_required
+                if available_mem &gt;= 0 and bank not in banks_used:
+                    bank_used_mem.append((bank, available_mem))
+
+            if len(bank_used_mem) == 0:
+                raise ValueError(f&#34;Gfx data exceeds biggest bank capacity, more groups are needed to store {gfx_mem_required} bytes&#34;)
+
+            best_banks = sorted(bank_used_mem, key=lambda banks: banks[1], reverse=False)
+
+            self.logger.debug(f&#34;Possible banks to store {gfx_mem_required} bytes of graphics: {best_banks} &#34;)
+            first_available_bank = best_banks[0][0]
+            self.gfx_banks[group] = first_available_bank
+            banks_used.append(first_available_bank)
+
+            self.logger.debug(f&#34;For group &#39;{group}&#39;, bank {first_available_bank} is selected&#34;)
+            self._get_segments_for_bank(first_available_bank)
+
+    def _sort_parts_by_size(self) -&gt; None:
+        &#34;&#34;&#34;Sort the parts by priority then by size decreasing&#34;&#34;&#34;
+
+        self.parts = sorted(self.parts, key=lambda parts: parts.size, reverse=True)
+        self._sort_parts_by_priority()
+
+    def _get_parts_groups(self) -&gt; List[str]:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            List[str]: [description]
+        &#34;&#34;&#34;
+
+        groups  = []
+        for part in self.parts:
+            if part.group is not None and part.group not in groups:
+                groups.append(part.group)
+
+        return groups
+
+    def _sort_parts_by_priority(self) -&gt; None:
+        &#34;&#34;&#34;Sort the part by priority (fixed addresses first then gfx then code/generic data)&#34;&#34;&#34;
+
+        high_priority_parts = []
+        medium_priority_parts = []
+        low_priority_parts = []
+
+        # give medium priority to some gfx parts
+        for part in self.parts:
+            if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS]:
+                low_priority_parts.insert(0, part)
+            else:
+                low_priority_parts.append(part)
+
+        # give medium priority to screen mem
+        for part in low_priority_parts:
+            if part.part_type in [Part.PartType.SCREEN_MEM]:
+                medium_priority_parts.insert(0, part)
+            else:
+                medium_priority_parts.append(part)
+
+        # give high priority to fixed address part
+        for part in medium_priority_parts:
+            if part.fixed_address is not None:
+                high_priority_parts.insert(0, part)
+                self._split_segments(part)
+            else:
+                high_priority_parts.append(part)
+
+        self.parts = high_priority_parts
+
+        self.logger.debug(&#34;Parts reorganized by priority&#34;)
+        for part in self.parts:
+            self.logger.debug(f&#34; - {part}&#34;)
+
+    def _get_segments_for_bank(self, bank: Bank) -&gt; List[MemorySegment]:
+
+        segments = []
+
+        for adr_range in bank.addresses_ranges:
+            start_address = adr_range[0]
+            end_address  = adr_range[1]
+
+            self.logger.debug(f&#34;Looking for segment on range [${start_address:04x} - ${end_address:04x}] for Bank {bank}&#34;)
+            for segment in self.segments:
+                # print(f&#34;Checking in segment range: [${segment.start_address:04x} - ${segment.end_address:04x}]&#34;)
+                if segment.start_address &gt;= start_address and segment.end_address &lt;= end_address:
+                    segments.append(segment)
+
+                elif start_address &gt;= segment.start_address and end_address &lt;= segment.end_address:
+                    # split the segment
+
+                    self.logger.debug(f&#34;MemorySegment is split to match banks&#34;)
+                    if start_address &gt; segment.start_address:
+                        low_seg = MemorySegment(
+                            start_address = segment.start_address,
+                            end_address = start_address - 1,
+                            segment_type = segment.segment_type)
+                        self.segments.insert(self.segments.index(segment), low_seg)
+                        self.logger.debug(f&#34; - low segment: {low_seg}&#34;)
+
+                    if end_address &lt; segment.end_address:
+                        high_seg = MemorySegment(
+                            start_address = end_address + 1,
+                            end_address = segment.end_address,
+                            segment_type = segment.segment_type)
+                        self.segments.insert(self.segments.index(segment)+1, high_seg)
+                        self.logger.debug(f&#34; - high segment {high_seg}&#34;)
+
+                    segment.start_address = start_address
+                    segment.end_address = end_address
+                    self.logger.debug(f&#34; - mid segment {segment}&#34;)
+
+
+        if len(segments) == 0:
+            raise ValueError(f&#34;No segments found for bank {bank}&#34;)
+
+        self.logger.debug(f&#34;Bank {bank} contains the segments: {segments}&#34;)
+
+        return segments
+
+    def _get_segment(self, start_address: int) -&gt; MemorySegment:
+        &#34;&#34;&#34;Find segment containing the given address
+
+        Args:
+            start_address (int): Part start address
+
+        Raises:
+            ValueError: if no MemorySegment found
+
+        Returns:
+            MemorySegment: Found segment
+        &#34;&#34;&#34;
+
+        for segment in self.segments:
+            if segment.start_address &lt;= start_address and segment.end_address &gt; start_address:
+                return segment
+
+        raise ValueError(f&#34;No segment found for this fixed address: {start_address:04x}&#34;)
+
+    def _is_compatible(self, segment: MemorySegment, part: Part) -&gt; bool:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            segment (MemorySegment): [description]
+            part (Part): [description]
+
+        Returns:
+            bool: True is compatible
+        &#34;&#34;&#34;
+        if segment.segment_type is MemorySegment.SegmentType.IO:
+            return part.part_type == Part.PartType.REGISTERS
+
+        elif segment.segment_type is MemorySegment.SegmentType.UserRAM:
+            return part.part_type not in [Part.PartType.REGISTERS]
+
+        elif segment.Restricted:
+            return False
+
+    def _allocate(self, segment: MemorySegment, part: Part) -&gt; None:
+        &#34;&#34;&#34;Allocate a part in a segment if compatible
+
+        Args:
+            segment (MemorySegment): [description]
+            part (Part): [description]
+
+        Raises:
+            ValueError: if they are not compatible
+        &#34;&#34;&#34;
+
+        self.logger.debug(f&#34;Checking {part} can be allocated in {segment}&#34;)
+        if not self._is_compatible(segment, part):
+            raise ValueError(f&#34;Part {part.name} of type {part.part_type.name} is not compatible with the segment {segment.name} of type {segment.segment_type.name}&#34;)
+
+        segment.allocate(part)
+
+    def _validate_results(self) -&gt; None:
+        &#34;&#34;&#34;Validate results&#34;&#34;&#34;
+
+        for segment in self.segments:
+            for alloc in segment.allocations:
+                assert self._is_compatible(segment, alloc.part), f&#34;Part {alloc.part} is not compatible with MemorySegment {segment}&#34;
+                if alloc.part.fixed_address is not None:
+                    assert alloc.start_address == alloc.part.fixed_address, f&#34;Part {alloc.part} should start at ${alloc.part.fixed_address:04x} but starts at ${alloc.start_address:04x}&#34;
+
+                if alloc.part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    bank_assigned = self.gfx_banks[alloc.part.group]
+                    segments_in_bank = self._get_segments_for_bank(bank_assigned)
+                    part_in_segment = False
+                    for segment in segments_in_bank:
+                        if alloc.start_address &gt;= segment.start_address and (alloc.start_address + alloc.part.size) &lt;= segment.end_address:
+                            part_in_segment = True
+
+                    # checking gfx part is in VIC bank assigned for this group
+                    assert part_in_segment == True, f&#34;Part {alloc.part} should be in segments {segments_in_bank} from banks {bank_assigned}&#34;
+
+                    # checking alignment
+                    if alloc.part.part_type is Part.PartType.SCREEN_MEM:
+                        assert alloc.start_address % 0x400 == 0, f&#34;Screen Memory parts have to be aligned on 0x400 boundary&#34;</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="shazzam.optimizer.Heuristics.Heuristics"><code class="flex name class">
+<span>class <span class="ident">Heuristics</span></span>
+<span>(</span><span>segments: List[<a title="shazzam.optimizer.MemorySegment.MemorySegment" href="MemorySegment.html#shazzam.optimizer.MemorySegment.MemorySegment">MemorySegment</a>], parts: List[<a title="shazzam.optimizer.Part.Part" href="Part.html#shazzam.optimizer.Part.Part">Part</a>], banks: List[<a title="shazzam.optimizer.Bank.Bank" href="Bank.html#shazzam.optimizer.Bank.Bank">Bank</a>])</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Heuristics():
+
+    def __init__(self, segments: List[MemorySegment], parts: List[Part], banks: List[Bank]):
+
+        self.logger = logging.getLogger(&#34;shazzam&#34;)
+
+        self.segments = copy.deepcopy(segments)
+        self.parts = copy.deepcopy(parts)
+        self.is_fitted = False
+        self.banks = banks
+
+        self.groups = self._get_parts_groups()
+
+        self._sort_parts_by_priority()
+        self.best_banks = self._select_best_bank()
+
+        self.logger.debug(f&#34;MemorySegments reorganized in:&#34;)
+        for segment in self.segments:
+            self.logger.debug(f&#34; - {segment}&#34;)
+
+    def best_fit(self) -&gt; List[MemorySegment]:
+        &#34;&#34;&#34;allocate memory to blocks as per Best fit algorithm
+
+        Returns:
+            List[MemorySegment]: [description]
+        &#34;&#34;&#34;
+        if self.is_fitted:
+            raise RuntimeError(&#34;Already fitted!&#34;)
+
+        # pick each process and find suitable blocks according to its size and assign to it
+        for part in self.parts:
+
+            if part.fixed_address is not None:
+                try:
+                    segment = self._get_segment(start_address=part.fixed_address)
+                    self._allocate(segment, part)
+                except ValueError as e:
+                    self.logger.error(e)
+            else:
+                segments = self.segments
+
+                # restrict to best bank segments
+                if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+                # Find the best fit block within all segments
+                best_segment = None
+                for segment in segments:
+                    if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                        if best_segment is None:
+                            best_segment = segment
+                        elif best_segment.remaining_size &gt; segment.remaining_size:
+                            best_segment = segment
+
+                # If we could find a block for current process
+                if best_segment is not None:
+                    self._allocate(best_segment, part)
+                else:
+                    self.logger.warning(f&#34;Warning! No segment found for part {part}!&#34;)
+
+        self.is_fitted = True
+
+        return self.segments
+
+    def next_fit(self) -&gt; List[MemorySegment]:
+        &#34;&#34;&#34;allocate memory to blocks as per Next fit algorithm
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            List[MemorySegment]: [description]
+        &#34;&#34;&#34;
+        if self.is_fitted:
+            raise RuntimeError(&#34;Already fitted!&#34;)
+
+        previous_idx = 0
+
+        # pick each process and find suitable blocks according to its size ad assign to it
+        for part in self.parts:
+
+            if part.fixed_address is None:
+                segments = self.segments
+
+                # restrict to best bank segments
+                if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+                # Do not start from beginning
+                for idx in range(previous_idx, len(segments)):
+                    segment = segments[idx]
+                    if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                        self._allocate(segment, part)
+
+                        previous_idx = idx if idx &lt; len(segments) else 0
+                        break
+            else:
+                try:
+                    segment = self._get_segment(start_address=part.fixed_address)
+                    self._allocate(segment, part)
+                except ValueError as e:
+                    raise e
+                    self.logger.error(e)
+
+        self.is_fitted = True
+
+        return self.segments
+
+    def first_fit(self) -&gt; List[MemorySegment]:
+        &#34;&#34;&#34;[summary]
+
+        Raises:
+            RuntimeError: [description]
+
+        Returns:
+            List[MemorySegment]: [description]
+        &#34;&#34;&#34;
+        if self.is_fitted:
+            raise RuntimeError(&#34;Already fitted!&#34;)
+
+        # Initially no block is assigned to any process pick each process and find suitable blocks according to its size ad assign to it
+        for part in self.parts:
+
+            if part.fixed_address is None:
+                segments = self.segments
+
+                # restrict to best bank segments
+                if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+                for segment in segments:
+                    if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                        self._allocate(segment, part)
+                        break
+            else:
+                try:
+                    segment = self._get_segment(start_address=part.fixed_address)
+                    self.logger.debug(f&#34;For part {part}, targetted segment is {segment}&#34;)
+                    self._allocate(segment, part)
+                except ValueError as e:
+                    self.logger.error(e)
+
+        self.is_fitted = True
+
+        return self.segments
+
+    def first_fit_decreasing(self) -&gt; None:
+        &#34;&#34;&#34;allocate memory to blocks as per First Fit Decreasing algorithm&#34;&#34;&#34;
+
+        # reorder parts by size decreasing and priority
+        self._sort_parts_by_size()
+
+        # fit as usual
+        self.first_fit()
+
+    def best_fit_decreasing(self) -&gt; None:
+        &#34;&#34;&#34;allocate memory to blocks as per Best Fit Decreasing algorithm&#34;&#34;&#34;
+
+        # reorder parts by size decreasing and priority
+        self._sort_parts_by_size()
+
+        # fit as usual
+        self.best_fit()
+
+    def next_fit_decreasing(self) -&gt; None:
+        &#34;&#34;&#34;allocate memory to blocks as per Next Fit Decreasing algorithm&#34;&#34;&#34;
+
+        # reorder parts by size decreasing and priority
+        self._sort_parts_by_size()
+
+        # fit as usual
+        self.next_fit()
+
+    def generate_c64jasm_segments(self) -&gt; None:
+        &#34;&#34;&#34;Generate segments file to be used in c64jasm&#34;&#34;&#34;
+
+        with open(&#34;segments.jasm&#34;, &#34;w&#34;) as f:
+            for i, segment in enumerate(self.segments):
+                for alloc in segment.allocations:
+                    line = f&#34;!segment {alloc.part.name.upper()} {{ from: ${alloc.start_address:04x}, to: ${alloc.end_address:04x} }}\n&#34;
+                    f.write(line)
+
+        #TODO: add Bank and d018 information
+
+    def print_results(self, validate_results: bool = True) -&gt; None:
+        &#34;&#34;&#34;Print results&#34;&#34;&#34;
+
+        # stats
+        allocated = 0
+        used = 0
+        not_allocated = 0
+        free = 0
+
+        for i, segment in enumerate(self.segments):
+            self.logger.info(f&#34;Segment {i} [${segment.start_address:04x} - ${segment.end_address:04x}] of size {segment.initial_size} has {segment.remaining_size} bytes remaining ({round(100*segment.remaining_size/segment.initial_size, 2)}%)&#34;)
+
+            used_in_segment = (segment.initial_size - segment.remaining_size)
+            used += used_in_segment
+            free += segment.remaining_size
+
+            if used_in_segment &gt; 0:
+                not_allocated += segment.remaining_size
+
+            for alloc in segment.allocations:
+                self.logger.info(f&#34; - Part {alloc.part} is allocated at [${alloc.start_address:04x} - ${alloc.end_address:04x}]&#34;)
+                allocated += alloc.initial_size
+
+        self.logger.info(f&#34;Total allocated      : {allocated} bytes&#34;)
+        self.logger.info(f&#34;Total not allocated  : {not_allocated} bytes&#34;)
+        self.logger.info(f&#34;Total free           : {free} bytes&#34;)
+
+        if validate_results:
+            self._validate_results()
+            self.logger.info(&#34;Segments allocation validated&#34;)
+
+        assert allocated == used, f&#34;Total allocated {allocated} should be equal to total used in segment {used}&#34;
+
+    def _split_segments(self, part) -&gt; None:
+        &#34;&#34;&#34;Split a segment in 2 parts to support fixed allocation
+
+        Args:
+            part ([type]): [description]
+        &#34;&#34;&#34;
+
+        segment = self._get_segment(part.fixed_address)
+
+        if part.fixed_address &gt; segment.start_address:
+
+            low_segment = MemorySegment(
+                start_address = segment.start_address,
+                end_address = part.fixed_address - 1,
+                segment_type = segment.segment_type)
+
+            self.segments.insert(self.segments.index(segment), low_segment)
+
+            segment.start_address = part.fixed_address
+
+        # print(&#34;\nMemorySegments updated&#34;)
+        # for segment in self.segments:
+        #     print(f&#34;\t - {segment}&#34;)
+
+    def _select_best_bank(self) -&gt; None:
+        &#34;&#34;&#34;Select best VIC bank based on gfx parts to store&#34;&#34;&#34;
+
+        self.gfx_banks = {}
+        banks_used = []
+        for group in self.groups:
+
+            gfx_mem_required = 0
+            for part in self.parts:
+                gfx_mem_required += part.size if part.group == group and part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM] else 0
+
+            bank_used_mem = []
+            for bank in self.banks:
+                available_mem = bank.size - gfx_mem_required
+                if available_mem &gt;= 0 and bank not in banks_used:
+                    bank_used_mem.append((bank, available_mem))
+
+            if len(bank_used_mem) == 0:
+                raise ValueError(f&#34;Gfx data exceeds biggest bank capacity, more groups are needed to store {gfx_mem_required} bytes&#34;)
+
+            best_banks = sorted(bank_used_mem, key=lambda banks: banks[1], reverse=False)
+
+            self.logger.debug(f&#34;Possible banks to store {gfx_mem_required} bytes of graphics: {best_banks} &#34;)
+            first_available_bank = best_banks[0][0]
+            self.gfx_banks[group] = first_available_bank
+            banks_used.append(first_available_bank)
+
+            self.logger.debug(f&#34;For group &#39;{group}&#39;, bank {first_available_bank} is selected&#34;)
+            self._get_segments_for_bank(first_available_bank)
+
+    def _sort_parts_by_size(self) -&gt; None:
+        &#34;&#34;&#34;Sort the parts by priority then by size decreasing&#34;&#34;&#34;
+
+        self.parts = sorted(self.parts, key=lambda parts: parts.size, reverse=True)
+        self._sort_parts_by_priority()
+
+    def _get_parts_groups(self) -&gt; List[str]:
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            List[str]: [description]
+        &#34;&#34;&#34;
+
+        groups  = []
+        for part in self.parts:
+            if part.group is not None and part.group not in groups:
+                groups.append(part.group)
+
+        return groups
+
+    def _sort_parts_by_priority(self) -&gt; None:
+        &#34;&#34;&#34;Sort the part by priority (fixed addresses first then gfx then code/generic data)&#34;&#34;&#34;
+
+        high_priority_parts = []
+        medium_priority_parts = []
+        low_priority_parts = []
+
+        # give medium priority to some gfx parts
+        for part in self.parts:
+            if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS]:
+                low_priority_parts.insert(0, part)
+            else:
+                low_priority_parts.append(part)
+
+        # give medium priority to screen mem
+        for part in low_priority_parts:
+            if part.part_type in [Part.PartType.SCREEN_MEM]:
+                medium_priority_parts.insert(0, part)
+            else:
+                medium_priority_parts.append(part)
+
+        # give high priority to fixed address part
+        for part in medium_priority_parts:
+            if part.fixed_address is not None:
+                high_priority_parts.insert(0, part)
+                self._split_segments(part)
+            else:
+                high_priority_parts.append(part)
+
+        self.parts = high_priority_parts
+
+        self.logger.debug(&#34;Parts reorganized by priority&#34;)
+        for part in self.parts:
+            self.logger.debug(f&#34; - {part}&#34;)
+
+    def _get_segments_for_bank(self, bank: Bank) -&gt; List[MemorySegment]:
+
+        segments = []
+
+        for adr_range in bank.addresses_ranges:
+            start_address = adr_range[0]
+            end_address  = adr_range[1]
+
+            self.logger.debug(f&#34;Looking for segment on range [${start_address:04x} - ${end_address:04x}] for Bank {bank}&#34;)
+            for segment in self.segments:
+                # print(f&#34;Checking in segment range: [${segment.start_address:04x} - ${segment.end_address:04x}]&#34;)
+                if segment.start_address &gt;= start_address and segment.end_address &lt;= end_address:
+                    segments.append(segment)
+
+                elif start_address &gt;= segment.start_address and end_address &lt;= segment.end_address:
+                    # split the segment
+
+                    self.logger.debug(f&#34;MemorySegment is split to match banks&#34;)
+                    if start_address &gt; segment.start_address:
+                        low_seg = MemorySegment(
+                            start_address = segment.start_address,
+                            end_address = start_address - 1,
+                            segment_type = segment.segment_type)
+                        self.segments.insert(self.segments.index(segment), low_seg)
+                        self.logger.debug(f&#34; - low segment: {low_seg}&#34;)
+
+                    if end_address &lt; segment.end_address:
+                        high_seg = MemorySegment(
+                            start_address = end_address + 1,
+                            end_address = segment.end_address,
+                            segment_type = segment.segment_type)
+                        self.segments.insert(self.segments.index(segment)+1, high_seg)
+                        self.logger.debug(f&#34; - high segment {high_seg}&#34;)
+
+                    segment.start_address = start_address
+                    segment.end_address = end_address
+                    self.logger.debug(f&#34; - mid segment {segment}&#34;)
+
+
+        if len(segments) == 0:
+            raise ValueError(f&#34;No segments found for bank {bank}&#34;)
+
+        self.logger.debug(f&#34;Bank {bank} contains the segments: {segments}&#34;)
+
+        return segments
+
+    def _get_segment(self, start_address: int) -&gt; MemorySegment:
+        &#34;&#34;&#34;Find segment containing the given address
+
+        Args:
+            start_address (int): Part start address
+
+        Raises:
+            ValueError: if no MemorySegment found
+
+        Returns:
+            MemorySegment: Found segment
+        &#34;&#34;&#34;
+
+        for segment in self.segments:
+            if segment.start_address &lt;= start_address and segment.end_address &gt; start_address:
+                return segment
+
+        raise ValueError(f&#34;No segment found for this fixed address: {start_address:04x}&#34;)
+
+    def _is_compatible(self, segment: MemorySegment, part: Part) -&gt; bool:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            segment (MemorySegment): [description]
+            part (Part): [description]
+
+        Returns:
+            bool: True is compatible
+        &#34;&#34;&#34;
+        if segment.segment_type is MemorySegment.SegmentType.IO:
+            return part.part_type == Part.PartType.REGISTERS
+
+        elif segment.segment_type is MemorySegment.SegmentType.UserRAM:
+            return part.part_type not in [Part.PartType.REGISTERS]
+
+        elif segment.Restricted:
+            return False
+
+    def _allocate(self, segment: MemorySegment, part: Part) -&gt; None:
+        &#34;&#34;&#34;Allocate a part in a segment if compatible
+
+        Args:
+            segment (MemorySegment): [description]
+            part (Part): [description]
+
+        Raises:
+            ValueError: if they are not compatible
+        &#34;&#34;&#34;
+
+        self.logger.debug(f&#34;Checking {part} can be allocated in {segment}&#34;)
+        if not self._is_compatible(segment, part):
+            raise ValueError(f&#34;Part {part.name} of type {part.part_type.name} is not compatible with the segment {segment.name} of type {segment.segment_type.name}&#34;)
+
+        segment.allocate(part)
+
+    def _validate_results(self) -&gt; None:
+        &#34;&#34;&#34;Validate results&#34;&#34;&#34;
+
+        for segment in self.segments:
+            for alloc in segment.allocations:
+                assert self._is_compatible(segment, alloc.part), f&#34;Part {alloc.part} is not compatible with MemorySegment {segment}&#34;
+                if alloc.part.fixed_address is not None:
+                    assert alloc.start_address == alloc.part.fixed_address, f&#34;Part {alloc.part} should start at ${alloc.part.fixed_address:04x} but starts at ${alloc.start_address:04x}&#34;
+
+                if alloc.part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                    bank_assigned = self.gfx_banks[alloc.part.group]
+                    segments_in_bank = self._get_segments_for_bank(bank_assigned)
+                    part_in_segment = False
+                    for segment in segments_in_bank:
+                        if alloc.start_address &gt;= segment.start_address and (alloc.start_address + alloc.part.size) &lt;= segment.end_address:
+                            part_in_segment = True
+
+                    # checking gfx part is in VIC bank assigned for this group
+                    assert part_in_segment == True, f&#34;Part {alloc.part} should be in segments {segments_in_bank} from banks {bank_assigned}&#34;
+
+                    # checking alignment
+                    if alloc.part.part_type is Part.PartType.SCREEN_MEM:
+                        assert alloc.start_address % 0x400 == 0, f&#34;Screen Memory parts have to be aligned on 0x400 boundary&#34;</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.best_fit"><code class="name flex">
+<span>def <span class="ident">best_fit</span></span>(<span>self) ‑> List[<a title="shazzam.optimizer.MemorySegment.MemorySegment" href="MemorySegment.html#shazzam.optimizer.MemorySegment.MemorySegment">MemorySegment</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>allocate memory to blocks as per Best fit algorithm</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[MemorySegment]</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def best_fit(self) -&gt; List[MemorySegment]:
+    &#34;&#34;&#34;allocate memory to blocks as per Best fit algorithm
+
+    Returns:
+        List[MemorySegment]: [description]
+    &#34;&#34;&#34;
+    if self.is_fitted:
+        raise RuntimeError(&#34;Already fitted!&#34;)
+
+    # pick each process and find suitable blocks according to its size and assign to it
+    for part in self.parts:
+
+        if part.fixed_address is not None:
+            try:
+                segment = self._get_segment(start_address=part.fixed_address)
+                self._allocate(segment, part)
+            except ValueError as e:
+                self.logger.error(e)
+        else:
+            segments = self.segments
+
+            # restrict to best bank segments
+            if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+            # Find the best fit block within all segments
+            best_segment = None
+            for segment in segments:
+                if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                    if best_segment is None:
+                        best_segment = segment
+                    elif best_segment.remaining_size &gt; segment.remaining_size:
+                        best_segment = segment
+
+            # If we could find a block for current process
+            if best_segment is not None:
+                self._allocate(best_segment, part)
+            else:
+                self.logger.warning(f&#34;Warning! No segment found for part {part}!&#34;)
+
+    self.is_fitted = True
+
+    return self.segments</code></pre>
+</details>
+</dd>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.best_fit_decreasing"><code class="name flex">
+<span>def <span class="ident">best_fit_decreasing</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>allocate memory to blocks as per Best Fit Decreasing algorithm</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def best_fit_decreasing(self) -&gt; None:
+    &#34;&#34;&#34;allocate memory to blocks as per Best Fit Decreasing algorithm&#34;&#34;&#34;
+
+    # reorder parts by size decreasing and priority
+    self._sort_parts_by_size()
+
+    # fit as usual
+    self.best_fit()</code></pre>
+</details>
+</dd>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.first_fit"><code class="name flex">
+<span>def <span class="ident">first_fit</span></span>(<span>self) ‑> List[<a title="shazzam.optimizer.MemorySegment.MemorySegment" href="MemorySegment.html#shazzam.optimizer.MemorySegment.MemorySegment">MemorySegment</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>RuntimeError</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[MemorySegment]</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def first_fit(self) -&gt; List[MemorySegment]:
+    &#34;&#34;&#34;[summary]
+
+    Raises:
+        RuntimeError: [description]
+
+    Returns:
+        List[MemorySegment]: [description]
+    &#34;&#34;&#34;
+    if self.is_fitted:
+        raise RuntimeError(&#34;Already fitted!&#34;)
+
+    # Initially no block is assigned to any process pick each process and find suitable blocks according to its size ad assign to it
+    for part in self.parts:
+
+        if part.fixed_address is None:
+            segments = self.segments
+
+            # restrict to best bank segments
+            if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+            for segment in segments:
+                if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                    self._allocate(segment, part)
+                    break
+        else:
+            try:
+                segment = self._get_segment(start_address=part.fixed_address)
+                self.logger.debug(f&#34;For part {part}, targetted segment is {segment}&#34;)
+                self._allocate(segment, part)
+            except ValueError as e:
+                self.logger.error(e)
+
+    self.is_fitted = True
+
+    return self.segments</code></pre>
+</details>
+</dd>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.first_fit_decreasing"><code class="name flex">
+<span>def <span class="ident">first_fit_decreasing</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>allocate memory to blocks as per First Fit Decreasing algorithm</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def first_fit_decreasing(self) -&gt; None:
+    &#34;&#34;&#34;allocate memory to blocks as per First Fit Decreasing algorithm&#34;&#34;&#34;
+
+    # reorder parts by size decreasing and priority
+    self._sort_parts_by_size()
+
+    # fit as usual
+    self.first_fit()</code></pre>
+</details>
+</dd>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.generate_c64jasm_segments"><code class="name flex">
+<span>def <span class="ident">generate_c64jasm_segments</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Generate segments file to be used in c64jasm</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_c64jasm_segments(self) -&gt; None:
+    &#34;&#34;&#34;Generate segments file to be used in c64jasm&#34;&#34;&#34;
+
+    with open(&#34;segments.jasm&#34;, &#34;w&#34;) as f:
+        for i, segment in enumerate(self.segments):
+            for alloc in segment.allocations:
+                line = f&#34;!segment {alloc.part.name.upper()} {{ from: ${alloc.start_address:04x}, to: ${alloc.end_address:04x} }}\n&#34;
+                f.write(line)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.next_fit"><code class="name flex">
+<span>def <span class="ident">next_fit</span></span>(<span>self) ‑> List[<a title="shazzam.optimizer.MemorySegment.MemorySegment" href="MemorySegment.html#shazzam.optimizer.MemorySegment.MemorySegment">MemorySegment</a>]</span>
+</code></dt>
+<dd>
+<div class="desc"><p>allocate memory to blocks as per Next fit algorithm</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[MemorySegment]</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def next_fit(self) -&gt; List[MemorySegment]:
+    &#34;&#34;&#34;allocate memory to blocks as per Next fit algorithm
+
+    Raises:
+        ValueError: [description]
+
+    Returns:
+        List[MemorySegment]: [description]
+    &#34;&#34;&#34;
+    if self.is_fitted:
+        raise RuntimeError(&#34;Already fitted!&#34;)
+
+    previous_idx = 0
+
+    # pick each process and find suitable blocks according to its size ad assign to it
+    for part in self.parts:
+
+        if part.fixed_address is None:
+            segments = self.segments
+
+            # restrict to best bank segments
+            if part.part_type in [Part.PartType.SPRITE, Part.PartType.BITMAP, Part.PartType.CHARACTERS, Part.PartType.SCREEN_MEM]:
+                segments = self._get_segments_for_bank(self.gfx_banks[part.group])
+
+            # Do not start from beginning
+            for idx in range(previous_idx, len(segments)):
+                segment = segments[idx]
+                if segment.remaining_size &gt;= part.size and self._is_compatible(segment, part):
+                    self._allocate(segment, part)
+
+                    previous_idx = idx if idx &lt; len(segments) else 0
+                    break
+        else:
+            try:
+                segment = self._get_segment(start_address=part.fixed_address)
+                self._allocate(segment, part)
+            except ValueError as e:
+                raise e
+                self.logger.error(e)
+
+    self.is_fitted = True
+
+    return self.segments</code></pre>
+</details>
+</dd>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.next_fit_decreasing"><code class="name flex">
+<span>def <span class="ident">next_fit_decreasing</span></span>(<span>self) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>allocate memory to blocks as per Next Fit Decreasing algorithm</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def next_fit_decreasing(self) -&gt; None:
+    &#34;&#34;&#34;allocate memory to blocks as per Next Fit Decreasing algorithm&#34;&#34;&#34;
+
+    # reorder parts by size decreasing and priority
+    self._sort_parts_by_size()
+
+    # fit as usual
+    self.next_fit()</code></pre>
+</details>
+</dd>
+<dt id="shazzam.optimizer.Heuristics.Heuristics.print_results"><code class="name flex">
+<span>def <span class="ident">print_results</span></span>(<span>self, validate_results: bool = True) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Print results</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def print_results(self, validate_results: bool = True) -&gt; None:
+    &#34;&#34;&#34;Print results&#34;&#34;&#34;
+
+    # stats
+    allocated = 0
+    used = 0
+    not_allocated = 0
+    free = 0
+
+    for i, segment in enumerate(self.segments):
+        self.logger.info(f&#34;Segment {i} [${segment.start_address:04x} - ${segment.end_address:04x}] of size {segment.initial_size} has {segment.remaining_size} bytes remaining ({round(100*segment.remaining_size/segment.initial_size, 2)}%)&#34;)
+
+        used_in_segment = (segment.initial_size - segment.remaining_size)
+        used += used_in_segment
+        free += segment.remaining_size
+
+        if used_in_segment &gt; 0:
+            not_allocated += segment.remaining_size
+
+        for alloc in segment.allocations:
+            self.logger.info(f&#34; - Part {alloc.part} is allocated at [${alloc.start_address:04x} - ${alloc.end_address:04x}]&#34;)
+            allocated += alloc.initial_size
+
+    self.logger.info(f&#34;Total allocated      : {allocated} bytes&#34;)
+    self.logger.info(f&#34;Total not allocated  : {not_allocated} bytes&#34;)
+    self.logger.info(f&#34;Total free           : {free} bytes&#34;)
+
+    if validate_results:
+        self._validate_results()
+        self.logger.info(&#34;Segments allocation validated&#34;)
+
+    assert allocated == used, f&#34;Total allocated {allocated} should be equal to total used in segment {used}&#34;</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="shazzam.optimizer" href="index.html">shazzam.optimizer</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="shazzam.optimizer.Heuristics.Heuristics" href="#shazzam.optimizer.Heuristics.Heuristics">Heuristics</a></code></h4>
+<ul class="">
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.best_fit" href="#shazzam.optimizer.Heuristics.Heuristics.best_fit">best_fit</a></code></li>
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.best_fit_decreasing" href="#shazzam.optimizer.Heuristics.Heuristics.best_fit_decreasing">best_fit_decreasing</a></code></li>
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.first_fit" href="#shazzam.optimizer.Heuristics.Heuristics.first_fit">first_fit</a></code></li>
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.first_fit_decreasing" href="#shazzam.optimizer.Heuristics.Heuristics.first_fit_decreasing">first_fit_decreasing</a></code></li>
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.generate_c64jasm_segments" href="#shazzam.optimizer.Heuristics.Heuristics.generate_c64jasm_segments">generate_c64jasm_segments</a></code></li>
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.next_fit" href="#shazzam.optimizer.Heuristics.Heuristics.next_fit">next_fit</a></code></li>
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.next_fit_decreasing" href="#shazzam.optimizer.Heuristics.Heuristics.next_fit_decreasing">next_fit_decreasing</a></code></li>
+<li><code><a title="shazzam.optimizer.Heuristics.Heuristics.print_results" href="#shazzam.optimizer.Heuristics.Heuristics.print_results">print_results</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

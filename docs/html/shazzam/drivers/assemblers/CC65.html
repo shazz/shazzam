@@ -26,33 +26,48 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from shazzam.defs import *
+<pre><code class="python">from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat
 from shazzam.Assembler import Assembler
 from shazzam.Segment import Segment
 from shazzam.Program import Program
 
 import subprocess
 import os
-import logging
-
 from typing import List
+
 
 class CC65(Assembler):
 
+    makefile = \
+        &#34;&#34;&#34;CA65   = ca65
+CL65   = cl65
+LD65   = ld65
+
+APP = %1.prg
+
+all: $(APP)
+
+%1.prg: %2
+        $(CL65) -v -g -d -t c64 --cpu 6502X -C gen-c64-asm.cfg -u __EXEHDR__ $^ -o $@
+
+clean:
+        rm -f *.o *.prg
+&#34;&#34;&#34;
+
     features = \
-&#34;&#34;&#34;FEATURES {
+        &#34;&#34;&#34;FEATURES {
     STARTADDRESS: default = %%;
 }
 &#34;&#34;&#34;
 
     symbols = \
-&#34;&#34;&#34;SYMBOLS {
+        &#34;&#34;&#34;SYMBOLS {
     __LOADADDR__: type = import;
 }
 &#34;&#34;&#34;
 
     memory = \
-&#34;&#34;&#34;MEMORY {
+        &#34;&#34;&#34;MEMORY {
     ZP:       file = &#34;&#34;, start = $0002,  size = $00FE,      define = yes;
     LOADADDR: file = %O, start = %S - 2, size = $0002;
     MAIN:     file = %O, start = %S,     size = %%% - %S,   fill = yes;
@@ -61,7 +76,7 @@ class CC65(Assembler):
 &#34;&#34;&#34;
 
     segments = \
-&#34;&#34;&#34;SEGMENTS {
+        &#34;&#34;&#34;SEGMENTS {
     ZEROPAGE: load = ZP,       type = zp,  optional = yes;
     LOADADDR: load = LOADADDR, type = ro;
     EXEHDR:   load = MAIN,     type = ro,  optional = yes;
@@ -107,7 +122,7 @@ class CC65(Assembler):
         Returns:
             [type]: [description]
         &#34;&#34;&#34;
-        return Alias( {
+        return Alias({
             # &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
             &#34;code&#34;: [CodeFormat.USE_HEX],
             &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
@@ -126,14 +141,16 @@ class CC65(Assembler):
         segment_filename = f&#39;generated/{program.name}/{segment.name}.o&#39;
 
         # seg_lines
-        cmd = [self.path, &#39;-t&#39;, &#39;c64&#39;, f&#34;generated/{program.name}/{segment.name}.asm&#34;]
+        cmd = [self.path, &#39;-t&#39;, &#39;c64&#39;, &#39;--cpu&#39;, &#39;6502X&#39;, f&#34;generated/{program.name}/{segment.name}.asm&#34;]
 
         cmd.append(&#39;-o&#39;)
         cmd.append(segment_filename)
 
-        self.logger.info(f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-        output = data.communicate()
+        self.logger.info(
+            f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
+        data = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        data.communicate()
 
         self.logger.info(f&#34;{segment.name} assembled&#34;)
 
@@ -148,10 +165,12 @@ class CC65(Assembler):
         &#34;&#34;&#34;
         program_filename = f&#39;generated/{program.name}/{program.name}.prg&#39;
 
-        self.generate_config(start_address, program)
+        self._generate_config(start_address, program)
+
+        self._generate_makefile(program)
 
         # seg_lines
-        cmd = [self.path, &#39;-v&#39;, &#39;-g&#39;, &#39;-d&#39;, &#39;-t&#39;, &#39;c64&#39;, &#39;-C&#39;, f&#39;generated/{program.name}/gen-c64-asm.cfg&#39;, &#39;-u&#39;, &#39;__EXEHDR__&#39;]
+        cmd = [self.path, &#39;-v&#39;, &#39;-g&#39;, &#39;-d&#39;, &#39;-t&#39;, &#39;c64&#39;, &#39;--cpu&#39;, &#39;6502X&#39;, &#39;-C&#39;, f&#39;generated/{program.name}/gen-c64-asm.cfg&#39;, &#39;-u&#39;, &#39;__EXEHDR__&#39;]
         for segment in program.segments:
             cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
 
@@ -159,19 +178,22 @@ class CC65(Assembler):
         cmd.append(program_filename)
 
         # cl65 -t c64 -C generated/c64-asm.cfg -u __EXEHDR__ generated/entry.asm generated/INIT.asm generated/IRQ.asm -o main.prg
-        self.logger.info(f&#34;Assembling {program.name} using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        self.logger.info(
+            f&#34;Assembling {program.name} using CL65 command: {cmd}&#34;)
+        data = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = data.communicate()
 
         if len(stderr_data) &gt; 1:
             self.logger.error(stderr_data)
         else:
-            self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
+            self.logger.info(
+                f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
         return program_filename
 
-    def generate_config(self, start_address, program):
-        &#34;&#34;&#34;generate_config
+    def _generate_config(self, start_address, program):
+        &#34;&#34;&#34;_generate_config
 
         Args:
             start_address ([type]): [description]
@@ -195,39 +217,47 @@ class CC65(Assembler):
                 non_default_segments.append(segment)
 
         if entry_point_found is False:
-            raise RuntimeError(f&#34;Entry point in CODE, DATA or BSS segment not found!&#34;)
+            raise RuntimeError(&#34;Entry point in CODE, DATA or BSS segment not found!&#34;)
 
         # find segment next to BASIC header
-        sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
-        sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
+        sorted_non_default_segments_adr = sorted(
+            [segment.start_adr for segment in non_default_segments])
+        sorted_default_segments_adr = sorted(
+            [segment.start_adr for segment in default_segments])
 
-        all_segments_adr = sorted(sorted_non_default_segments_adr + sorted_default_segments_adr)
+        all_segments_adr = sorted(
+            sorted_non_default_segments_adr + sorted_default_segments_adr)
 
         if len(sorted_non_default_segments_adr) &gt; 0:
             # TODO: test with node default entry point
             # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
             first_segment_address = sorted_non_default_segments_adr[0]
-            CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${first_segment_address:04X}&#34;)
+            CC65.memory = CC65.memory.replace(
+                &#34;%%%&#34;, f&#34;${first_segment_address:04X}&#34;)
         else:
-            start_adr = sorted_default_segments_adr[0]
+            # start_adr = sorted_default_segments_adr[0]
             end_adr = sorted_default_segments_adr[-1]
             for segment in default_segments:
                 end_adr = max(end_adr, segment.end_adr)
 
+            self.logger.info(&#34;Adding basic header to default segment&#34;)
+            end_adr += CC65.basic_header_size
             # main_size = start_address + CC65.basic_header_size + (program.segments[0].size)
-            main_size = end_adr - start_adr
+            # main_size = end_adr - start_adr
             # self.logger.info(f&#34;Only one CODE segment of size: {program.segments[0].size} + {CC65.basic_header_size} + 0x{start_address:04X} = {main_size:04X}&#34;)
             CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${end_adr:04X}&#34;)
 
         mem_lines = &#34;&#34;
 
-        self.logger.debug(f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
+        self.logger.debug(
+            f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
         for i, adr in enumerate(all_segments_adr):
             segment = self._get_segment_by_address(adr, program.segments)
 
             if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
                 if i != len(all_segments_adr)-1:
-                    seg_size = self._get_segment_by_address(all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
+                    seg_size = self._get_segment_by_address(
+                        all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
                 else:
                     seg_size = segment.end_adr-segment.start_adr
 
@@ -246,7 +276,7 @@ class CC65(Assembler):
         CC65.segments = CC65.segments.replace(&#34;%%&#34;, seg_lines)
 
         with open(f&#34;generated/{program.name}/gen-c64-asm.cfg&#34;, &#34;w&#34;) as f:
-            f.write(CC65.features   )
+            f.write(CC65.features)
             f.write(CC65.symbols)
             f.write(CC65.memory)
             f.write(CC65.segments)
@@ -270,7 +300,26 @@ class CC65(Assembler):
             if segment.start_adr == address:
                 return segment
 
-        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)</code></pre>
+        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)
+
+    def _generate_makefile(self, program):
+        &#34;&#34;&#34;_generate_makefile
+
+        Args:
+            program ([type]): [description]
+        &#34;&#34;&#34;
+        makefile = CC65.makefile.replace(&#34;%1&#34;, program.name)
+
+        asm_files = []
+        for segment in program.segments:
+            asm_files.append(f&#34;{segment.name}.asm&#34;)
+
+        makefile = makefile.replace(&#34;%2&#34;, &#39; &#39;.join(asm_files))
+
+        with open(f&#34;generated/{program.name}/Makefile&#34;, &#34;w&#34;) as f:
+                f.write(makefile)
+
+        self.logger.debug(&#34;CC65 Makefile file written&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -287,27 +336,44 @@ class CC65(Assembler):
 <span>(</span><span>name: str, exe_path: str)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>This class defines the interface to be implemented by cross-assembler drivers.
+The default one is CC65.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class CC65(Assembler):
 
+    makefile = \
+        &#34;&#34;&#34;CA65   = ca65
+CL65   = cl65
+LD65   = ld65
+
+APP = %1.prg
+
+all: $(APP)
+
+%1.prg: %2
+        $(CL65) -v -g -d -t c64 --cpu 6502X -C gen-c64-asm.cfg -u __EXEHDR__ $^ -o $@
+
+clean:
+        rm -f *.o *.prg
+&#34;&#34;&#34;
+
     features = \
-&#34;&#34;&#34;FEATURES {
+        &#34;&#34;&#34;FEATURES {
     STARTADDRESS: default = %%;
 }
 &#34;&#34;&#34;
 
     symbols = \
-&#34;&#34;&#34;SYMBOLS {
+        &#34;&#34;&#34;SYMBOLS {
     __LOADADDR__: type = import;
 }
 &#34;&#34;&#34;
 
     memory = \
-&#34;&#34;&#34;MEMORY {
+        &#34;&#34;&#34;MEMORY {
     ZP:       file = &#34;&#34;, start = $0002,  size = $00FE,      define = yes;
     LOADADDR: file = %O, start = %S - 2, size = $0002;
     MAIN:     file = %O, start = %S,     size = %%% - %S,   fill = yes;
@@ -316,7 +382,7 @@ class CC65(Assembler):
 &#34;&#34;&#34;
 
     segments = \
-&#34;&#34;&#34;SEGMENTS {
+        &#34;&#34;&#34;SEGMENTS {
     ZEROPAGE: load = ZP,       type = zp,  optional = yes;
     LOADADDR: load = LOADADDR, type = ro;
     EXEHDR:   load = MAIN,     type = ro,  optional = yes;
@@ -362,7 +428,7 @@ class CC65(Assembler):
         Returns:
             [type]: [description]
         &#34;&#34;&#34;
-        return Alias( {
+        return Alias({
             # &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
             &#34;code&#34;: [CodeFormat.USE_HEX],
             &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
@@ -381,14 +447,16 @@ class CC65(Assembler):
         segment_filename = f&#39;generated/{program.name}/{segment.name}.o&#39;
 
         # seg_lines
-        cmd = [self.path, &#39;-t&#39;, &#39;c64&#39;, f&#34;generated/{program.name}/{segment.name}.asm&#34;]
+        cmd = [self.path, &#39;-t&#39;, &#39;c64&#39;, &#39;--cpu&#39;, &#39;6502X&#39;, f&#34;generated/{program.name}/{segment.name}.asm&#34;]
 
         cmd.append(&#39;-o&#39;)
         cmd.append(segment_filename)
 
-        self.logger.info(f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-        output = data.communicate()
+        self.logger.info(
+            f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
+        data = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        data.communicate()
 
         self.logger.info(f&#34;{segment.name} assembled&#34;)
 
@@ -403,10 +471,12 @@ class CC65(Assembler):
         &#34;&#34;&#34;
         program_filename = f&#39;generated/{program.name}/{program.name}.prg&#39;
 
-        self.generate_config(start_address, program)
+        self._generate_config(start_address, program)
+
+        self._generate_makefile(program)
 
         # seg_lines
-        cmd = [self.path, &#39;-v&#39;, &#39;-g&#39;, &#39;-d&#39;, &#39;-t&#39;, &#39;c64&#39;, &#39;-C&#39;, f&#39;generated/{program.name}/gen-c64-asm.cfg&#39;, &#39;-u&#39;, &#39;__EXEHDR__&#39;]
+        cmd = [self.path, &#39;-v&#39;, &#39;-g&#39;, &#39;-d&#39;, &#39;-t&#39;, &#39;c64&#39;, &#39;--cpu&#39;, &#39;6502X&#39;, &#39;-C&#39;, f&#39;generated/{program.name}/gen-c64-asm.cfg&#39;, &#39;-u&#39;, &#39;__EXEHDR__&#39;]
         for segment in program.segments:
             cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
 
@@ -414,19 +484,22 @@ class CC65(Assembler):
         cmd.append(program_filename)
 
         # cl65 -t c64 -C generated/c64-asm.cfg -u __EXEHDR__ generated/entry.asm generated/INIT.asm generated/IRQ.asm -o main.prg
-        self.logger.info(f&#34;Assembling {program.name} using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        self.logger.info(
+            f&#34;Assembling {program.name} using CL65 command: {cmd}&#34;)
+        data = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = data.communicate()
 
         if len(stderr_data) &gt; 1:
             self.logger.error(stderr_data)
         else:
-            self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
+            self.logger.info(
+                f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
         return program_filename
 
-    def generate_config(self, start_address, program):
-        &#34;&#34;&#34;generate_config
+    def _generate_config(self, start_address, program):
+        &#34;&#34;&#34;_generate_config
 
         Args:
             start_address ([type]): [description]
@@ -450,39 +523,47 @@ class CC65(Assembler):
                 non_default_segments.append(segment)
 
         if entry_point_found is False:
-            raise RuntimeError(f&#34;Entry point in CODE, DATA or BSS segment not found!&#34;)
+            raise RuntimeError(&#34;Entry point in CODE, DATA or BSS segment not found!&#34;)
 
         # find segment next to BASIC header
-        sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
-        sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
+        sorted_non_default_segments_adr = sorted(
+            [segment.start_adr for segment in non_default_segments])
+        sorted_default_segments_adr = sorted(
+            [segment.start_adr for segment in default_segments])
 
-        all_segments_adr = sorted(sorted_non_default_segments_adr + sorted_default_segments_adr)
+        all_segments_adr = sorted(
+            sorted_non_default_segments_adr + sorted_default_segments_adr)
 
         if len(sorted_non_default_segments_adr) &gt; 0:
             # TODO: test with node default entry point
             # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
             first_segment_address = sorted_non_default_segments_adr[0]
-            CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${first_segment_address:04X}&#34;)
+            CC65.memory = CC65.memory.replace(
+                &#34;%%%&#34;, f&#34;${first_segment_address:04X}&#34;)
         else:
-            start_adr = sorted_default_segments_adr[0]
+            # start_adr = sorted_default_segments_adr[0]
             end_adr = sorted_default_segments_adr[-1]
             for segment in default_segments:
                 end_adr = max(end_adr, segment.end_adr)
 
+            self.logger.info(&#34;Adding basic header to default segment&#34;)
+            end_adr += CC65.basic_header_size
             # main_size = start_address + CC65.basic_header_size + (program.segments[0].size)
-            main_size = end_adr - start_adr
+            # main_size = end_adr - start_adr
             # self.logger.info(f&#34;Only one CODE segment of size: {program.segments[0].size} + {CC65.basic_header_size} + 0x{start_address:04X} = {main_size:04X}&#34;)
             CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${end_adr:04X}&#34;)
 
         mem_lines = &#34;&#34;
 
-        self.logger.debug(f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
+        self.logger.debug(
+            f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
         for i, adr in enumerate(all_segments_adr):
             segment = self._get_segment_by_address(adr, program.segments)
 
             if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
                 if i != len(all_segments_adr)-1:
-                    seg_size = self._get_segment_by_address(all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
+                    seg_size = self._get_segment_by_address(
+                        all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
                 else:
                     seg_size = segment.end_adr-segment.start_adr
 
@@ -501,7 +582,7 @@ class CC65(Assembler):
         CC65.segments = CC65.segments.replace(&#34;%%&#34;, seg_lines)
 
         with open(f&#34;generated/{program.name}/gen-c64-asm.cfg&#34;, &#34;w&#34;) as f:
-            f.write(CC65.features   )
+            f.write(CC65.features)
             f.write(CC65.symbols)
             f.write(CC65.memory)
             f.write(CC65.segments)
@@ -525,7 +606,26 @@ class CC65(Assembler):
             if segment.start_adr == address:
                 return segment
 
-        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)</code></pre>
+        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)
+
+    def _generate_makefile(self, program):
+        &#34;&#34;&#34;_generate_makefile
+
+        Args:
+            program ([type]): [description]
+        &#34;&#34;&#34;
+        makefile = CC65.makefile.replace(&#34;%1&#34;, program.name)
+
+        asm_files = []
+        for segment in program.segments:
+            asm_files.append(f&#34;{segment.name}.asm&#34;)
+
+        makefile = makefile.replace(&#34;%2&#34;, &#39; &#39;.join(asm_files))
+
+        with open(f&#34;generated/{program.name}/Makefile&#34;, &#34;w&#34;) as f:
+                f.write(makefile)
+
+        self.logger.debug(&#34;CC65 Makefile file written&#34;)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -538,6 +638,10 @@ class CC65(Assembler):
 <div class="desc"></div>
 </dd>
 <dt id="shazzam.drivers.assemblers.CC65.CC65.features"><code class="name">var <span class="ident">features</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.drivers.assemblers.CC65.CC65.makefile"><code class="name">var <span class="ident">makefile</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -581,10 +685,12 @@ class CC65(Assembler):
     &#34;&#34;&#34;
     program_filename = f&#39;generated/{program.name}/{program.name}.prg&#39;
 
-    self.generate_config(start_address, program)
+    self._generate_config(start_address, program)
+
+    self._generate_makefile(program)
 
     # seg_lines
-    cmd = [self.path, &#39;-v&#39;, &#39;-g&#39;, &#39;-d&#39;, &#39;-t&#39;, &#39;c64&#39;, &#39;-C&#39;, f&#39;generated/{program.name}/gen-c64-asm.cfg&#39;, &#39;-u&#39;, &#39;__EXEHDR__&#39;]
+    cmd = [self.path, &#39;-v&#39;, &#39;-g&#39;, &#39;-d&#39;, &#39;-t&#39;, &#39;c64&#39;, &#39;--cpu&#39;, &#39;6502X&#39;, &#39;-C&#39;, f&#39;generated/{program.name}/gen-c64-asm.cfg&#39;, &#39;-u&#39;, &#39;__EXEHDR__&#39;]
     for segment in program.segments:
         cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
 
@@ -592,121 +698,19 @@ class CC65(Assembler):
     cmd.append(program_filename)
 
     # cl65 -t c64 -C generated/c64-asm.cfg -u __EXEHDR__ generated/entry.asm generated/INIT.asm generated/IRQ.asm -o main.prg
-    self.logger.info(f&#34;Assembling {program.name} using CL65 command: {cmd}&#34;)
-    data = subprocess.Popen(cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+    self.logger.info(
+        f&#34;Assembling {program.name} using CL65 command: {cmd}&#34;)
+    data = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout_data, stderr_data = data.communicate()
 
     if len(stderr_data) &gt; 1:
         self.logger.error(stderr_data)
     else:
-        self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
+        self.logger.info(
+            f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
     return program_filename</code></pre>
-</details>
-</dd>
-<dt id="shazzam.drivers.assemblers.CC65.CC65.generate_config"><code class="name flex">
-<span>def <span class="ident">generate_config</span></span>(<span>self, start_address, program)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>generate_config</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>start_address</code></strong> :&ensp;<code>[type]</code></dt>
-<dd>[description]</dd>
-<dt><strong><code>program</code></strong> :&ensp;<code>[type]</code></dt>
-<dd>[description]</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>RuntimeError</code></dt>
-<dd>[description]</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def generate_config(self, start_address, program):
-    &#34;&#34;&#34;generate_config
-
-    Args:
-        start_address ([type]): [description]
-        program ([type]): [description]
-
-    Raises:
-        RuntimeError: [description]
-    &#34;&#34;&#34;
-    # gen features
-    CC65.features = CC65.features.replace(&#34;%%&#34;, f&#34;${start_address:04X}&#34;)
-
-    # gen memory
-    entry_point_found = False
-    non_default_segments = []
-    default_segments = []
-    for i, segment in enumerate(program.segments):
-        if segment.name in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
-            entry_point_found = True
-            default_segments.append(segment)
-        else:
-            non_default_segments.append(segment)
-
-    if entry_point_found is False:
-        raise RuntimeError(f&#34;Entry point in CODE, DATA or BSS segment not found!&#34;)
-
-    # find segment next to BASIC header
-    sorted_non_default_segments_adr = sorted([segment.start_adr for segment in non_default_segments])
-    sorted_default_segments_adr = sorted([segment.start_adr for segment in default_segments])
-
-    all_segments_adr = sorted(sorted_non_default_segments_adr + sorted_default_segments_adr)
-
-    if len(sorted_non_default_segments_adr) &gt; 0:
-        # TODO: test with node default entry point
-        # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]
-        first_segment_address = sorted_non_default_segments_adr[0]
-        CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${first_segment_address:04X}&#34;)
-    else:
-        start_adr = sorted_default_segments_adr[0]
-        end_adr = sorted_default_segments_adr[-1]
-        for segment in default_segments:
-            end_adr = max(end_adr, segment.end_adr)
-
-        # main_size = start_address + CC65.basic_header_size + (program.segments[0].size)
-        main_size = end_adr - start_adr
-        # self.logger.info(f&#34;Only one CODE segment of size: {program.segments[0].size} + {CC65.basic_header_size} + 0x{start_address:04X} = {main_size:04X}&#34;)
-        CC65.memory = CC65.memory.replace(&#34;%%%&#34;, f&#34;${end_adr:04X}&#34;)
-
-    mem_lines = &#34;&#34;
-
-    self.logger.debug(f&#34;Browsing segments by increasing addresses: {all_segments_adr}&#34;)
-    for i, adr in enumerate(all_segments_adr):
-        segment = self._get_segment_by_address(adr, program.segments)
-
-        if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
-            if i != len(all_segments_adr)-1:
-                seg_size = self._get_segment_by_address(all_segments_adr[i+1], program.segments).start_adr - segment.start_adr
-            else:
-                seg_size = segment.end_adr-segment.start_adr
-
-            mem_lines += f&#34;\t{segment.name}:\tfile = %O, start = ${segment.start_adr:04X},      size = ${seg_size:04X},    fill = yes;\n&#34;
-
-    self.logger.debug(f&#34;Adding lines: {mem_lines}&#34;)
-    CC65.memory = CC65.memory.replace(&#34;%%&#34;, mem_lines)
-
-    # gen segments
-    seg_lines = &#34;&#34;
-    for segment in program.segments:
-        if segment.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
-            seg_lines += f&#34;\t{segment.name}:\tload = {segment.name},\ttype = rw, optional = no, define = yes;\n&#34;
-
-    self.logger.debug(f&#34;Adding lines in configuration: {seg_lines}&#34;)
-    CC65.segments = CC65.segments.replace(&#34;%%&#34;, seg_lines)
-
-    with open(f&#34;generated/{program.name}/gen-c64-asm.cfg&#34;, &#34;w&#34;) as f:
-        f.write(CC65.features   )
-        f.write(CC65.symbols)
-        f.write(CC65.memory)
-        f.write(CC65.segments)
-
-    self.logger.debug(&#34;CC65 configuration files written&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.drivers.assemblers.CC65.CC65.get_bss_segment"><code class="name flex">
@@ -752,7 +756,7 @@ class CC65(Assembler):
     Returns:
         [type]: [description]
     &#34;&#34;&#34;
-    return Alias( {
+    return Alias({
         # &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
         &#34;code&#34;: [CodeFormat.USE_HEX],
         &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
@@ -816,10 +820,10 @@ class CC65(Assembler):
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.assemble_prg" href="#shazzam.drivers.assemblers.CC65.CC65.assemble_prg">assemble_prg</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.basic_header_size" href="#shazzam.drivers.assemblers.CC65.CC65.basic_header_size">basic_header_size</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.features" href="#shazzam.drivers.assemblers.CC65.CC65.features">features</a></code></li>
-<li><code><a title="shazzam.drivers.assemblers.CC65.CC65.generate_config" href="#shazzam.drivers.assemblers.CC65.CC65.generate_config">generate_config</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.get_bss_segment" href="#shazzam.drivers.assemblers.CC65.CC65.get_bss_segment">get_bss_segment</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.get_code_format" href="#shazzam.drivers.assemblers.CC65.CC65.get_code_format">get_code_format</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.get_data_segment" href="#shazzam.drivers.assemblers.CC65.CC65.get_data_segment">get_data_segment</a></code></li>
+<li><code><a title="shazzam.drivers.assemblers.CC65.CC65.makefile" href="#shazzam.drivers.assemblers.CC65.CC65.makefile">makefile</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.memory" href="#shazzam.drivers.assemblers.CC65.CC65.memory">memory</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.segments" href="#shazzam.drivers.assemblers.CC65.CC65.segments">segments</a></code></li>
 <li><code><a title="shazzam.drivers.assemblers.CC65.CC65.symbols" href="#shazzam.drivers.assemblers.CC65.CC65.symbols">symbols</a></code></li>

@@ -26,11 +26,12 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python"># if shazzam not installed
+<pre><code class="python">from reloading import reloading
+
+# if shazzam not installed
 import sys
 sys.path.append(&#34;.&#34;)
 
-from reloading import reloading
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
@@ -45,17 +46,19 @@ from shazzam.drivers.crunchers.Doynamite import Doynamite
 from shazzam.drivers.crunchers.Lzsa import Lzsa
 
 # define your cross assembler
-assembler = CC65(&#34;cc65&#34;, &#34;/home/shazz/projects/c64/bin/cl65&#34;)
+assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
 prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,
           comments_format=prefs.comments,
           directive_prefix=prefs.directive)
 
-prg_cruncher  = Exomizer(&#34;/home/shazz/projects/c64/bin/exomizer&#34;)
-prg_cruncher  = Nucrunch(&#34;/home/shazz/projects/c64/bin/nucrunch&#34;)
-prg_cruncher  = Pucrunch(&#34;/home/shazz/projects/c64/bin/pucrunch&#34;)
-data_cruncher = Apultra(&#34;/home/shazz/projects/c64/bin/apultra&#34;, mode = PackingMode.FORWARD)
+prg_cruncher  = Exomizer(&#34;third_party/exomizer/exomizer&#34;)
+prg_cruncher  = Nucrunch(&#34;third_party/nucrunch/nucrunch&#34;)
+prg_cruncher  = Pucrunch(&#34;third_party/pucrunch/pucrunch&#34;)
+
+data_cruncher = Apultra(&#34;third_party/lzsa/lzsa&#34;, mode=PackingMode.FORWARD)
+data_cruncher = Apultra(&#34;third_party/apultra/apultra&#34;, mode=PackingMode.FORWARD)
 
 @reloading
 def code():
@@ -179,8 +182,7 @@ def code():
         data_cruncher.generate_depacker_routine(s.get_stats().start_address)
 
     # generate listing and code
-    gen_code(prefs=prefs)
-    gen_listing()
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801, cruncher=prg_cruncher)

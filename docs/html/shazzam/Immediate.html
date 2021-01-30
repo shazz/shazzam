@@ -34,7 +34,7 @@
             raise ValueError(&#34;Immediate is void&#34;)
 
         if name and high_byte is None:
-            raise ValueError(f&#34;high_byte not specified&#34;)
+            raise ValueError(&#34;high_byte not specified&#34;)
 
         if value and value &gt; 0xff:
             raise ValueError(f&#34;Immediate value {value} exceeds 1 byte&#34;)
@@ -59,11 +59,11 @@
         return self._value
 
     @value.setter
-    def value(self, val):
-         if(val &gt; 0xff):
+    def value(self, val: int) -&gt; None:
+        if(val &gt; 0xff):
             raise ValueError(f&#34;Immediate value {val} exceeds 1 byte&#34;)
 
-         self._value = val
+        self._value = val
 
     def __add__(self, adder):
         self._add_modifier = adder
@@ -107,7 +107,7 @@
             raise ValueError(&#34;Immediate is void&#34;)
 
         if name and high_byte is None:
-            raise ValueError(f&#34;high_byte not specified&#34;)
+            raise ValueError(&#34;high_byte not specified&#34;)
 
         if value and value &gt; 0xff:
             raise ValueError(f&#34;Immediate value {value} exceeds 1 byte&#34;)
@@ -132,11 +132,11 @@
         return self._value
 
     @value.setter
-    def value(self, val):
-         if(val &gt; 0xff):
+    def value(self, val: int) -&gt; None:
+        if(val &gt; 0xff):
             raise ValueError(f&#34;Immediate value {val} exceeds 1 byte&#34;)
 
-         self._value = val
+        self._value = val
 
     def __add__(self, adder):
         self._add_modifier = adder

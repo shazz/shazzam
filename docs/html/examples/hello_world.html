@@ -31,13 +31,14 @@ import sys
 sys.path.append(&#34;.&#34;)
 
 from reloading import reloading
+from shazzam.Segment import SegmentType
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
 
 # define your cross assembler
-assembler = CC65(&#34;cc65&#34;, &#34;/home/shazz/projects/c64/bin/cl65&#34;)
+assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
 prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,
@@ -53,7 +54,7 @@ def code():
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
 
-        jsr(at(0x0e544))        # ROM routine to clear the screen Clear screen.Input: – Output: – Used registers: A, X, Y.
+        jsr(at(0xe544))        # ROM routine to clear the screen Clear screen.Input: – Output: – Used registers: A, X, Y.
 
         lda(imm(0))
         sta(at(vic.border_col)) # set border color
@@ -91,18 +92,20 @@ def code():
         label(&#34;msg&#34;)
         byte(&#34;WELCOME TO THE MATRIX - THE 8BITS MATRIX&#34;)
 
-    with segment(0x1ffe, &#34;charset&#34;) as s:       #0x2000 - 2 header bytes
+    with segment(0x1ffe, &#34;charset&#34;, segment_type=SegmentType.CHARACTERS) as s:       #0x2000 - 2 header bytes
         incbin(open(&#34;resources/aeg_collection_12.64c&#34;, &#34;rb&#34;).read())
 
     # generate listing
-    gen_code(&#34;helloworld&#34;, prefs=prefs)
-    gen_listing(&#34;helloworld&#34;)
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
+    # optimize segments
+    optimize_segments()
+
 if __name__ == &#34;__main__&#34;:
-    generate(code)</code></pre>
+    generate(code, &#34;hello_world&#34;)</code></pre>
 </details>
 </section>
 <section>

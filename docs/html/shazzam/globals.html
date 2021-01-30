@@ -29,15 +29,16 @@
 <pre><code class="python"># ---------------------------------------------------------------------
 # Globals
 # ---------------------------------------------------------------------
-from shazzam.defs import *
+from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat
 from shazzam.Program import Program
 
 import logging
 import sys
 
+
 def initialize():
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX, _DEFAULT_CODE_SEGMENT
-    global _PROGRAM, _GLOBAL_LABELS, _CURRENT_CONTEXT, _CURRENT_RASTER
+    global _PROGRAM, _GLOBAL_LABELS, _CURRENT_CONTEXT, _CURRENT_RASTER, _LISTING_FORMAT
     global logger
 
     print(&#34;Program created&#34;)
@@ -47,16 +48,19 @@ def initialize():
     _CURRENT_RASTER = None
 
     # _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS ]
-    _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX ]
+    _CODE_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS,
+                    CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
     _COMMENTS_FORMAT = CommentsFormat.USE_SEMICOLON
     _DIRECTIVE_PREFIX = DirectiveFormat.NO_PREFIX
     _DEFAULT_CODE_SEGMENT = &#34;CODE&#34;
+    _LISTING_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS,
+                       CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
 
     logger = logging.getLogger(&#34;shazzam&#34;)
     logger.setLevel(logging.INFO)
 
     # formatter = logging.Formatter(&#39;%(levelname)s : %(funcName)s : %(message)s&#39;)
-    formatter = logging.Formatter(&#39;%(levelname)s :%(message)s&#39;)
+    formatter = logging.Formatter(&#39;%(levelname)s: %(message)s&#39;)
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(formatter)
@@ -81,7 +85,7 @@ def initialize():
 </summary>
 <pre><code class="python">def initialize():
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX, _DEFAULT_CODE_SEGMENT
-    global _PROGRAM, _GLOBAL_LABELS, _CURRENT_CONTEXT, _CURRENT_RASTER
+    global _PROGRAM, _GLOBAL_LABELS, _CURRENT_CONTEXT, _CURRENT_RASTER, _LISTING_FORMAT
     global logger
 
     print(&#34;Program created&#34;)
@@ -91,16 +95,19 @@ def initialize():
     _CURRENT_RASTER = None
 
     # _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS ]
-    _CODE_FORMAT =  [ CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX ]
+    _CODE_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS,
+                    CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
     _COMMENTS_FORMAT = CommentsFormat.USE_SEMICOLON
     _DIRECTIVE_PREFIX = DirectiveFormat.NO_PREFIX
     _DEFAULT_CODE_SEGMENT = &#34;CODE&#34;
+    _LISTING_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS,
+                       CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
 
     logger = logging.getLogger(&#34;shazzam&#34;)
     logger.setLevel(logging.INFO)
 
     # formatter = logging.Formatter(&#39;%(levelname)s : %(funcName)s : %(message)s&#39;)
-    formatter = logging.Formatter(&#39;%(levelname)s :%(message)s&#39;)
+    formatter = logging.Formatter(&#39;%(levelname)s: %(message)s&#39;)
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG)
     console_handler.setFormatter(formatter)

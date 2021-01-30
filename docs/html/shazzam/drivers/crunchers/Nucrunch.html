@@ -26,20 +26,21 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">import subprocess
-import os
-import logging
-
-from shazzam.Cruncher import Cruncher
+<pre><code class="python">from shazzam.Cruncher import Cruncher
+from shazzam.py64gen import RegisterACC as a
+from shazzam.py64gen import RegisterX as x
+from shazzam.py64gen import RegisterY as y
 from shazzam.py64gen import *
-from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+
 
 class Nucrunch(Cruncher):
 
     def __init__(self, exe_path: str):
 
-        cmd_prg_template = [exe_path, &#39;-cbxo&#39;, &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34; ]
-        cmd_bin_template = [exe_path, &#39;-cxo&#39;, &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34; ]
+        cmd_prg_template = [exe_path, &#39;-cbxo&#39;,
+                            &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34;]
+        cmd_bin_template = [exe_path, &#39;-cxo&#39;,
+                            &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34;]
         super().__init__(&#34;nucrucnh&#34;, exe_path, cmd_prg_template, cmd_bin_template)
 
     def generate_depacker_routine(self, address: int) -&gt; None:
@@ -77,8 +78,10 @@ class Nucrunch(Cruncher):
 
     def __init__(self, exe_path: str):
 
-        cmd_prg_template = [exe_path, &#39;-cbxo&#39;, &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34; ]
-        cmd_bin_template = [exe_path, &#39;-cxo&#39;, &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34; ]
+        cmd_prg_template = [exe_path, &#39;-cbxo&#39;,
+                            &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34;]
+        cmd_bin_template = [exe_path, &#39;-cxo&#39;,
+                            &#34;OUTPUT_TO_SET&#34;, &#34;FILENAME_TO_SET&#34;]
         super().__init__(&#34;nucrucnh&#34;, exe_path, cmd_prg_template, cmd_bin_template)
 
     def generate_depacker_routine(self, address: int) -&gt; None:

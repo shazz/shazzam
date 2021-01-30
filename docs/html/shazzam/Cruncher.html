@@ -31,7 +31,6 @@ import subprocess
 import os
 from typing import List
 
-from shazzam.Segment import Segment
 
 class Cruncher():
 
@@ -68,8 +67,9 @@ class Cruncher():
             if extra_params and len(extra_params) &gt; 0:
                 self.prg_cmd[1:1] = extra_params
 
-            self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
-            data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            self.logger.info(
+                f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
+            data = subprocess.Popen(self.prg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout_data, stderr_data = data.communicate()
 
             err = stderr_data.decode()
@@ -80,7 +80,8 @@ class Cruncher():
                 self.logger.info(f&#34;{filename} packed to {os.path.getsize(output_filename)} bytes&#34;)
 
         except Exception as e:
-            self.logger.error(f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
+            self.logger.error(
+                f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
             raise
 
     def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
@@ -106,7 +107,7 @@ class Cruncher():
                 self.prg_cmd[1:1] = extra_params
 
             self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.incbin_cmd }&#34;)
-            data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            data = subprocess.Popen(self.incbin_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout_data, stderr_data = data.communicate()
 
             # check packing ratio
@@ -187,8 +188,9 @@ class Cruncher():
             if extra_params and len(extra_params) &gt; 0:
                 self.prg_cmd[1:1] = extra_params
 
-            self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
-            data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            self.logger.info(
+                f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
+            data = subprocess.Popen(self.prg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout_data, stderr_data = data.communicate()
 
             err = stderr_data.decode()
@@ -199,7 +201,8 @@ class Cruncher():
                 self.logger.info(f&#34;{filename} packed to {os.path.getsize(output_filename)} bytes&#34;)
 
         except Exception as e:
-            self.logger.error(f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
+            self.logger.error(
+                f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
             raise
 
     def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
@@ -225,7 +228,7 @@ class Cruncher():
                 self.prg_cmd[1:1] = extra_params
 
             self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.incbin_cmd }&#34;)
-            data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+            data = subprocess.Popen(self.incbin_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout_data, stderr_data = data.communicate()
 
             # check packing ratio
@@ -259,6 +262,7 @@ class Cruncher():
 <li><a title="shazzam.drivers.crunchers.Lzsa.Lzsa" href="drivers/crunchers/Lzsa.html#shazzam.drivers.crunchers.Lzsa.Lzsa">Lzsa</a></li>
 <li><a title="shazzam.drivers.crunchers.Nucrunch.Nucrunch" href="drivers/crunchers/Nucrunch.html#shazzam.drivers.crunchers.Nucrunch.Nucrunch">Nucrunch</a></li>
 <li><a title="shazzam.drivers.crunchers.Pucrunch.Pucrunch" href="drivers/crunchers/Pucrunch.html#shazzam.drivers.crunchers.Pucrunch.Pucrunch">Pucrunch</a></li>
+<li><a title="shazzam.drivers.crunchers.zx0.Pucrunch" href="drivers/crunchers/zx0.html#shazzam.drivers.crunchers.zx0.Pucrunch">Pucrunch</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
@@ -306,7 +310,7 @@ class Cruncher():
             self.prg_cmd[1:1] = extra_params
 
         self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.incbin_cmd }&#34;)
-        data = subprocess.Popen(self.incbin_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        data = subprocess.Popen(self.incbin_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = data.communicate()
 
         # check packing ratio
@@ -362,8 +366,9 @@ class Cruncher():
         if extra_params and len(extra_params) &gt; 0:
             self.prg_cmd[1:1] = extra_params
 
-        self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
-        data = subprocess.Popen(self.prg_cmd, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+        self.logger.info(
+            f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
+        data = subprocess.Popen(self.prg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = data.communicate()
 
         err = stderr_data.decode()
@@ -374,7 +379,8 @@ class Cruncher():
             self.logger.info(f&#34;{filename} packed to {os.path.getsize(output_filename)} bytes&#34;)
 
     except Exception as e:
-        self.logger.error(f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
+        self.logger.error(
+            f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
         raise</code></pre>
 </details>
 </dd>

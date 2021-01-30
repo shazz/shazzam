@@ -3,6 +3,7 @@ import sys
 sys.path.append(".")
 
 from reloading import reloading
+from shazzam.Segment import SegmentType
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
@@ -63,7 +64,7 @@ def code():
         label("msg")
         byte("WELCOME TO THE MATRIX - THE 8BITS MATRIX")
 
-    with segment(0x1ffe, "charset") as s:       #0x2000 - 2 header bytes
+    with segment(0x1ffe, "charset", segment_type=SegmentType.CHARACTERS) as s:       #0x2000 - 2 header bytes
         incbin(open("resources/aeg_collection_12.64c", "rb").read())
 
     # generate listing
@@ -71,6 +72,9 @@ def code():
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
+
+    # optimize segments
+    optimize_segments()
 
 if __name__ == "__main__":
     generate(code, "hello_world")

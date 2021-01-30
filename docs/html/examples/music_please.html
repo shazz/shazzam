@@ -38,7 +38,7 @@ import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
 
 # define your cross assembler
-assembler = CC65(&#34;cc65&#34;, &#34;/home/shazz/projects/c64/bin/cl65&#34;)
+assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
 prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,
@@ -127,14 +127,13 @@ def code():
         incbin(sid.data)
 
     # generate listing and code
-    gen_code(&#34;musicplease&#34;, prefs=prefs)
-    gen_listing(&#34;musicplease&#34;)
+    gen_code(format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == &#34;__main__&#34;:
-    generate(code)</code></pre>
+    generate(code, &#34;music_please&#34;)</code></pre>
 </details>
 </section>
 <section>

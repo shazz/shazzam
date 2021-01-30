@@ -26,18 +26,17 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">import subprocess
-import os
-import logging
-from enum import Enum
+<pre><code class="python">from enum import Enum
 
 from shazzam.Cruncher import Cruncher
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
+
 class PackingMode(Enum):
     FORWARD = 0
     BACKWARD = 1
+
 
 class Apultra(Cruncher):
 
@@ -90,12 +89,12 @@ class Apultra(Cruncher):
         # Macro to read a byte from the compressed source data.
         def APL_GET_SRC():
             skip = get_anonymous_label(&#34;skip&#34;)
-            lda(ind_at(apl_srcptr),y)
+            lda(ind_at(apl_srcptr), y)
             inc(at(apl_srcptr)+0)
             bne(rel_at(skip))
             APL_INC_PAGE()
             label(skip)
-            nop()
+            # nop()
 
         label(&#34;apl_decompress&#34;, is_global=True)
 
@@ -108,7 +107,7 @@ class Apultra(Cruncher):
 
         label(&#34;apl_write_byte&#34;)
         ldx(imm(0))
-        sta(ind_at(apl_dstptr),y)
+        sta(ind_at(apl_dstptr), y)
         inc(at(apl_dstptr)+0)
         bne(rel_at(&#34;apl_next_tag&#34;))
         inc(at(apl_dstptr)+1)
@@ -152,7 +151,7 @@ class Apultra(Cruncher):
         tay()
         iny()
         dec(at(apl_dstptr)+1)
-        lda(ind_at(apl_dstptr),y)
+        lda(ind_at(apl_dstptr), y)
         inc(at(apl_dstptr)+1)
         ldy(imm(0))
         beq(rel_at(&#34;apl_write_byte&#34;))
@@ -251,8 +250,8 @@ class Apultra(Cruncher):
         sta(at(apl_winptr)+1)
 
         label(&#34;apl_copy_page&#34;)
-        lda(ind_at(apl_winptr),y)
-        sta(ind_at(apl_dstptr),y)
+        lda(ind_at(apl_winptr), y)
+        sta(ind_at(apl_dstptr), y)
         iny()
         bne(rel_at(&#34;apl_copy_page&#34;))
         inc(at(apl_winptr)+1)
@@ -272,17 +271,17 @@ class Apultra(Cruncher):
     def _backward_depacker(self, address: int) -&gt; None:
 
         # Zero page locations
-        apl_gamma2_hi     = 0xF6
-        apl_bitbuf        = 0xF7
-        apl_offset        = 0xF8
-        apl_winptr        = 0xFA
-        apl_srcptr        = 0xFC
-        apl_dstptr        = 0xFE
+        apl_gamma2_hi = 0xF6
+        apl_bitbuf = 0xF7
+        apl_offset = 0xF8
+        apl_winptr = 0xFA
+        apl_srcptr = 0xFC
+        apl_dstptr = 0xFE
 
         # Read a byte from the source into A. Trashes X
         def APL_GET_SRC():
             src_page_done = get_anonymous_label(&#34;src_page_done&#34;)
-            lda(ind_at(apl_srcptr),y)
+            lda(ind_at(apl_srcptr), y)
             ldx(at(apl_srcptr)+0)
             bne(rel_at(src_page_done))
             dec(at(apl_srcptr)+1)
@@ -292,7 +291,7 @@ class Apultra(Cruncher):
         # Write a byte to the destinatipn
         def APL_PUT_DST():
             dst_page_done = get_anonymous_label(&#34;dst_page_done&#34;)
-            sta(ind_at(apl_dstptr),y)
+            sta(ind_at(apl_dstptr), y)
             lda(at(apl_dstptr)+0)
             bne(rel_at(dst_page_done))
             dec(at(apl_dstptr)+1)
@@ -335,51 +334,62 @@ class Apultra(Cruncher):
         bcc(rel_at(&#34;apl_copy_literal&#34;))             # if 0&#34;) literal
 
         APL_GET_BIT()                  # read &#39;8+n bits or other&#39; bit
-        bcc(rel_at(&#34;apl_long_match&#34;))               # if 10x&#34;) long 8+n bits match
+        # if 10x&#34;) long 8+n bits match
+        bcc(rel_at(&#34;apl_long_match&#34;))
 
-                                        # 11x&#34;) other type of match
+        # 11x&#34;) other type of match
 
         APL_GET_BIT()                  # read &#39;7)+1) match or short literal&#39; bit
-        bcs(rel_at(&#34;apl_short_match&#34;))              # if 111&#34;) 4 bit offset for 1-byte copy
+        # if 111&#34;) 4 bit offset for 1-byte copy
+        bcs(rel_at(&#34;apl_short_match&#34;))
 
         APL_GET_SRC()                  # read low byte of offset + length bit
-        lsr(a)                           # shift offset into place, len bit into carry
+        # shift offset into place, len bit into carry
+        lsr(a)
         beq(rel_at(&#34;apl_done&#34;))                     # check for EOD
         sta(at(apl_offset)+0)             # store low byte of offset
         sty(at(apl_offset)+1)             # set high byte of offset to 0
 
         tya()                           # set A to 0
         sty(at(apl_gamma2_hi))            # set high byte of len to 0
-        adc(imm(0x02))                      # add 2 or 3 depending on len bit in carry
-                                                # now, low part of len is in A
-                                                # high part of len in apl_gamma2_hi is 0
-                                                # offset is written to apl_offset
+        # add 2 or 3 depending on len bit in carry
+        adc(imm(0x02))
+        # now, low part of len is in A
+        # high part of len in apl_gamma2_hi is 0
+        # offset is written to apl_offset
         bne(rel_at(&#34;apl_got_len&#34;))                  # go copy matched bytes
 
         label(&#34;apl_long_match&#34;)
-        jsr(at(&#34;apl_get_gamma2&#34;))               # 10&#34;) read gamma2 high offset bits in A
+        # 10&#34;) read gamma2 high offset bits in A
+        jsr(at(&#34;apl_get_gamma2&#34;))
         sty(at(apl_gamma2_hi))            # zero out high byte of gamma2
 
         cpx(imm(0x01))                      # set carry if following literal
-        sbc(imm(0x02))                      # substract 3 if following literal, 2 otherwise
+        # substract 3 if following literal, 2 otherwise
+        sbc(imm(0x02))
         bcs(rel_at(&#34;apl_no_repmatch&#34;))
 
-        jsr(at(&#34;apl_get_gamma2&#34;))               # read repmatch length&#34;) low part in A
+        # read repmatch length&#34;) low part in A
+        jsr(at(&#34;apl_get_gamma2&#34;))
         bcc(rel_at(&#34;apl_got_len&#34;))                  # go copy large match
-                                    # (carry is always clear after label(&#34;apl_get_gamma2)
+        # (carry is always clear after label(&#34;apl_get_gamma2)
 
         label(&#34;apl_short_match&#34;)
-        lda(imm(0x10))                      # clear offset, load end bit into place
+        # clear offset, load end bit into place
+        lda(imm(0x10))
         label(&#34;apl_read_short_offs&#34;)
         APL_GET_BIT_SAVEA            # read one bit of offset into carry
         rol(a)                           # shift into A, shift end bit as well
-        bcc(rel_at(&#34;apl_read_short_offs&#34;))          # loop until end bit is shifted out into carry
+        # loop until end bit is shifted out into carry
+        bcc(rel_at(&#34;apl_read_short_offs&#34;))
 
-        beq(rel_at(&#34;apl_write_literal&#34;))            # zero offset means write a 0
+        # zero offset means write a 0
+        beq(rel_at(&#34;apl_write_literal&#34;))
         tay()
-        lda(ind_at(apl_dstptr),y)            # load backreferenced byte
+        lda(ind_at(apl_dstptr), y)            # load backreferenced byte
         ldy(imm(0x00))                      # clear Y again
-        beq(rel_at(&#34;apl_write_literal&#34;))            # go write byte to destination
+        # go write byte to destination
+        beq(rel_at(&#34;apl_write_literal&#34;))
 
         label(&#34;apl_get_gamma2&#34;)
         lda(imm(0x01))                      # 1 so it gets shifted to 2
@@ -388,7 +398,8 @@ class Apultra(Cruncher):
         rol(a)                           # shift into low byte
         rol(at(apl_gamma2_hi))            # shift into high byte
         APL_GET_BIT_SAVEA()            # read continuation bit
-        bcs(rel_at(&#34;apl_gamma2_loop&#34;))              # loop until a zero continuation bit is read
+        # loop until a zero continuation bit is read
+        bcs(rel_at(&#34;apl_gamma2_loop&#34;))
         label(&#34;apl_done&#34;)
         rts()
 
@@ -397,35 +408,43 @@ class Apultra(Cruncher):
         APL_GET_SRC()                  # read low byte of offset from source
         sta(at(apl_offset)+0)             # store low byte of offset
 
-        jsr(at(&#34;apl_get_gamma2&#34;))               # read match length&#34;) low part in A
+        # read match length&#34;) low part in A
+        jsr(at(&#34;apl_get_gamma2&#34;))
 
         ldx(at(apl_offset)+1)             # high offset byte is zero?
-        beq(rel_at(&#34;apl_offset_1byte&#34;))             # if so, offset(at(&#34;apl_ 256
+        # if so, offset(at(&#34;apl_ 256
+        beq(rel_at(&#34;apl_offset_1byte&#34;))
 
-                                    # offset is &gt;= 256label(&#34;apl_
+        # offset is &gt;= 256label(&#34;apl_
 
         cpx(imm(0x7d))                      # offset &gt;= 32000 (7d00) ?
-        bcs(rel_at(&#34;apl_offset_incby2&#34;))            # if so, increase match len by 2
+        # if so, increase match len by 2
+        bcs(rel_at(&#34;apl_offset_incby2&#34;))
         cpx(imm(0x05))                      # offset &gt;= 1280 (0500) ?
-        bcs(rel_at(&#34;apl_offset_incby1&#34;))            # if so, increase match len by 1
+        # if so, increase match len by 1
+        bcs(rel_at(&#34;apl_offset_incby1&#34;))
         bcc(rel_at(&#34;apl_got_len&#34;))                  # length is fine, go copy
 
         label(&#34;apl_offset_1byte&#34;)
         ldx(at(apl_offset)+0)             # offset(at(&#34;apl_ 128 ?
-        bmi(rel_at(&#34;apl_got_len&#34;))                  # if so, increase match len by 2
+        # if so, increase match len by 2
+        bmi(rel_at(&#34;apl_got_len&#34;))
         sec()                           # carry must be set below
 
         label(&#34;apl_offset_incby2&#34;)
-        adc(imm(0x01))                      # add 1 + set carry (from bcs or sec)
-        bcs(rel_at(&#34;apl_len_inchi&#34;))                # go add 256 to len if overflow
+        # add 1 + set carry (from bcs or sec)
+        adc(imm(0x01))
+        # go add 256 to len if overflow
+        bcs(rel_at(&#34;apl_len_inchi&#34;))
 
-                                                # carry clear&#34;) fall through for no-op
+        # carry clear&#34;) fall through for no-op
 
         label(&#34;apl_offset_incby1&#34;)
         adc(imm(0x00))                      # add 1 + carry
         bcc(rel_at(&#34;apl_got_len&#34;))
         label(&#34;apl_len_inchi&#34;)
-        inc(at(apl_gamma2_hi))            # add 256 to len if low byte overflows
+        # add 256 to len if low byte overflows
+        inc(at(apl_gamma2_hi))
 
         label(&#34;apl_got_len&#34;)
         tax()                           # transfer low byte of len into X
@@ -442,7 +461,7 @@ class Apultra(Cruncher):
         sta(at(apl_winptr)+1)             # store high 8 bits of address
 
         label(&#34;apl_copy_match_loop&#34;)
-        lda(ind_at(apl_winptr),y)            # read one byte of backreference
+        lda(ind_at(apl_winptr), y)            # read one byte of backreference
         APL_PUT_DST()                  # write byte to destination
 
         lda(at(apl_winptr)+0)             # decrement backreference address
@@ -456,12 +475,12 @@ class Apultra(Cruncher):
         dec(at(apl_gamma2_hi))
         bne(rel_at(&#34;apl_copy_match_loop&#34;))
 
-                                    # X is 0 when exiting the loop above
+        # X is 0 when exiting the loop above
         inx()                           # set &#39;follows match&#39; flag
         jmp(at(&#34;apl_next_token&#34;))             # go decode next token
 
         label(&#34;apl_apl_load_bits&#34;)
-        lda(ind_at(apl_srcptr),y)            # read 8 bits from source
+        lda(ind_at(apl_srcptr), y)            # read 8 bits from source
         rol(a)                           # shift bit queue, and high bit into carry
         sta(at(apl_bitbuf))               # save bit queue
 
@@ -543,12 +562,12 @@ class Apultra(Cruncher):
         # Macro to read a byte from the compressed source data.
         def APL_GET_SRC():
             skip = get_anonymous_label(&#34;skip&#34;)
-            lda(ind_at(apl_srcptr),y)
+            lda(ind_at(apl_srcptr), y)
             inc(at(apl_srcptr)+0)
             bne(rel_at(skip))
             APL_INC_PAGE()
             label(skip)
-            nop()
+            # nop()
 
         label(&#34;apl_decompress&#34;, is_global=True)
 
@@ -561,7 +580,7 @@ class Apultra(Cruncher):
 
         label(&#34;apl_write_byte&#34;)
         ldx(imm(0))
-        sta(ind_at(apl_dstptr),y)
+        sta(ind_at(apl_dstptr), y)
         inc(at(apl_dstptr)+0)
         bne(rel_at(&#34;apl_next_tag&#34;))
         inc(at(apl_dstptr)+1)
@@ -605,7 +624,7 @@ class Apultra(Cruncher):
         tay()
         iny()
         dec(at(apl_dstptr)+1)
-        lda(ind_at(apl_dstptr),y)
+        lda(ind_at(apl_dstptr), y)
         inc(at(apl_dstptr)+1)
         ldy(imm(0))
         beq(rel_at(&#34;apl_write_byte&#34;))
@@ -704,8 +723,8 @@ class Apultra(Cruncher):
         sta(at(apl_winptr)+1)
 
         label(&#34;apl_copy_page&#34;)
-        lda(ind_at(apl_winptr),y)
-        sta(ind_at(apl_dstptr),y)
+        lda(ind_at(apl_winptr), y)
+        sta(ind_at(apl_dstptr), y)
         iny()
         bne(rel_at(&#34;apl_copy_page&#34;))
         inc(at(apl_winptr)+1)
@@ -725,17 +744,17 @@ class Apultra(Cruncher):
     def _backward_depacker(self, address: int) -&gt; None:
 
         # Zero page locations
-        apl_gamma2_hi     = 0xF6
-        apl_bitbuf        = 0xF7
-        apl_offset        = 0xF8
-        apl_winptr        = 0xFA
-        apl_srcptr        = 0xFC
-        apl_dstptr        = 0xFE
+        apl_gamma2_hi = 0xF6
+        apl_bitbuf = 0xF7
+        apl_offset = 0xF8
+        apl_winptr = 0xFA
+        apl_srcptr = 0xFC
+        apl_dstptr = 0xFE
 
         # Read a byte from the source into A. Trashes X
         def APL_GET_SRC():
             src_page_done = get_anonymous_label(&#34;src_page_done&#34;)
-            lda(ind_at(apl_srcptr),y)
+            lda(ind_at(apl_srcptr), y)
             ldx(at(apl_srcptr)+0)
             bne(rel_at(src_page_done))
             dec(at(apl_srcptr)+1)
@@ -745,7 +764,7 @@ class Apultra(Cruncher):
         # Write a byte to the destinatipn
         def APL_PUT_DST():
             dst_page_done = get_anonymous_label(&#34;dst_page_done&#34;)
-            sta(ind_at(apl_dstptr),y)
+            sta(ind_at(apl_dstptr), y)
             lda(at(apl_dstptr)+0)
             bne(rel_at(dst_page_done))
             dec(at(apl_dstptr)+1)
@@ -788,51 +807,62 @@ class Apultra(Cruncher):
         bcc(rel_at(&#34;apl_copy_literal&#34;))             # if 0&#34;) literal
 
         APL_GET_BIT()                  # read &#39;8+n bits or other&#39; bit
-        bcc(rel_at(&#34;apl_long_match&#34;))               # if 10x&#34;) long 8+n bits match
+        # if 10x&#34;) long 8+n bits match
+        bcc(rel_at(&#34;apl_long_match&#34;))
 
-                                        # 11x&#34;) other type of match
+        # 11x&#34;) other type of match
 
         APL_GET_BIT()                  # read &#39;7)+1) match or short literal&#39; bit
-        bcs(rel_at(&#34;apl_short_match&#34;))              # if 111&#34;) 4 bit offset for 1-byte copy
+        # if 111&#34;) 4 bit offset for 1-byte copy
+        bcs(rel_at(&#34;apl_short_match&#34;))
 
         APL_GET_SRC()                  # read low byte of offset + length bit
-        lsr(a)                           # shift offset into place, len bit into carry
+        # shift offset into place, len bit into carry
+        lsr(a)
         beq(rel_at(&#34;apl_done&#34;))                     # check for EOD
         sta(at(apl_offset)+0)             # store low byte of offset
         sty(at(apl_offset)+1)             # set high byte of offset to 0
 
         tya()                           # set A to 0
         sty(at(apl_gamma2_hi))            # set high byte of len to 0
-        adc(imm(0x02))                      # add 2 or 3 depending on len bit in carry
-                                                # now, low part of len is in A
-                                                # high part of len in apl_gamma2_hi is 0
-                                                # offset is written to apl_offset
+        # add 2 or 3 depending on len bit in carry
+        adc(imm(0x02))
+        # now, low part of len is in A
+        # high part of len in apl_gamma2_hi is 0
+        # offset is written to apl_offset
         bne(rel_at(&#34;apl_got_len&#34;))                  # go copy matched bytes
 
         label(&#34;apl_long_match&#34;)
-        jsr(at(&#34;apl_get_gamma2&#34;))               # 10&#34;) read gamma2 high offset bits in A
+        # 10&#34;) read gamma2 high offset bits in A
+        jsr(at(&#34;apl_get_gamma2&#34;))
         sty(at(apl_gamma2_hi))            # zero out high byte of gamma2
 
         cpx(imm(0x01))                      # set carry if following literal
-        sbc(imm(0x02))                      # substract 3 if following literal, 2 otherwise
+        # substract 3 if following literal, 2 otherwise
+        sbc(imm(0x02))
         bcs(rel_at(&#34;apl_no_repmatch&#34;))
 
-        jsr(at(&#34;apl_get_gamma2&#34;))               # read repmatch length&#34;) low part in A
+        # read repmatch length&#34;) low part in A
+        jsr(at(&#34;apl_get_gamma2&#34;))
         bcc(rel_at(&#34;apl_got_len&#34;))                  # go copy large match
-                                    # (carry is always clear after label(&#34;apl_get_gamma2)
+        # (carry is always clear after label(&#34;apl_get_gamma2)
 
         label(&#34;apl_short_match&#34;)
-        lda(imm(0x10))                      # clear offset, load end bit into place
+        # clear offset, load end bit into place
+        lda(imm(0x10))
         label(&#34;apl_read_short_offs&#34;)
         APL_GET_BIT_SAVEA            # read one bit of offset into carry
         rol(a)                           # shift into A, shift end bit as well
-        bcc(rel_at(&#34;apl_read_short_offs&#34;))          # loop until end bit is shifted out into carry
+        # loop until end bit is shifted out into carry
+        bcc(rel_at(&#34;apl_read_short_offs&#34;))
 
-        beq(rel_at(&#34;apl_write_literal&#34;))            # zero offset means write a 0
+        # zero offset means write a 0
+        beq(rel_at(&#34;apl_write_literal&#34;))
         tay()
-        lda(ind_at(apl_dstptr),y)            # load backreferenced byte
+        lda(ind_at(apl_dstptr), y)            # load backreferenced byte
         ldy(imm(0x00))                      # clear Y again
-        beq(rel_at(&#34;apl_write_literal&#34;))            # go write byte to destination
+        # go write byte to destination
+        beq(rel_at(&#34;apl_write_literal&#34;))
 
         label(&#34;apl_get_gamma2&#34;)
         lda(imm(0x01))                      # 1 so it gets shifted to 2
@@ -841,7 +871,8 @@ class Apultra(Cruncher):
         rol(a)                           # shift into low byte
         rol(at(apl_gamma2_hi))            # shift into high byte
         APL_GET_BIT_SAVEA()            # read continuation bit
-        bcs(rel_at(&#34;apl_gamma2_loop&#34;))              # loop until a zero continuation bit is read
+        # loop until a zero continuation bit is read
+        bcs(rel_at(&#34;apl_gamma2_loop&#34;))
         label(&#34;apl_done&#34;)
         rts()
 
@@ -850,35 +881,43 @@ class Apultra(Cruncher):
         APL_GET_SRC()                  # read low byte of offset from source
         sta(at(apl_offset)+0)             # store low byte of offset
 
-        jsr(at(&#34;apl_get_gamma2&#34;))               # read match length&#34;) low part in A
+        # read match length&#34;) low part in A
+        jsr(at(&#34;apl_get_gamma2&#34;))
 
         ldx(at(apl_offset)+1)             # high offset byte is zero?
-        beq(rel_at(&#34;apl_offset_1byte&#34;))             # if so, offset(at(&#34;apl_ 256
+        # if so, offset(at(&#34;apl_ 256
+        beq(rel_at(&#34;apl_offset_1byte&#34;))
 
-                                    # offset is &gt;= 256label(&#34;apl_
+        # offset is &gt;= 256label(&#34;apl_
 
         cpx(imm(0x7d))                      # offset &gt;= 32000 (7d00) ?
-        bcs(rel_at(&#34;apl_offset_incby2&#34;))            # if so, increase match len by 2
+        # if so, increase match len by 2
+        bcs(rel_at(&#34;apl_offset_incby2&#34;))
         cpx(imm(0x05))                      # offset &gt;= 1280 (0500) ?
-        bcs(rel_at(&#34;apl_offset_incby1&#34;))            # if so, increase match len by 1
+        # if so, increase match len by 1
+        bcs(rel_at(&#34;apl_offset_incby1&#34;))
         bcc(rel_at(&#34;apl_got_len&#34;))                  # length is fine, go copy
 
         label(&#34;apl_offset_1byte&#34;)
         ldx(at(apl_offset)+0)             # offset(at(&#34;apl_ 128 ?
-        bmi(rel_at(&#34;apl_got_len&#34;))                  # if so, increase match len by 2
+        # if so, increase match len by 2
+        bmi(rel_at(&#34;apl_got_len&#34;))
         sec()                           # carry must be set below
 
         label(&#34;apl_offset_incby2&#34;)
-        adc(imm(0x01))                      # add 1 + set carry (from bcs or sec)
-        bcs(rel_at(&#34;apl_len_inchi&#34;))                # go add 256 to len if overflow
+        # add 1 + set carry (from bcs or sec)
+        adc(imm(0x01))
+        # go add 256 to len if overflow
+        bcs(rel_at(&#34;apl_len_inchi&#34;))
 
-                                                # carry clear&#34;) fall through for no-op
+        # carry clear&#34;) fall through for no-op
 
         label(&#34;apl_offset_incby1&#34;)
         adc(imm(0x00))                      # add 1 + carry
         bcc(rel_at(&#34;apl_got_len&#34;))
         label(&#34;apl_len_inchi&#34;)
-        inc(at(apl_gamma2_hi))            # add 256 to len if low byte overflows
+        # add 256 to len if low byte overflows
+        inc(at(apl_gamma2_hi))
 
         label(&#34;apl_got_len&#34;)
         tax()                           # transfer low byte of len into X
@@ -895,7 +934,7 @@ class Apultra(Cruncher):
         sta(at(apl_winptr)+1)             # store high 8 bits of address
 
         label(&#34;apl_copy_match_loop&#34;)
-        lda(ind_at(apl_winptr),y)            # read one byte of backreference
+        lda(ind_at(apl_winptr), y)            # read one byte of backreference
         APL_PUT_DST()                  # write byte to destination
 
         lda(at(apl_winptr)+0)             # decrement backreference address
@@ -909,12 +948,12 @@ class Apultra(Cruncher):
         dec(at(apl_gamma2_hi))
         bne(rel_at(&#34;apl_copy_match_loop&#34;))
 
-                                    # X is 0 when exiting the loop above
+        # X is 0 when exiting the loop above
         inx()                           # set &#39;follows match&#39; flag
         jmp(at(&#34;apl_next_token&#34;))             # go decode next token
 
         label(&#34;apl_apl_load_bits&#34;)
-        lda(ind_at(apl_srcptr),y)            # read 8 bits from source
+        lda(ind_at(apl_srcptr), y)            # read 8 bits from source
         rol(a)                           # shift bit queue, and high bit into carry
         sta(at(apl_bitbuf))               # save bit queue
 

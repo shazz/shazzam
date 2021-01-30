@@ -26,12 +26,16 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from shazzam.defs import *
+<pre><code class="python">import logging
+
 from shazzam.Segment import Segment
 
-import logging
 
 class Assembler():
+    &#34;&#34;&#34;
+    This class defines the interface to be implemented by cross-assembler drivers.
+    The default one is CC65.
+    &#34;&#34;&#34;
 
     def __init__(self, name: str, exe_path: str):
         self.path = exe_path
@@ -88,12 +92,17 @@ class Assembler():
 <span>(</span><span>name: str, exe_path: str)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>This class defines the interface to be implemented by cross-assembler drivers.
+The default one is CC65.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class Assembler():
+    &#34;&#34;&#34;
+    This class defines the interface to be implemented by cross-assembler drivers.
+    The default one is CC65.
+    &#34;&#34;&#34;
 
     def __init__(self, name: str, exe_path: str):
         self.path = exe_path

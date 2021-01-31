@@ -25,9 +25,9 @@ def code():
 
     # define here or anywhere, doesn't matter, your variables
     kla = p.read_kla('resources/panda.kla')
-    vic_bank    = 0x4000
-    screen_mem  = 0x2000
-    bitmap_mem  = 0x0000
+    vic_bank    = 0x0000
+    screen_mem  = 0x0400
+    bitmap_mem  = 0x2000
     char_mem    = 0x0000            # not used, 0 is fine
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
@@ -69,4 +69,4 @@ def code():
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code, "i_love_koalas")
+    generate(code, "lomem_test")

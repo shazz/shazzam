@@ -200,6 +200,11 @@ clean:
         all_segments_adr = sorted(
             sorted_non_default_segments_adr + sorted_default_segments_adr)
 
+        self.logger.info(f"Segments addresses: {[hex(adr) for adr in all_segments_adr]}")
+        for adr in all_segments_adr:
+            if adr < 0x0801:
+                raise ValueError("Lomem segment (< 0x0801) not yet supported. Sorry :(")
+
         if len(sorted_non_default_segments_adr) > 0:
             # TODO: test with node default entry point
             # first_segment_address = sorted_non_default_segments_adr[sorted_non_default_segments_adr.index(start_address)+1]

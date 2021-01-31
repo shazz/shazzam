@@ -93,6 +93,12 @@ def install_3rd_party(session):
     session.run("make", "all")
     session.cd("..")
 
+    # pucrunch
+    session.run("git", "clone", "https://github.com/shazz/c64f.git")
+    session.cd("c64f")
+    session.run("make")
+    session.cd("..")
+
     # nucrunch
     session.run("wget", "https://csdb.dk/release/download.php?id=206619", "-O", "nucrunch.tgz")
     session.run("tar", "-xvzf", "nucrunch.tgz")

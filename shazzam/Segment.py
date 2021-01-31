@@ -533,7 +533,7 @@ class Segment():
             code_template_index = {
                 "label": 0,
                 "instruction": label_size,
-                "cycles": label_size+20,
+                "cycles": label_size+30,
             }
 
             remaining_bytes_to_process = 0

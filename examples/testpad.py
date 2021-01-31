@@ -8,6 +8,7 @@ from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 from shazzam.drivers.assemblers.CC65 import CC65
 import shazzam.macros.math as m
+import shazzam.plugins.plugins as p
 
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
@@ -22,6 +23,15 @@ def code():
 
     # define here or anywhere, doesn't matter, your variables
 
+    import binascii
+    kla = p.read_kla('resources/panda.kla')
+    print(kla.keys())
+    # print(f"address: {binascii.hexlify(kla.address)}")
+    print(f"address: {kla.address:04X}")
+    print(f"bitmap[0]: {kla.bitmap[0]:02X}")
+    print(f"bitmap[0]: {kla.bitmap[1]:02X}")
+    print(f"color: {kla.bg_color}")
+    exit()
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:

@@ -52,7 +52,7 @@ def code():
         label("loop")
         jmp(at("loop"))
 
-    # set bitmap data at vic_bank + bimap
+    # set bitmap data at vic_bank + bitmap
     with segment(vic_bank, "bitmap", segment_type=SegmentType.BITMAP) as s:
         incbin(kla.bitmap)
 

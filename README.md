@@ -43,6 +43,7 @@ Then, if you're not using `nox`, you'll have to install the various mandatory an
 #### Cross-Assemblers
 
 - [CC65](https://github.com/cc65/cc65) (mandatory)
+- [c64jasm](https://github.com/nurpax/c64jasm) (supported soon!!!)
 
 #### Packers
 
@@ -59,13 +60,14 @@ Then, if you're not using `nox`, you'll have to install the various mandatory an
 
 ### From sources
 
-Shazzam provides a `noxfile` to automate the creation of the various virtual environments and install the various tools
+Shazzam provides a `noxfile` to automate the creation of the various virtual environments and install the various tools and docs
 
 ````bash
 git clone https://github.com/shazz/shazzam
 cd shazzam
 nox -s install
 nox -s install_3rd_party
+nox -rs docs
 ````
 
 ## 4 lines example
@@ -145,6 +147,8 @@ import shazzam.macros.macros_math as m
     byte(0)
 ````
 
+shazzam provides various sets of ready to use macros to set the VIC banks and memory, some 16bits math operations, to set IRQs, to wate cycles.... Just check `shazzam/macros/`
+
 ## Inline testing thru emulation
 
 Inspired from bass, shazzam includes [py65emu](https://github.com/docmarionum1/py65emu), a generic 6502 emulator written in Python, it doesn't emulate a C64 or any other hardware than the 6502 CPU. But that's good enough to emulate your routines and check the registers and what is written in the memory.
@@ -180,6 +184,8 @@ Result: 266
 ````
 
 So this is good news, the macro works :)
+
+And using the built-in 6502 emulator you can do more, check how many cycles were really used beteween 2 locations in the code, or even step-by-step debugging.
 
 ## Segments support
 
@@ -263,4 +269,34 @@ for y in range(y_scroll, y_scroll+10):
             nop()
         else:
             nop()
+````
+
+## Python-based C64 files parsers
+
+As this is just Python, up to you to do what you like to do but if it helps, shazzam includes some useful parsers ready to use:
+- SID files
+- Koala files
+- SPD v2 Sprite files
+
+Just import them!
+
+The `i_love_kaoalas` example shows how to display a Koala picture in a few lines of code. A little ectract:
+
+````python
+import shazzam.plugins.plugins as p
+
+def code():
+
+    kla = p.read_kla('resources/panda.kla')
+
+    with segment(0x0801, assembler.get_code_segment()) as s:
+
+        lda(imm(kla.bg_color))      # set border and window color to picture background color
+        sta(at(vic.border_col))
+        sta(at(vic.bck_col))
+
+    with segment(0xd800, "color_ram", segment_type=SegmentType.REGISTERS) as s:
+        incbin(kla.colorram)
+
+    [...]
 ````

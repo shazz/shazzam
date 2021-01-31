@@ -56,7 +56,7 @@ class Cruncher():
                 f"Cannot crunch prg using {self.packer_name} due to {e}")
             raise
 
-    def crunch_incbin(self, filename: str, extra_params: List = None) -> bytearray:
+    def crunch_incbin(self, filename: str = None, data: bytearray = None, extra_params: List = None) -> bytearray:
         """crunch_incbin
 
         Args:
@@ -66,6 +66,14 @@ class Cruncher():
         Raises:
             RuntimeError: [description]
         """
+        if filename is None and data is None:
+            raise ValueError("filename AND data cannot be none at the same time")
+
+        if filename is None:
+                filename = "resources/tmp.raw"
+                with open(filename, "wb") as f:
+                    f.write(data)
+
         if self.incbin_cmd is None:
             raise RuntimeError("Packer command line for incbin is not set!")
 

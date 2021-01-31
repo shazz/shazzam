@@ -16,6 +16,9 @@ from shazzam.drivers.crunchers.Pucrunch import Pucrunch
 from shazzam.drivers.crunchers.Apultra import Apultra, PackingMode
 from shazzam.drivers.crunchers.Doynamite import Doynamite
 from shazzam.drivers.crunchers.Lzsa import Lzsa
+from shazzam.drivers.crunchers.Zx7 import Zx7
+import shazzam.plugins.plugins as p
+
 
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
@@ -26,17 +29,17 @@ set_prefs(default_code_segment=assembler.get_code_segment(),
           directive_prefix=prefs.directive)
 
 prg_cruncher  = Exomizer("third_party/exomizer/exomizer")
-prg_cruncher  = Nucrunch("third_party/nucrunch/nucrunch")
-prg_cruncher  = Pucrunch("third_party/pucrunch/pucrunch")
+# prg_cruncher  = Nucrunch("third_party/nucrunch/nucrunch")
+# prg_cruncher  = Pucrunch("third_party/pucrunch/pucrunch")
 
-data_cruncher = Apultra("third_party/lzsa/lzsa", mode=PackingMode.FORWARD)
+# data_cruncher = Lzsa("third_party/lzsa/lzsa", mode=PackingMode.FORWARD)
 data_cruncher = Apultra("third_party/apultra/apultra", mode=PackingMode.FORWARD)
 
 @reloading
 def code():
 
     # define here or anywhere, doesn't matter, your variables
-    sidfile = "resources/Meetro.sid"
+    sid = p.read_sid("resources/Meetro.sid")
     segments = {
         assembler.get_code_segment(): 0x0801,
         "packedata": 0x3000,
@@ -44,7 +47,7 @@ def code():
     }
 
     with segment(segments["packedata"], "packedata") as s:
-        incbin(data_cruncher.crunch_incbin(sidfile))
+        incbin(data_cruncher.crunch_incbin(data=sid.data))
         print(s.get_stats())
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
@@ -138,10 +141,10 @@ def code():
         sta(at(apl_srcptr)+1)
 
         # depacked data are located at apl_dstptr+126 bytes
-        lda(imm(0x1000-126 & 0xff))
+        lda(imm(0x1000 & 0xff))
         sta(at(apl_dstptr))
 
-        lda(imm(0x1000-126 >> 8))
+        lda(imm(0x1000 >> 8))
         sta(at(apl_dstptr)+1)
 
         # unpack data forward.

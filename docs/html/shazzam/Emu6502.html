@@ -28,6 +28,7 @@
 </summary>
 <pre><code class="python">import logging
 from io import BytesIO
+import traceback
 
 from py65emu.cpu import CPU
 from py65emu.mmu import MMU
@@ -40,7 +41,7 @@ class Emu6502():
     def __init__(self):
         self.logger = logging.getLogger(&#34;shazzam&#34;)
 
-    def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address) -&gt; CPU:
+    def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; CPU:
         &#34;&#34;&#34;[summary]
 
         Args:
@@ -59,13 +60,12 @@ class Emu6502():
         from copy import deepcopy
         debug_bytecode = deepcopy(bytecode).read()
 
-        low_ram = (0x00, seg_start_address-1)
-        hi_ram = (seg_stop_address, 0xffff)
+        low_ram = (0x00, seg_start_address, False)
+        hi_ram = (seg_stop_address, 0xffff, False)
 
         mmu = MMU([
             low_ram,
-            (seg_start_address, seg_stop_address -
-             seg_start_address, False, bytecode),
+            (seg_start_address, seg_stop_address - seg_start_address, False, bytecode),
             hi_ram
         ])
 
@@ -77,37 +77,50 @@ class Emu6502():
         # for i in range(seg_stop_address - seg_start_address):
         #     self.logger.debug(f&#34;{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}&#34;)
 
+
+        counting_enabled = False if cycles_count_start is not None else True
         self.logger.debug(f&#34;Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}&#34;)
 
+        nb_cycles_used = 0
         current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
         current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
-        current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-        current_operand = debug_bytecode[cpu.r.pc-seg_start_address+1:cpu.r.pc-seg_start_address+current_operand_size]
-        self.logger.debug(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-        self.logger.debug(f&#34;{current_instruction} operand: {hex(int.from_bytes(current_operand, &#39;big&#39;))}&#34;)
-        self.logger.debug(cpu.r)
-
-        nb_cycles_used = 0
         while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
             try:
-                cpu.step()
-                # input()
+                if cpu.r.pc == cycles_count_start:
+                    counting_enabled = True
+                    self.logger.info(f&#34;Starting to count cycle at ${cpu.r.pc:04X}&#34;)
+                if cpu.r.pc == cycles_count_end:
+                    counting_enabled = False
+                    self.logger.info(f&#34;Stopping to count cycle at ${cpu.r.pc:04X}&#34;)
 
                 current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
                 current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
                 current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
                 current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
-                self.logger.debug(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                self.logger.debug(f&#34;{current_instruction} operand: {hex(int.from_bytes(current_operand, &#39;big&#39;))}&#34;)
-                self.logger.debug(cpu.r)
-                self.logger.debug(cpu.cc)
-                nb_cycles_used += cpu.cc
+
+                if counting_enabled:
+                    nb_cycles_used += cpu.cc
+
+                if counting_enabled and nb_cycles_used % 1000 == 0:
+                    self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
+
+                if debug_mode:
+                    self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
+                    self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                    self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
+                    input()
+
+                cpu.step()
 
             except Exception as e:
-                self.logger.critical(
-                    f&#34;Emulation crashed at ${cpu.r.pc:04X} due to {e.__class__}&#34;)
-                # self.logger.debug(traceback.format_exc())
+                self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
+                self.logger.critical(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                self.logger.critical(f&#34;Registers: {cpu.r}&#34;)
+                self.logger.critical(traceback.format_exc())
                 break
+
+        self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
+        # exit()
 
         return cpu, mmu, nb_cycles_used</code></pre>
 </details>
@@ -135,7 +148,7 @@ class Emu6502():
     def __init__(self):
         self.logger = logging.getLogger(&#34;shazzam&#34;)
 
-    def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address) -&gt; CPU:
+    def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; CPU:
         &#34;&#34;&#34;[summary]
 
         Args:
@@ -154,13 +167,12 @@ class Emu6502():
         from copy import deepcopy
         debug_bytecode = deepcopy(bytecode).read()
 
-        low_ram = (0x00, seg_start_address-1)
-        hi_ram = (seg_stop_address, 0xffff)
+        low_ram = (0x00, seg_start_address, False)
+        hi_ram = (seg_stop_address, 0xffff, False)
 
         mmu = MMU([
             low_ram,
-            (seg_start_address, seg_stop_address -
-             seg_start_address, False, bytecode),
+            (seg_start_address, seg_stop_address - seg_start_address, False, bytecode),
             hi_ram
         ])
 
@@ -172,44 +184,57 @@ class Emu6502():
         # for i in range(seg_stop_address - seg_start_address):
         #     self.logger.debug(f&#34;{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}&#34;)
 
+
+        counting_enabled = False if cycles_count_start is not None else True
         self.logger.debug(f&#34;Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}&#34;)
 
+        nb_cycles_used = 0
         current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
         current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
-        current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-        current_operand = debug_bytecode[cpu.r.pc-seg_start_address+1:cpu.r.pc-seg_start_address+current_operand_size]
-        self.logger.debug(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-        self.logger.debug(f&#34;{current_instruction} operand: {hex(int.from_bytes(current_operand, &#39;big&#39;))}&#34;)
-        self.logger.debug(cpu.r)
-
-        nb_cycles_used = 0
         while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
             try:
-                cpu.step()
-                # input()
+                if cpu.r.pc == cycles_count_start:
+                    counting_enabled = True
+                    self.logger.info(f&#34;Starting to count cycle at ${cpu.r.pc:04X}&#34;)
+                if cpu.r.pc == cycles_count_end:
+                    counting_enabled = False
+                    self.logger.info(f&#34;Stopping to count cycle at ${cpu.r.pc:04X}&#34;)
 
                 current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
                 current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
                 current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
                 current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
-                self.logger.debug(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                self.logger.debug(f&#34;{current_instruction} operand: {hex(int.from_bytes(current_operand, &#39;big&#39;))}&#34;)
-                self.logger.debug(cpu.r)
-                self.logger.debug(cpu.cc)
-                nb_cycles_used += cpu.cc
+
+                if counting_enabled:
+                    nb_cycles_used += cpu.cc
+
+                if counting_enabled and nb_cycles_used % 1000 == 0:
+                    self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
+
+                if debug_mode:
+                    self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
+                    self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                    self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
+                    input()
+
+                cpu.step()
 
             except Exception as e:
-                self.logger.critical(
-                    f&#34;Emulation crashed at ${cpu.r.pc:04X} due to {e.__class__}&#34;)
-                # self.logger.debug(traceback.format_exc())
+                self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
+                self.logger.critical(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                self.logger.critical(f&#34;Registers: {cpu.r}&#34;)
+                self.logger.critical(traceback.format_exc())
                 break
+
+        self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
+        # exit()
 
         return cpu, mmu, nb_cycles_used</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="shazzam.Emu6502.Emu6502.load_and_run"><code class="name flex">
-<span>def <span class="ident">load_and_run</span></span>(<span>self, bytecode: _io.BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address) ‑> py65emu.cpu.CPU</span>
+<span>def <span class="ident">load_and_run</span></span>(<span>self, bytecode: _io.BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) ‑> py65emu.cpu.CPU</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -233,7 +258,7 @@ class Emu6502():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address) -&gt; CPU:
+<pre><code class="python">def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; CPU:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -252,13 +277,12 @@ class Emu6502():
     from copy import deepcopy
     debug_bytecode = deepcopy(bytecode).read()
 
-    low_ram = (0x00, seg_start_address-1)
-    hi_ram = (seg_stop_address, 0xffff)
+    low_ram = (0x00, seg_start_address, False)
+    hi_ram = (seg_stop_address, 0xffff, False)
 
     mmu = MMU([
         low_ram,
-        (seg_start_address, seg_stop_address -
-         seg_start_address, False, bytecode),
+        (seg_start_address, seg_stop_address - seg_start_address, False, bytecode),
         hi_ram
     ])
 
@@ -270,37 +294,50 @@ class Emu6502():
     # for i in range(seg_stop_address - seg_start_address):
     #     self.logger.debug(f&#34;{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}&#34;)
 
+
+    counting_enabled = False if cycles_count_start is not None else True
     self.logger.debug(f&#34;Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}&#34;)
 
+    nb_cycles_used = 0
     current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
     current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
-    current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-    current_operand = debug_bytecode[cpu.r.pc-seg_start_address+1:cpu.r.pc-seg_start_address+current_operand_size]
-    self.logger.debug(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-    self.logger.debug(f&#34;{current_instruction} operand: {hex(int.from_bytes(current_operand, &#39;big&#39;))}&#34;)
-    self.logger.debug(cpu.r)
-
-    nb_cycles_used = 0
     while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
         try:
-            cpu.step()
-            # input()
+            if cpu.r.pc == cycles_count_start:
+                counting_enabled = True
+                self.logger.info(f&#34;Starting to count cycle at ${cpu.r.pc:04X}&#34;)
+            if cpu.r.pc == cycles_count_end:
+                counting_enabled = False
+                self.logger.info(f&#34;Stopping to count cycle at ${cpu.r.pc:04X}&#34;)
 
             current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
             current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
             current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
             current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
-            self.logger.debug(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-            self.logger.debug(f&#34;{current_instruction} operand: {hex(int.from_bytes(current_operand, &#39;big&#39;))}&#34;)
-            self.logger.debug(cpu.r)
-            self.logger.debug(cpu.cc)
-            nb_cycles_used += cpu.cc
+
+            if counting_enabled:
+                nb_cycles_used += cpu.cc
+
+            if counting_enabled and nb_cycles_used % 1000 == 0:
+                self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
+
+            if debug_mode:
+                self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
+                self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
+                input()
+
+            cpu.step()
 
         except Exception as e:
-            self.logger.critical(
-                f&#34;Emulation crashed at ${cpu.r.pc:04X} due to {e.__class__}&#34;)
-            # self.logger.debug(traceback.format_exc())
+            self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
+            self.logger.critical(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+            self.logger.critical(f&#34;Registers: {cpu.r}&#34;)
+            self.logger.critical(traceback.format_exc())
             break
+
+    self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
+    # exit()
 
     return cpu, mmu, nb_cycles_used</code></pre>
 </details>

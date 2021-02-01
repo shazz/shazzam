@@ -526,6 +526,22 @@ def get_current_address() -> int:
 
     return g._CURRENT_CONTEXT.next_position
 
+def get_label_address(label: str) -> int:
+
+    global _CURRENT_CONTEXT
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError("No segment defined!")
+
+    if isinstance(label, str):
+        if label in g._CURRENT_CONTEXT.labels:
+            adr = g._CURRENT_CONTEXT.labels[label]
+            if adr.value is not None:
+                return adr.value
+            else:
+                raise ValueError(f"label {start_address} not yet resolved")
+        else:
+            raise ValueError(f"label {start_address} not found")
+
 
 # -----------------------------------------------------------
 # Private functions

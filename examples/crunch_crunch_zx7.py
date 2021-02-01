@@ -28,11 +28,6 @@ set_prefs(default_code_segment=assembler.get_code_segment(),
           directive_prefix=prefs.directive)
 
 prg_cruncher  = Exomizer("third_party/exomizer/exomizer")
-prg_cruncher  = Nucrunch("third_party/nucrunch/nucrunch")
-prg_cruncher  = Pucrunch("third_party/pucrunch/pucrunch")
-
-data_cruncher = Apultra("third_party/lzsa/lzsa", mode=PackingMode.FORWARD)
-data_cruncher = Apultra("third_party/apultra/apultra", mode=PackingMode.FORWARD)
 data_cruncher = Zx7()
 
 @reloading

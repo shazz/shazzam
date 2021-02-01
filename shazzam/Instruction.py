@@ -57,7 +57,7 @@ class Instruction():
         ["bne","rel"],["cmp","iiy"],["___","___"],["dcp","iiy"],["___","___"],["cmp","zpx"],["dec","zpx"],["dcp","zpx"],  # D0
         ["cld","imp"],["cmp","aby"],["___","___"],["dcp","aby"],["___","___"],["cmp","abx"],["dec","abx"],["dcp","abx"],  # D8
         ["cpx","imm"],["sbc","iix"],["___","___"],["isc","iix"],["cpx","zpg"],["sbc","zpg"],["inc","zpg"],["isc","zpg"],  # E0
-        ["inx","imp"],["sbc","imm"],["nop","imp"],["sbc","imm"],["cpx","abs"],["sbc","abs"],["inc","abs"],["isc","abs"],  # E8
+        ["inx","imp"],["sbc","imm"],["nop","imp"],["___","___"],["cpx","abs"],["sbc","abs"],["inc","abs"],["isc","abs"],  # E8
         ["beq","rel"],["sbc","iiy"],["___","___"],["isc","iiy"],["___","___"],["sbc","zpx"],["inc","zpx"],["isc","zpx"],  # F0
         ["sed","imp"],["sbc","aby"],["___","___"],["isc","aby"],["___","___"],["sbc","abx"],["inc","abx"],["isc","abx"]   # F8
     ]
@@ -75,7 +75,7 @@ class Instruction():
         'aby': 2,
         'ind': 2,
         'rel': 1,
-        'acc': 1,
+        'acc': 0,
     }
 
     addressing_modes = sorted(list(set([opcode[1] for opcode in opcodes])))
@@ -194,10 +194,10 @@ class Instruction():
 
         self.logger.debug(f"Get operand for mode {self.mode}")
 
-        if self.mode in ['imp']:
+        if self.mode in ['imp', 'acc']:
             return None
 
-        elif self.mode in ['imm', 'acc']:
+        elif self.mode in ['imm']:
             return (def_immediate_value & 0xff)
 
         elif self.mode in ['zpg', 'zpx', 'zpy']:

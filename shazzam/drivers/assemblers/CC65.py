@@ -54,9 +54,13 @@ clean:
 """
 
     basic_header_size = 13
+    start_address = 0x0801+basic_header_size
 
     def __init__(self, name: str, exe_path: str):
         super().__init__(name, exe_path)
+
+    def get_code_segment_address(self) -> str:
+        return CC65.start_address
 
     def get_code_segment(self) -> str:
         """get_code_segment
@@ -137,9 +141,9 @@ clean:
         # calling cl65
         try:
             self._get_segment_by_name(self.get_code_segment(), program.segments)
-            cmd = [self.path, '-v', '-g', '-d', '-t', 'c64', '--cpu', '6502X', '-C', f'generated/{program.name}/gen-c64-asm.cfg', '-u', '__EXEHDR__']
+            cmd = [self.path, '-v', '-g', '-d', '-Ln', f'generated/{program.name}/{self.get_code_segment()}.vice_lst', '-l', f'generated/{program.name}/{self.get_code_segment()}.cc65_lst' ,'-t', 'c64', '--cpu', '6502X', '-C', f'generated/{program.name}/gen-c64-asm.cfg', '-u', '__EXEHDR__']
         except ValueError:
-            cmd = [self.path, '-v', '-g', '-d', '-t', 'c64', '--cpu', '6502X', '-C', f'generated/{program.name}/gen-c64-asm.cfg']
+            cmd = [self.path, '-v', '-g', '-d', '-Ln', f'generated/{program.name}/{self.get_code_segment()}.vice_lst', '-l', f'generated/{program.name}/{self.get_code_segment()}.cc65_lst', '-t', 'c64', '--cpu', '6502X', '-C', f'generated/{program.name}/gen-c64-asm.cfg']
 
         for segment in program.segments:
             cmd.append(f"generated/{program.name}/{segment.name}.asm")
@@ -150,6 +154,8 @@ clean:
         self.logger.info(f"Assembling {program.name} using CL65 command: {cmd}")
         data = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = data.communicate()
+
+        print(stdout_data.decode('utf-8'))
 
         if len(stderr_data) > 1:
             self.logger.error(stderr_data)
@@ -174,7 +180,10 @@ clean:
 
         # set load address that will be the 2 PRG first bytes
         seg = self._get_segment_by_address(sorted_adr[0], program.segments)
-        CC65.memory = CC65.memory.replace("%1", f"${seg.start_adr:04X}")
+        if seg.name == self.get_code_segment():
+            CC65.memory = CC65.memory.replace("%1", f"${0x0801:04X}")
+        else:
+            CC65.memory = CC65.memory.replace("%1", f"${seg.start_adr:04X}")
 
         mem_lines = []
         for i, segment_adr in enumerate(sorted_adr):
@@ -185,11 +194,11 @@ clean:
                 if i != len(sorted_adr)-1:
                     seg_size = self._get_segment_by_address(sorted_adr[i+1], program.segments).start_adr - seg.start_adr
                 else:
-                    seg_size = seg.end_adr-seg.start_adr
+                    seg_size = seg.end_adr - seg.start_adr + CC65.basic_header_size
 
                 # check if default 0801 segment is defined
                 if seg.name == 'CODE':
-                    mem_lines.append(f"\tMAIN:\tfile = %O, start = ${seg.start_adr:04X},      size = ${seg_size:04X},    fill = yes;\n")
+                    mem_lines.append(f"\tMAIN:\tfile = %O, start = ${0x0801:04X},      size = ${seg_size:04X},    fill = yes;\n")
                 else:
                     mem_lines.append(f"\t{seg.name}:\tfile = %O, start = ${seg.start_adr:04X},      size = ${seg_size:04X},    fill = yes;\n")
 

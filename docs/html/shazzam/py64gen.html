@@ -554,6 +554,22 @@ def get_current_address() -&gt; int:
 
     return g._CURRENT_CONTEXT.next_position
 
+def get_label_address(label: str) -&gt; int:
+
+    global _CURRENT_CONTEXT
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError(&#34;No segment defined!&#34;)
+
+    if isinstance(label, str):
+        if label in g._CURRENT_CONTEXT.labels:
+            adr = g._CURRENT_CONTEXT.labels[label]
+            if adr.value is not None:
+                return adr.value
+            else:
+                raise ValueError(f&#34;label {start_address} not yet resolved&#34;)
+        else:
+            raise ValueError(f&#34;label {start_address} not found&#34;)
+
 
 # -----------------------------------------------------------
 # Private functions
@@ -13241,6 +13257,32 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
     return g._CURRENT_CONTEXT.next_position</code></pre>
 </details>
 </dd>
+<dt id="shazzam.py64gen.get_label_address"><code class="name flex">
+<span>def <span class="ident">get_label_address</span></span>(<span>label: str) ‑> int</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_label_address(label: str) -&gt; int:
+
+    global _CURRENT_CONTEXT
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError(&#34;No segment defined!&#34;)
+
+    if isinstance(label, str):
+        if label in g._CURRENT_CONTEXT.labels:
+            adr = g._CURRENT_CONTEXT.labels[label]
+            if adr.value is not None:
+                return adr.value
+            else:
+                raise ValueError(f&#34;label {start_address} not yet resolved&#34;)
+        else:
+            raise ValueError(f&#34;label {start_address} not found&#34;)</code></pre>
+</details>
+</dd>
 <dt id="shazzam.py64gen.get_segment_addresses"><code class="name flex">
 <span>def <span class="ident">get_segment_addresses</span></span>(<span>name: str) ‑> int</span>
 </code></dt>
@@ -18855,6 +18897,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 <li><code><a title="shazzam.py64gen.generate" href="#shazzam.py64gen.generate">generate</a></code></li>
 <li><code><a title="shazzam.py64gen.get_anonymous_label" href="#shazzam.py64gen.get_anonymous_label">get_anonymous_label</a></code></li>
 <li><code><a title="shazzam.py64gen.get_current_address" href="#shazzam.py64gen.get_current_address">get_current_address</a></code></li>
+<li><code><a title="shazzam.py64gen.get_label_address" href="#shazzam.py64gen.get_label_address">get_label_address</a></code></li>
 <li><code><a title="shazzam.py64gen.get_segment_addresses" href="#shazzam.py64gen.get_segment_addresses">get_segment_addresses</a></code></li>
 <li><code><a title="shazzam.py64gen.imm" href="#shazzam.py64gen.imm">imm</a></code></li>
 <li><code><a title="shazzam.py64gen.inc" href="#shazzam.py64gen.inc">inc</a></code></li>

@@ -29,11 +29,7 @@ set_prefs(default_code_segment=assembler.get_code_segment(),
           directive_prefix=prefs.directive)
 
 prg_cruncher  = Exomizer("third_party/exomizer/exomizer")
-# prg_cruncher  = Nucrunch("third_party/nucrunch/nucrunch")
-# prg_cruncher  = Pucrunch("third_party/pucrunch/pucrunch")
-
-# data_cruncher = Lzsa("third_party/lzsa/lzsa", mode=PackingMode.FORWARD)
-data_cruncher = Apultra("third_party/apultra/apultra", mode=PackingMode.FORWARD)
+data_cruncher = Lzsa("third_party/apultra/apultra")
 
 @reloading
 def code():
@@ -154,7 +150,7 @@ def code():
         rts()
 
     with segment(segments["depacker"], "depacker") as s:
-        data_cruncher.generate_depacker_routine(s.get_stats().start_address)
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast = True)
 
     # generate listing and code
     gen_code(format_code=prefs, gen_listing=True)

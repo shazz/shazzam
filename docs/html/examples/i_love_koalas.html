@@ -80,8 +80,8 @@ def code():
         label(&#34;loop&#34;)
         jmp(at(&#34;loop&#34;))
 
-    # set bitmap data at vic_bank + bimap
-    with segment(vic_bank, &#34;bitmap&#34;, segment_type=SegmentType.BITMAP) as s:
+    # set bitmap data at vic_bank + bitmap
+    with segment(vic_bank+bitmap_mem, &#34;bitmap&#34;, segment_type=SegmentType.BITMAP) as s:
         incbin(kla.bitmap)
 
     with segment(vic_bank+screen_mem, &#34;screen_ram&#34;, segment_type=SegmentType.SCREEN_MEM) as s:

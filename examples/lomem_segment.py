@@ -31,7 +31,7 @@ def code():
     char_mem    = 0x0000            # not used, 0 is fine
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
-    with segment(0x0801, assembler.get_code_segment()) as s:
+    with segment(0x4000, "START") as s:
 
         v.setup_vic_bank(vic_bank)  # set vic bank
 
@@ -69,4 +69,4 @@ def code():
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code, "lomem_test")
+    generate(code, "lomem_segment")

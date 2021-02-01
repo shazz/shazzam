@@ -211,14 +211,17 @@ And icing on the cake, Shazzam features a Segment Optimizer which automatically 
 
 ## Crunchers support
 
-Obviously, you can add any cruncher/packer to shrink your data or generated PRG but by default, Shazzam supports:
+Obviously, you can add any cruncher/packer to shrink your data (incbin) or generated PRG but by default, Shazzam supports:
 
-- Exomizer
-- pucrunch
-- nucrunch
-- Alpultra
-- lzsa
-- Dyonamite
+- Exomizer (PRG) (incbin missing)
+- pucrunch (PRG) (incbin missing)
+- nucrunch (PRG) (incbin missing)
+- Alpultra (incbin) (PRG missing)
+- lzsa (PRG and incbin depacker missing)
+- Dyonamite ((PRG and incbin depacker missing))
+- zx7 (incin) (PRG missing)
+- c64f (incbin) (PRG missing)
+- zx0 (todo)
 
 Extract from the `crunch_crunch` provided example:
 

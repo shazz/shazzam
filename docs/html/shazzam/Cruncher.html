@@ -84,7 +84,7 @@ class Cruncher():
                 f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
             raise
 
-    def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
+    def crunch_incbin(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
         &#34;&#34;&#34;crunch_incbin
 
         Args:
@@ -94,6 +94,14 @@ class Cruncher():
         Raises:
             RuntimeError: [description]
         &#34;&#34;&#34;
+        if filename is None and data is None:
+            raise ValueError(&#34;filename AND data cannot be none at the same time&#34;)
+
+        if filename is None:
+                filename = &#34;resources/tmp.raw&#34;
+                with open(filename, &#34;wb&#34;) as f:
+                    f.write(data)
+
         if self.incbin_cmd is None:
             raise RuntimeError(&#34;Packer command line for incbin is not set!&#34;)
 
@@ -205,7 +213,7 @@ class Cruncher():
                 f&#34;Cannot crunch prg using {self.packer_name} due to {e}&#34;)
             raise
 
-    def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
+    def crunch_incbin(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
         &#34;&#34;&#34;crunch_incbin
 
         Args:
@@ -215,6 +223,14 @@ class Cruncher():
         Raises:
             RuntimeError: [description]
         &#34;&#34;&#34;
+        if filename is None and data is None:
+            raise ValueError(&#34;filename AND data cannot be none at the same time&#34;)
+
+        if filename is None:
+                filename = &#34;resources/tmp.raw&#34;
+                with open(filename, &#34;wb&#34;) as f:
+                    f.write(data)
+
         if self.incbin_cmd is None:
             raise RuntimeError(&#34;Packer command line for incbin is not set!&#34;)
 
@@ -257,17 +273,19 @@ class Cruncher():
 <h3>Subclasses</h3>
 <ul class="hlist">
 <li><a title="shazzam.drivers.crunchers.Apultra.Apultra" href="drivers/crunchers/Apultra.html#shazzam.drivers.crunchers.Apultra.Apultra">Apultra</a></li>
+<li><a title="shazzam.drivers.crunchers.C64f.C64f" href="drivers/crunchers/C64f.html#shazzam.drivers.crunchers.C64f.C64f">C64f</a></li>
 <li><a title="shazzam.drivers.crunchers.Doynamite.Doynamite" href="drivers/crunchers/Doynamite.html#shazzam.drivers.crunchers.Doynamite.Doynamite">Doynamite</a></li>
 <li><a title="shazzam.drivers.crunchers.Exomizer.Exomizer" href="drivers/crunchers/Exomizer.html#shazzam.drivers.crunchers.Exomizer.Exomizer">Exomizer</a></li>
 <li><a title="shazzam.drivers.crunchers.Lzsa.Lzsa" href="drivers/crunchers/Lzsa.html#shazzam.drivers.crunchers.Lzsa.Lzsa">Lzsa</a></li>
 <li><a title="shazzam.drivers.crunchers.Nucrunch.Nucrunch" href="drivers/crunchers/Nucrunch.html#shazzam.drivers.crunchers.Nucrunch.Nucrunch">Nucrunch</a></li>
 <li><a title="shazzam.drivers.crunchers.Pucrunch.Pucrunch" href="drivers/crunchers/Pucrunch.html#shazzam.drivers.crunchers.Pucrunch.Pucrunch">Pucrunch</a></li>
+<li><a title="shazzam.drivers.crunchers.Zx7.Zx7" href="drivers/crunchers/Zx7.html#shazzam.drivers.crunchers.Zx7.Zx7">Zx7</a></li>
 <li><a title="shazzam.drivers.crunchers.zx0.Pucrunch" href="drivers/crunchers/zx0.html#shazzam.drivers.crunchers.zx0.Pucrunch">Pucrunch</a></li>
 </ul>
 <h3>Methods</h3>
 <dl>
 <dt id="shazzam.Cruncher.Cruncher.crunch_incbin"><code class="name flex">
-<span>def <span class="ident">crunch_incbin</span></span>(<span>self, filename: str, extra_params: List = None) ‑> bytearray</span>
+<span>def <span class="ident">crunch_incbin</span></span>(<span>self, filename: str = None, data: bytearray = None, extra_params: List = None) ‑> bytearray</span>
 </code></dt>
 <dd>
 <div class="desc"><p>crunch_incbin</p>
@@ -287,7 +305,7 @@ class Cruncher():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def crunch_incbin(self, filename: str, extra_params: List = None) -&gt; bytearray:
+<pre><code class="python">def crunch_incbin(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
     &#34;&#34;&#34;crunch_incbin
 
     Args:
@@ -297,6 +315,14 @@ class Cruncher():
     Raises:
         RuntimeError: [description]
     &#34;&#34;&#34;
+    if filename is None and data is None:
+        raise ValueError(&#34;filename AND data cannot be none at the same time&#34;)
+
+    if filename is None:
+            filename = &#34;resources/tmp.raw&#34;
+            with open(filename, &#34;wb&#34;) as f:
+                f.write(data)
+
     if self.incbin_cmd is None:
         raise RuntimeError(&#34;Packer command line for incbin is not set!&#34;)
 

@@ -68,6 +68,9 @@ class DirectiveFormat(Enum):
     USE_DOT = auto()
     USE_EXCLAMATION = auto()
 
+class DirectiveDelimiter(Enum):
+    DOUBLE_QUOTE = auto()
+    NO_DELIMITER = auto()
 
 class LabelFormat(Enum):
     NO_PREFIX = auto()
@@ -224,6 +227,36 @@ class System(Enum):
 <div class="desc"></div>
 </dd>
 <dt id="shazzam.defs.DetectMode.MANUAL"><code class="name">var <span class="ident">MANUAL</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
+<dt id="shazzam.defs.DirectiveDelimiter"><code class="flex name class">
+<span>class <span class="ident">DirectiveDelimiter</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class DirectiveDelimiter(Enum):
+    DOUBLE_QUOTE = auto()
+    NO_DELIMITER = auto()</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="shazzam.defs.DirectiveDelimiter.DOUBLE_QUOTE"><code class="name">var <span class="ident">DOUBLE_QUOTE</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.defs.DirectiveDelimiter.NO_DELIMITER"><code class="name">var <span class="ident">NO_DELIMITER</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -442,6 +475,13 @@ class System(Enum):
 <ul class="">
 <li><code><a title="shazzam.defs.DetectMode.AUTO" href="#shazzam.defs.DetectMode.AUTO">AUTO</a></code></li>
 <li><code><a title="shazzam.defs.DetectMode.MANUAL" href="#shazzam.defs.DetectMode.MANUAL">MANUAL</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="shazzam.defs.DirectiveDelimiter" href="#shazzam.defs.DirectiveDelimiter">DirectiveDelimiter</a></code></h4>
+<ul class="">
+<li><code><a title="shazzam.defs.DirectiveDelimiter.DOUBLE_QUOTE" href="#shazzam.defs.DirectiveDelimiter.DOUBLE_QUOTE">DOUBLE_QUOTE</a></code></li>
+<li><code><a title="shazzam.defs.DirectiveDelimiter.NO_DELIMITER" href="#shazzam.defs.DirectiveDelimiter.NO_DELIMITER">NO_DELIMITER</a></code></li>
 </ul>
 </li>
 <li>

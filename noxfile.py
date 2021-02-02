@@ -57,6 +57,7 @@ def install_3rd_party(session):
     session.run("tar", "--version")
     session.run("unzip", "-h")
     session.run("gcc", "--version")
+    session.run("npm", "--version")
 
     shutil.rmtree('third_party', ignore_errors=True)
 
@@ -122,6 +123,14 @@ def install_3rd_party(session):
     session.run("wget", "https://csdb.dk/release/download.php?id=241780", "-O", "sparkle.zip")
     session.run("unzip", "sparkle.zip", "-d", "sparkle")
     session.run("rm", "sparkle.zip")
+
+    # cc65
+    session.run("git", "clone", "https://github.com/nurpax/c64jasm.git")
+    session.cd("c64jasm")
+    session.run("npm", "install", ".")
+    session.run("npm", "run-script", "dist")
+    session.run("ln", "-s", "dist/src/cli.js", "c64jasm")
+    session.cd("..")
 
     # cc65
     session.run("git", "clone", "https://github.com/cc65/cc65.git")

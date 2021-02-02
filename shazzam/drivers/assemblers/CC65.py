@@ -1,4 +1,4 @@
-from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat
+from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter
 from shazzam.Assembler import Assembler
 from shazzam.Segment import Segment
 from shazzam.Program import Program
@@ -96,7 +96,8 @@ clean:
             # "code": [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
             "code": [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             "comments": CommentsFormat.USE_SEMICOLON,
-            "directive": DirectiveFormat.USE_DOT
+            "directive": DirectiveFormat.USE_DOT,
+            "delimiter": DirectiveDelimiter.DOUBLE_QUOTE
         })
 
     def assemble_segment(self, program: Program, segment: Segment) -> str:
@@ -109,20 +110,7 @@ clean:
             str: [description]
         """
         segment_filename = f'generated/{program.name}/{segment.name}.o'
-
-        # seg_lines
-        cmd = [self.path, '-t', 'c64', '--cpu', '6502X', f"generated/{program.name}/{segment.name}.asm"]
-
-        cmd.append('-o')
-        cmd.append(segment_filename)
-
-        self.logger.info(
-            f"Assembling {segment.name} segment using CL65 command: {cmd}")
-        data = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        data.communicate()
-
-        self.logger.info(f"{segment.name} assembled")
+        raise NotImplementedError()
 
         return segment_filename
 
@@ -158,7 +146,7 @@ clean:
         print(stdout_data.decode('utf-8'))
 
         if len(stderr_data) > 1:
-            self.logger.error(stderr_data)
+            self.logger.error(stderr_data.decode('utf-8'))
         else:
             self.logger.info(f"{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked")
 

@@ -15,10 +15,16 @@ import shazzam.macros.vic as v
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
 prefs = assembler.get_code_format()
-set_prefs(default_code_segment=assembler.get_code_segment(),
-          code_format=prefs.code,
-          comments_format=prefs.comments,
-          directive_prefix=prefs.directive)
+set_prefs(
+    default_code_segment="start",
+    code_format=prefs.code,
+    comments_format=prefs.comments,
+    directive_prefix=prefs.directive,
+    directive_delimiter=prefs.delimiter
+)
+
+program_name = os.path.splitext(os.path.basename(__file__))[0]
+
 
 @reloading
 def code():
@@ -63,10 +69,10 @@ def code():
         incbin(kla.colorram)
 
     # generate listing
-    gen_code(format_code=prefs, gen_listing=True)
+    gen_code(assembler, format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code, "lomem_segment")
+    generate(code, program_name)

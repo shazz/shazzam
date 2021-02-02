@@ -36,7 +36,7 @@ from reloading import reloading
 
 import shazzam.globals as g
 from shazzam.Instruction import Instruction
-from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, System, DetectMode, Alias
+from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, System, DetectMode, Alias, DirectiveDelimiter
 from shazzam.defs import RegisterACC, RegisterX, RegisterY
 from shazzam.Rasterline import Rasterline
 from shazzam.Segment import Segment, SegmentType
@@ -57,13 +57,14 @@ from typing import List, Any, Dict
 # ---------------------------------------------------------------------
 # py64gen public functions
 # ---------------------------------------------------------------------
-def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat):
+def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format
     g._DIRECTIVE_PREFIX = directive_prefix
     g._DEFAULT_CODE_SEGMENT = default_code_segment
+    g._DIRECTIVE_DELIMITER = directive_delimiter
 
 
 @contextmanager
@@ -144,7 +145,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER = None
 
 
-def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
+def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -170,12 +171,13 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
             default_code_segment=format_code.default_code_segment,
             code_format=format_code.code,
             comments_format=format_code.comments,
-            directive_prefix=format_code.directive)
+            directive_prefix=format_code.directive,
+            directive_delimiter=format_code.delimiter
+        )
 
     for segment in g._PROGRAM.segments:
 
-        g.logger.debug(
-            f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
+        g.logger.debug(f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
         segment.change_format()
         code = segment.gen_code()
 
@@ -183,6 +185,7 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
             os.makedirs(f&#34;generated/{g._PROGRAM.name}&#34;, exist_ok=True)
             with open(f&#34;generated/{g._PROGRAM.name}/{segment.name}.asm&#34;, &#34;w&#34;) as f:
                 f.writelines(header)
+                f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
                 f.writelines(code)
 
     if gen_listing:
@@ -192,14 +195,17 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
                 &#34;default_code_segment&#34;: &#34;CODE&#34;,
                 &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
-                &#34;directive&#34;: DirectiveFormat.USE_DOT
+                &#34;directive&#34;: DirectiveFormat.USE_DOT,
+                &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER
             })
 
         set_prefs(
             default_code_segment=format_listing.default_code_segment,
             code_format=format_listing.code,
             comments_format=format_listing.comments,
-            directive_prefix=format_listing.directive)
+            directive_prefix=format_listing.directive,
+            directive_delimiter=format_listing.delimiter
+        )
 
         for segment in g._PROGRAM.segments:
 
@@ -497,7 +503,7 @@ def byte(value: Any) -&gt; bytearray:
         ret_array = []
         for v in value:
             ret_array.append(g._CURRENT_CONTEXT.add_byte(Immediate(value=v)))
-        return bytearray(ret_array)
+        return ret_array
     else:
         raise ValueError(&#34;Immediate must be an int or a string&#34;)
 
@@ -566,10 +572,11 @@ def get_label_address(label: str) -&gt; int:
             if adr.value is not None:
                 return adr.value
             else:
-                raise ValueError(f&#34;label {start_address} not yet resolved&#34;)
+                raise ValueError(f&#34;label {label} not yet resolved&#34;)
         else:
-            raise ValueError(f&#34;label {start_address} not found&#34;)
-
+            raise ValueError(f&#34;label {label} not found&#34;)
+    else:
+        return label
 
 # -----------------------------------------------------------
 # Private functions
@@ -11506,7 +11513,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
         ret_array = []
         for v in value:
             ret_array.append(g._CURRENT_CONTEXT.add_byte(Immediate(value=v)))
-        return bytearray(ret_array)
+        return ret_array
     else:
         raise ValueError(&#34;Immediate must be an int or a string&#34;)</code></pre>
 </details>
@@ -13012,7 +13019,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.gen_code"><code class="name flex">
-<span>def <span class="ident">gen_code</span></span>(<span>header: str = None, format_code: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None, gen_listing: bool = True, format_listing: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None) ‑> NoneType</span>
+<span>def <span class="ident">gen_code</span></span>(<span>assembler: <a title="shazzam.Assembler.Assembler" href="Assembler.html#shazzam.Assembler.Assembler">Assembler</a>, header: str = None, format_code: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None, gen_listing: bool = True, format_listing: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -13031,7 +13038,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
+<pre><code class="python">def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -13057,12 +13064,13 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
             default_code_segment=format_code.default_code_segment,
             code_format=format_code.code,
             comments_format=format_code.comments,
-            directive_prefix=format_code.directive)
+            directive_prefix=format_code.directive,
+            directive_delimiter=format_code.delimiter
+        )
 
     for segment in g._PROGRAM.segments:
 
-        g.logger.debug(
-            f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
+        g.logger.debug(f&#34;generating code for segment {segment.name} from {g._PROGRAM.segments}&#34;)
         segment.change_format()
         code = segment.gen_code()
 
@@ -13070,6 +13078,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
             os.makedirs(f&#34;generated/{g._PROGRAM.name}&#34;, exist_ok=True)
             with open(f&#34;generated/{g._PROGRAM.name}/{segment.name}.asm&#34;, &#34;w&#34;) as f:
                 f.writelines(header)
+                f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
                 f.writelines(code)
 
     if gen_listing:
@@ -13079,14 +13088,17 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
                 &#34;default_code_segment&#34;: &#34;CODE&#34;,
                 &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
-                &#34;directive&#34;: DirectiveFormat.USE_DOT
+                &#34;directive&#34;: DirectiveFormat.USE_DOT,
+                &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER
             })
 
         set_prefs(
             default_code_segment=format_listing.default_code_segment,
             code_format=format_listing.code,
             comments_format=format_listing.comments,
-            directive_prefix=format_listing.directive)
+            directive_prefix=format_listing.directive,
+            directive_delimiter=format_listing.delimiter
+        )
 
         for segment in g._PROGRAM.segments:
 
@@ -13278,9 +13290,11 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
             if adr.value is not None:
                 return adr.value
             else:
-                raise ValueError(f&#34;label {start_address} not yet resolved&#34;)
+                raise ValueError(f&#34;label {label} not yet resolved&#34;)
         else:
-            raise ValueError(f&#34;label {start_address} not found&#34;)</code></pre>
+            raise ValueError(f&#34;label {label} not found&#34;)
+    else:
+        return label</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.get_segment_addresses"><code class="name flex">
@@ -17338,7 +17352,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 </details>
 </dd>
 <dt id="shazzam.py64gen.set_prefs"><code class="name flex">
-<span>def <span class="ident">set_prefs</span></span>(<span>default_code_segment: str, code_format: List[<a title="shazzam.defs.CodeFormat" href="defs.html#shazzam.defs.CodeFormat">CodeFormat</a>], comments_format: <a title="shazzam.defs.CommentsFormat" href="defs.html#shazzam.defs.CommentsFormat">CommentsFormat</a>, directive_prefix: <a title="shazzam.defs.DirectiveFormat" href="defs.html#shazzam.defs.DirectiveFormat">DirectiveFormat</a>)</span>
+<span>def <span class="ident">set_prefs</span></span>(<span>default_code_segment: str, code_format: List[<a title="shazzam.defs.CodeFormat" href="defs.html#shazzam.defs.CodeFormat">CodeFormat</a>], comments_format: <a title="shazzam.defs.CommentsFormat" href="defs.html#shazzam.defs.CommentsFormat">CommentsFormat</a>, directive_prefix: <a title="shazzam.defs.DirectiveFormat" href="defs.html#shazzam.defs.DirectiveFormat">DirectiveFormat</a>, directive_delimiter: <a title="shazzam.defs.DirectiveDelimiter" href="defs.html#shazzam.defs.DirectiveDelimiter">DirectiveDelimiter</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -17346,13 +17360,14 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat):
+<pre><code class="python">def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format
     g._DIRECTIVE_PREFIX = directive_prefix
-    g._DEFAULT_CODE_SEGMENT = default_code_segment</code></pre>
+    g._DEFAULT_CODE_SEGMENT = default_code_segment
+    g._DIRECTIVE_DELIMITER = directive_delimiter</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.slo"><code class="name flex">

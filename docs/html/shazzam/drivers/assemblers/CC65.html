@@ -26,7 +26,7 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat
+<pre><code class="python">from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter
 from shazzam.Assembler import Assembler
 from shazzam.Segment import Segment
 from shazzam.Program import Program
@@ -124,7 +124,8 @@ clean:
             # &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
             &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
-            &#34;directive&#34;: DirectiveFormat.USE_DOT
+            &#34;directive&#34;: DirectiveFormat.USE_DOT,
+            &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE
         })
 
     def assemble_segment(self, program: Program, segment: Segment) -&gt; str:
@@ -137,20 +138,7 @@ clean:
             str: [description]
         &#34;&#34;&#34;
         segment_filename = f&#39;generated/{program.name}/{segment.name}.o&#39;
-
-        # seg_lines
-        cmd = [self.path, &#39;-t&#39;, &#39;c64&#39;, &#39;--cpu&#39;, &#39;6502X&#39;, f&#34;generated/{program.name}/{segment.name}.asm&#34;]
-
-        cmd.append(&#39;-o&#39;)
-        cmd.append(segment_filename)
-
-        self.logger.info(
-            f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        data.communicate()
-
-        self.logger.info(f&#34;{segment.name} assembled&#34;)
+        raise NotImplementedError()
 
         return segment_filename
 
@@ -186,7 +174,7 @@ clean:
         print(stdout_data.decode(&#39;utf-8&#39;))
 
         if len(stderr_data) &gt; 1:
-            self.logger.error(stderr_data)
+            self.logger.error(stderr_data.decode(&#39;utf-8&#39;))
         else:
             self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
@@ -425,7 +413,8 @@ clean:
             # &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
             &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
-            &#34;directive&#34;: DirectiveFormat.USE_DOT
+            &#34;directive&#34;: DirectiveFormat.USE_DOT,
+            &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE
         })
 
     def assemble_segment(self, program: Program, segment: Segment) -&gt; str:
@@ -438,20 +427,7 @@ clean:
             str: [description]
         &#34;&#34;&#34;
         segment_filename = f&#39;generated/{program.name}/{segment.name}.o&#39;
-
-        # seg_lines
-        cmd = [self.path, &#39;-t&#39;, &#39;c64&#39;, &#39;--cpu&#39;, &#39;6502X&#39;, f&#34;generated/{program.name}/{segment.name}.asm&#34;]
-
-        cmd.append(&#39;-o&#39;)
-        cmd.append(segment_filename)
-
-        self.logger.info(
-            f&#34;Assembling {segment.name} segment using CL65 command: {cmd}&#34;)
-        data = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        data.communicate()
-
-        self.logger.info(f&#34;{segment.name} assembled&#34;)
+        raise NotImplementedError()
 
         return segment_filename
 
@@ -487,7 +463,7 @@ clean:
         print(stdout_data.decode(&#39;utf-8&#39;))
 
         if len(stderr_data) &gt; 1:
-            self.logger.error(stderr_data)
+            self.logger.error(stderr_data.decode(&#39;utf-8&#39;))
         else:
             self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
@@ -702,7 +678,7 @@ clean:
     print(stdout_data.decode(&#39;utf-8&#39;))
 
     if len(stderr_data) &gt; 1:
-        self.logger.error(stderr_data)
+        self.logger.error(stderr_data.decode(&#39;utf-8&#39;))
     else:
         self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
@@ -756,7 +732,8 @@ clean:
         # &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.SHOW_LABELS],
         &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.CYCLES],
         &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
-        &#34;directive&#34;: DirectiveFormat.USE_DOT
+        &#34;directive&#34;: DirectiveFormat.USE_DOT,
+        &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE
     })</code></pre>
 </details>
 </dd>
@@ -803,6 +780,7 @@ clean:
 <ul class="hlist">
 <li><code><a title="shazzam.Assembler.Assembler.assemble_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.assemble_segment">assemble_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.get_code_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.get_code_segment">get_code_segment</a></code></li>
+<li><code><a title="shazzam.Assembler.Assembler.segments_definition_gen" href="../../Assembler.html#shazzam.Assembler.Assembler.segments_definition_gen">segments_definition_gen</a></code></li>
 </ul>
 </li>
 </ul>

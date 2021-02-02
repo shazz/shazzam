@@ -16,7 +16,12 @@ prefs = assembler.get_code_format()
 set_prefs(default_code_segment=assembler.get_code_segment(),
           code_format=prefs.code,
           comments_format=prefs.comments,
-          directive_prefix=prefs.directive)
+          directive_prefix=prefs.directive,
+          directive_delimiter=prefs.delimiter
+)
+
+program_name = os.path.splitext(os.path.basename(__file__))[0]
+
 
 @reloading
 def code():
@@ -57,10 +62,10 @@ def code():
         assert cpu.r.a == 13, f"7th fibonacci number is 13 not {cpy.r.a}"
 
     # generate listing
-    gen_code(format_code=prefs, gen_listing=True)
+    gen_code(assembler, format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == "__main__":
-    generate(code, "step_by_step")
+    generate(code, program_name)

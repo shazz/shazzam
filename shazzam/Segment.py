@@ -1,6 +1,6 @@
 
 import shazzam.globals as g
-from shazzam.defs import CommentsFormat, DirectiveFormat, CodeFormat, Alias
+from shazzam.defs import CommentsFormat, DirectiveFormat, CodeFormat, Alias, DirectiveDelimiter
 from shazzam.Instruction import Instruction
 from shazzam.Address import Address
 from shazzam.ByteData import ByteData
@@ -59,9 +59,14 @@ class Segment():
         DirectiveFormat.USE_EXCLAMATION: '!'
     }
 
+    directive_delimiter = {
+        DirectiveDelimiter.NO_DELIMITER : "",
+        DirectiveDelimiter.DOUBLE_QUOTE : '"'
+    }
+
     def __init__(self, start_adr: int, name: str,
                 code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None,
-                directive_prefix: DirectiveFormat = None, use_relative_addressing: bool = False,
+                directive_prefix: DirectiveFormat = None, directive_delimiter: DirectiveDelimiter = None, use_relative_addressing: bool = False,
                 fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None):
         """[summary]
 
@@ -92,6 +97,8 @@ class Segment():
             comments_format = g._COMMENTS_FORMAT
         if directive_prefix is None:
             directive_prefix = g._DIRECTIVE_PREFIX
+        if directive_delimiter is None:
+            directive_delimiter = g._DIRECTIVE_DELIMITER
 
         self.logger.debug("Prefs: {code_format} / {comments_format} / {directive_prefix}")
 
@@ -104,6 +111,7 @@ class Segment():
 
         self.comment_char = Segment.comments_chars[comments_format]
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
+        self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
 
         self.rasterlines = {}
         self.anonymous_labels = {}
@@ -117,8 +125,9 @@ class Segment():
         code_format = g._CODE_FORMAT
         comments_format = g._COMMENTS_FORMAT
         directive_prefix = g._DIRECTIVE_PREFIX
+        directive_delimiter = g._DIRECTIVE_DELIMITER
 
-        self.logger.debug(f"Reset Prefs: {code_format} / {comments_format} / {directive_prefix}")
+        self.logger.info(f"Reset Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter}")
 
         self.show_address = True if CodeFormat.ADDRESS in code_format else False
         self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
@@ -126,6 +135,8 @@ class Segment():
         self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
         self.use_hex = True if CodeFormat.USE_HEX in code_format else False
         self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
+        self.directive_prefix = Segment.directive_prefix[directive_prefix]
+        self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
 
     def close(self) -> None:
         """[summary]"""
@@ -625,7 +636,7 @@ class Segment():
         code.append('\n')
 
         # add segment directive
-        code.append(f'\t\t{self.directive_prefix}segment "{self.name}"\n')
+        code.append(f'\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n')
 
         # get longest label
         if len(locals_labels) > 0:

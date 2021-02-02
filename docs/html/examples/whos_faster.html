@@ -27,6 +27,7 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">from reloading import reloading
+import os
 
 # if shazzam not installed
 import sys
@@ -41,15 +42,20 @@ from shazzam.drivers.assemblers.CC65 import CC65
 from shazzam.drivers.crunchers.C64f import C64f
 import shazzam.plugins.plugins as p
 
+program_name = os.path.splitext(os.path.basename(__file__))[0]
+
 # define your cross assembler
 assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
 prefs = assembler.get_code_format()
-set_prefs(default_code_segment=assembler.get_code_segment(),
-          code_format=prefs.code,
-          comments_format=prefs.comments,
-          directive_prefix=prefs.directive)
-
+set_prefs(
+    default_code_segment=&#34;start&#34;,
+    code_format=prefs.code,
+    comments_format=prefs.comments,
+    directive_prefix=prefs.directive,
+    directive_delimiter=prefs.delimiter
+)
 data_cruncher = C64f(&#34;third_party/c64f/c64f&#34;)
+program_name = os.path.splitext(os.path.basename(__file__))[0]
 
 @reloading
 def code():
@@ -110,40 +116,42 @@ def code():
         # -------------------------------------------------
         # Depacking routine
         # -------------------------------------------------
-        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast=False)
+        # CHANGE use_fast to True or False to benchmark c64f FAST and SMALL depacking routines
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast=True)
 
         # -------------------------------------------------
         # Packed data
         # -------------------------------------------------
-
         label(&#34;packed_data&#34;)
         incbin(data_cruncher.crunch_incbin(data=sid.data))
 
         cpu, mmu, cycles_used = s.emulate(start_address=&#34;start_perf&#34;, cycles_count_start=&#34;dc64f&#34;, cycles_count_end=&#34;end_depack&#34;)
-        print(f&#34;Depacker used {cycles_used} cycles (around {round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)} vbls (IDLE/ACTIVE)) since ${get_label_address(&#39;dc64f&#39;):04X} (dc64f)&#34;)
+        routine_size = get_label_address(&#34;packed_data&#34;) - get_label_address(&#34;dc64f&#34;)
+        print(f&#34;Depacker used {routine_size} bytes and {cycles_used} cycles (around [{round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)}] vbls [IDLE/ACTIVE]) since ${get_label_address(&#39;dc64f&#39;):04X} (dc64f)&#34;)
 
         expected_results = {
             0x4000: [0x4C, 0x40, 0x10, 0x4C, 0xC1, 0x10, 0x01, 0x02, 0x04, 0x0F, 0x10, 0x00, 0x51, 0x27, 0x3A, 0x07],
             0x4C10: [0xA3, 0x18, 0xA0, 0x1F, 0xA2, 0x37, 0x1F, 0xA3, 0x37, 0x7F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         }
 
-        print(&#34;----------------------------------------------------------------&#34;)
+        # checking start / end packed data are well depacked
+        print(&#34;--------------------------------------------------------------&#34;)
         for adr in expected_results.keys():
-            print(f&#34;Address: {adr:04X}:&#34;, end =&#39; &#39;)
+            print(f&#34;Address ${adr:04X}:&#34;, end =&#39; &#39;)
             for i in range(16):
                 print(f&#34;{mmu.read(adr + i):02X}&#34;, end=&#39; &#39;)
                 assert expected_results[adr][i] == mmu.read(adr + i)
             print(&#34;&#34;)
-        print(&#34;----------------------------------------------------------------&#34;)
+        print(&#34;--------------------------------------------------------------&#34;)
 
-    # generate listing and code
-    gen_code(format_code=prefs, gen_listing=True)
+    # generate listing
+    gen_code(assembler, format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
-    assemble_prg(assembler, start_address=assembler.get_code_segment_address())
+    assemble_prg(assembler, start_address=0x0801)
 
 if __name__ == &#34;__main__&#34;:
-    generate(code, &#34;whos_faster&#34;)</code></pre>
+    generate(code, program_name)</code></pre>
 </details>
 </section>
 <section>

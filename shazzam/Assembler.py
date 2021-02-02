@@ -1,4 +1,5 @@
 import logging
+from typing import List
 
 from shazzam.Segment import Segment
 
@@ -48,3 +49,52 @@ class Assembler():
             str: [description]
         """
         pass
+
+    def segments_definition_gen(self, segments: List[Segment]) -> str:
+        """[summary]
+
+        Args:
+            segments (List[Segment]): [description]
+
+        Returns:
+            str: [description]
+        """
+        return ""
+
+    def _get_segment_by_address(self, address: int, segments: List[Segment]) -> Segment:
+        """_get_segment_by_address
+
+        Args:
+            address (int): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        """
+        for segment in segments:
+            if segment.start_adr == address:
+                return segment
+
+        raise ValueError(f"No Segment found starting at {address:04X}")
+
+    def _get_segment_by_name(self, name: str, segments: List[Segment]) -> Segment:
+        """[summary]
+
+        Args:
+            name (str): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        """
+        for segment in segments:
+            if segment.name == name:
+                return segment
+
+        raise ValueError(f"No Segment found with name {name}")

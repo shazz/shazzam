@@ -40,6 +40,9 @@ class DirectiveFormat(Enum):
     USE_DOT = auto()
     USE_EXCLAMATION = auto()
 
+class DirectiveDelimiter(Enum):
+    DOUBLE_QUOTE = auto()
+    NO_DELIMITER = auto()
 
 class LabelFormat(Enum):
     NO_PREFIX = auto()

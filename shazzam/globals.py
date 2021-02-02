@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------
 # Globals
 # ---------------------------------------------------------------------
-from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat
+from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter
 from shazzam.Program import Program
 
 import logging
@@ -9,7 +9,7 @@ import sys
 
 
 def initialize():
-    global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX, _DEFAULT_CODE_SEGMENT
+    global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX, _DEFAULT_CODE_SEGMENT, _DIRECTIVE_DELIMITER
     global _PROGRAM, _GLOBAL_LABELS, _CURRENT_CONTEXT, _CURRENT_RASTER, _LISTING_FORMAT
     global logger
 
@@ -23,6 +23,7 @@ def initialize():
     _CODE_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
     _COMMENTS_FORMAT = CommentsFormat.USE_SEMICOLON
     _DIRECTIVE_PREFIX = DirectiveFormat.NO_PREFIX
+    _DIRECTIVE_DELIMITER = DirectiveDelimiter.DOUBLE_QUOTE
     _DEFAULT_CODE_SEGMENT = "CODE"
     _LISTING_FORMAT = [CodeFormat.BYTECODE, CodeFormat.ADDRESS, CodeFormat.CYCLES, CodeFormat.UPPERCASE, CodeFormat.USE_HEX]
 

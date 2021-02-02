@@ -1,5 +1,5 @@
 reloading
 dill
-#bidict
+cooked_input
 git+https://github.com/shazz/py65emu.git
 git+https://github.com/shazz/pyzx7.git

@@ -8,7 +8,7 @@ from reloading import reloading
 
 import shazzam.globals as g
 from shazzam.Instruction import Instruction
-from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, System, DetectMode, Alias
+from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, System, DetectMode, Alias, DirectiveDelimiter
 from shazzam.defs import RegisterACC, RegisterX, RegisterY
 from shazzam.Rasterline import Rasterline
 from shazzam.Segment import Segment, SegmentType
@@ -29,13 +29,14 @@ from typing import List, Any, Dict
 # ---------------------------------------------------------------------
 # py64gen public functions
 # ---------------------------------------------------------------------
-def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat):
+def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format
     g._DIRECTIVE_PREFIX = directive_prefix
     g._DEFAULT_CODE_SEGMENT = default_code_segment
+    g._DIRECTIVE_DELIMITER = directive_delimiter
 
 
 @contextmanager
@@ -116,7 +117,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER = None
 
 
-def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -> None:
+def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -> None:
     """[summary]
 
     Args:
@@ -142,12 +143,13 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
             default_code_segment=format_code.default_code_segment,
             code_format=format_code.code,
             comments_format=format_code.comments,
-            directive_prefix=format_code.directive)
+            directive_prefix=format_code.directive,
+            directive_delimiter=format_code.delimiter
+        )
 
     for segment in g._PROGRAM.segments:
 
-        g.logger.debug(
-            f"generating code for segment {segment.name} from {g._PROGRAM.segments}")
+        g.logger.debug(f"generating code for segment {segment.name} from {g._PROGRAM.segments}")
         segment.change_format()
         code = segment.gen_code()
 
@@ -155,6 +157,7 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
             os.makedirs(f"generated/{g._PROGRAM.name}", exist_ok=True)
             with open(f"generated/{g._PROGRAM.name}/{segment.name}.asm", "w") as f:
                 f.writelines(header)
+                f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
                 f.writelines(code)
 
     if gen_listing:
@@ -164,14 +167,17 @@ def gen_code(header: str = None, format_code: Alias = None, gen_listing: bool = 
                 "default_code_segment": "CODE",
                 "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 "comments": CommentsFormat.USE_SEMICOLON,
-                "directive": DirectiveFormat.USE_DOT
+                "directive": DirectiveFormat.USE_DOT,
+                "delimiter": DirectiveDelimiter.NO_DELIMITER
             })
 
         set_prefs(
             default_code_segment=format_listing.default_code_segment,
             code_format=format_listing.code,
             comments_format=format_listing.comments,
-            directive_prefix=format_listing.directive)
+            directive_prefix=format_listing.directive,
+            directive_delimiter=format_listing.delimiter
+        )
 
         for segment in g._PROGRAM.segments:
 

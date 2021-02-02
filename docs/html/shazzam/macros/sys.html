@@ -60,33 +60,35 @@ def waste_cycles(n):
 
 
 # ------------------------------------------------------------------------------------------
-# basic start
-# generate a compatible basic header
+# basic start(addr)
+# generate a compatible basic header, if addr bot set, entry point must follow the macro
 # ------------------------------------------------------------------------------------------
-def basic_start(addr):
-    with segment(0x0801, &#34;entry&#34;) as s:
-        byte(0x0c)
-        byte(0x08)
-        byte(0x00)
-        byte(0x00)
-        byte(0x9e)
+def basic_start(addr: int = None):
 
-        if (addr &gt;= 10000):
-            byte(0x30 + (addr//10000)%10)
+    addr = addr if isinstance(addr, int) else 0x0801+10
 
-        if (addr &gt;= 1000):
-            byte(0x30 + (addr//1000)%10)
+    byte(0x0c)
+    byte(0x08)
+    byte(0x00)
+    byte(0x00)
+    byte(0x9e)
 
-        if (addr &gt;= 100):
-            byte(0x30 + (addr//100)%10)
+    if (addr &gt;= 10000):
+        byte(0x30 + (addr//10000)%10)
 
-        if (addr &gt;= 10):
-            byte(0x30 + (addr//10)%10)
+    if (addr &gt;= 1000):
+        byte(0x30 + (addr//1000)%10)
 
-        byte(0x30 + addr % 10)
-        byte(0x0, 0x0, 0x0)
+    if (addr &gt;= 100):
+        byte(0x30 + (addr//100)%10)
 
-        logger.info(f&#34;after basic header, program start at {s.get_stats()[&#39;current_address&#39;]}&#34;)
+    if (addr &gt;= 10):
+        byte(0x30 + (addr//10)%10)
+
+    byte(0x30 + addr % 10)
+    byte([0x0, 0x0, 0x0])
+
+    logger.info(f&#34;after basic header, program start at {get_current_address()}&#34;)
 
 
 # ------------------------------------------------------------------------
@@ -241,7 +243,7 @@ def double_irq(end: Any, stableIRQ: Any):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="shazzam.macros.sys.basic_start"><code class="name flex">
-<span>def <span class="ident">basic_start</span></span>(<span>addr)</span>
+<span>def <span class="ident">basic_start</span></span>(<span>addr: int = None)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -249,30 +251,32 @@ def double_irq(end: Any, stableIRQ: Any):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def basic_start(addr):
-    with segment(0x0801, &#34;entry&#34;) as s:
-        byte(0x0c)
-        byte(0x08)
-        byte(0x00)
-        byte(0x00)
-        byte(0x9e)
+<pre><code class="python">def basic_start(addr: int = None):
 
-        if (addr &gt;= 10000):
-            byte(0x30 + (addr//10000)%10)
+    addr = addr if isinstance(addr, int) else 0x0801+10
 
-        if (addr &gt;= 1000):
-            byte(0x30 + (addr//1000)%10)
+    byte(0x0c)
+    byte(0x08)
+    byte(0x00)
+    byte(0x00)
+    byte(0x9e)
 
-        if (addr &gt;= 100):
-            byte(0x30 + (addr//100)%10)
+    if (addr &gt;= 10000):
+        byte(0x30 + (addr//10000)%10)
 
-        if (addr &gt;= 10):
-            byte(0x30 + (addr//10)%10)
+    if (addr &gt;= 1000):
+        byte(0x30 + (addr//1000)%10)
 
-        byte(0x30 + addr % 10)
-        byte(0x0, 0x0, 0x0)
+    if (addr &gt;= 100):
+        byte(0x30 + (addr//100)%10)
 
-        logger.info(f&#34;after basic header, program start at {s.get_stats()[&#39;current_address&#39;]}&#34;)</code></pre>
+    if (addr &gt;= 10):
+        byte(0x30 + (addr//10)%10)
+
+    byte(0x30 + addr % 10)
+    byte([0x0, 0x0, 0x0])
+
+    logger.info(f&#34;after basic header, program start at {get_current_address()}&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.macros.sys.double_irq"><code class="name flex">

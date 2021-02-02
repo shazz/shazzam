@@ -29,12 +29,23 @@
 <pre><code class="python">import logging
 from io import BytesIO
 import traceback
+from enum import Enum, auto
+
+import cooked_input as ci
+from cooked_input import GetInputCommand, GetInputInterrupt, CommandResponse, COMMAND_ACTION_NOP, COMMAND_ACTION_CANCEL, COMMAND_ACTION_USE_VALUE
 
 from py65emu.cpu import CPU
 from py65emu.mmu import MMU
 
 from shazzam.Instruction import Instruction
 
+class Action(Enum):
+    READ_MEMORY = auto()
+    READ_REGISTERS = auto()
+    EXIT = auto()
+    RUN_NEXT = auto()
+    SHOW_INSTRUCTION = auto()
+    SHOW_CYCLES_COUNT = auto()
 
 class Emu6502():
 
@@ -101,16 +112,19 @@ class Emu6502():
                 if counting_enabled:
                     nb_cycles_used += cpu.cc
 
-                if counting_enabled and nb_cycles_used % 1000 == 0:
-                    self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
-
                 if debug_mode:
-                    self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                    self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                    self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
-                    input()
-
-                cpu.step()
+                    # self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
+                    # self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                    # self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
+                    inputs = self.get_input(f&#34;${cpu.r.pc:04X}&#34;)
+                    if inputs:
+                        self.process_input(inputs, cpu, mmu, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), nb_cycles_used, cycles_count_start)
+                    else:
+                        debug_mode = False
+                else:
+                    if counting_enabled and nb_cycles_used % 1000 == 0:
+                        self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
+                    cpu.step()
 
             except Exception as e:
                 self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
@@ -120,9 +134,132 @@ class Emu6502():
                 break
 
         self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
-        # exit()
 
-        return cpu, mmu, nb_cycles_used</code></pre>
+        return cpu, mmu, nb_cycles_used
+
+    def process_input(self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start):
+
+        if inputs[&#39;cmd&#39;] == Action.READ_MEMORY:
+            vals = [int(x) for x in inputs[&#39;args&#39;]]
+
+            if len(vals) == 1:
+                print(f&#34;${vals[0]:04X}: {mmu.read(vals[0])}&#34;)
+            else:
+                delta = vals[1] - vals[0]
+                modulo = 1 if delta % 16 != 0 else 0
+
+                for i in range((delta // 16) + modulo):
+                    print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
+                    for j in range(min(16, delta - (i*16))):
+                        print(f&#34;{mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
+                    print()
+
+        elif inputs[&#39;cmd&#39;] == Action.READ_REGISTERS:
+            if len(inputs[&#39;args&#39;]) == 0:
+                print(f&#34;Registers: {cpu.r}&#34;)
+            else:
+                for r in inputs[&#39;args&#39;]:
+                    print(f&#34;Register {r}: {eval(f&#39;cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;cpu.r.{r.lower()}&#39;):0b}&#34;)
+
+        elif inputs[&#39;cmd&#39;] == Action.RUN_NEXT:
+            if len(inputs[&#39;args&#39;]) == 0:
+                print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+                cpu.step()
+
+        elif inputs[&#39;cmd&#39;] == Action.SHOW_INSTRUCTION:
+            print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+
+        elif inputs[&#39;cmd&#39;] == Action.SHOW_CYCLES_COUNT:
+            if nb_cycles_start:
+                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
+            else:
+                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used&#34;)
+
+    def get_input(self, prompt: str):
+
+        def memory_action(cmd_str, cmd_vars, cmd_dict):
+            list_loc = cmd_vars.split(&#39; &#39;)
+            if len(list_loc) &gt; 2:
+                raise ValueError(&#34;too many locations&#34;)
+
+            # check hex
+            vals = [int(x, 0) for x in list_loc]
+            if len(vals) == 2:
+                if vals[1] - vals[0] &lt; 0:
+                   raise ValueError(&#34;negative memory range&#34;)
+
+            res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(list_loc)}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def registers_action(cmd_str, cmd_vars, cmd_dict):
+            if cmd_vars:
+                list_reg = [reg.upper() for reg in cmd_vars.split(&#39; &#39;)]
+                for reg in list_reg:
+                    if reg not in [&#39;A&#39;, &#39;Y&#39;, &#39;X&#39;, &#39;P&#39;, &#39;S&#39;, &#39;PC&#39;]:
+                        raise ValueError(f&#34;Unknown register {reg}&#34;)
+
+                res = f&#34;!{Action.READ_REGISTERS} {&#39; &#39;.join(list_reg)}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+            else:
+                res = f&#34;!{Action.READ_REGISTERS}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+
+        def next_action(cmd_str, cmd_vars, cmd_dict):
+            if cmd_vars:
+                cmd_vars = int(cmd_vars, 0)
+
+            res = f&#34;!{Action.RUN_NEXT} {cmd_vars}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def instruction_action(cmd_str, cmd_vars, cmd_dict):
+            res = f&#34;!{Action.SHOW_INSTRUCTION}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def cycles_action(cmd_str, cmd_vars, cmd_dict):
+            res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def cancel_action(cmd_str, cmd_vars, cmd_dict):
+            return (COMMAND_ACTION_CANCEL, None)
+
+        def show_help_action(cmd_str, cmd_vars, cmd_dict):
+            print(&#39;Available commands:&#39;)
+            print(&#39;? - show this message&#39;)
+            print(&#39;e - exit simulator&#39;)
+            print(&#39;n [nb]- run next nb instructions&#39;)
+            print(&#39;m - show memory&#39;)
+            print(&#39;r - show registers&#39;)
+            print(&#39;i - show instruction&#39;)
+            print(&#39;c - show cycles count&#39;)
+            return CommandResponse(COMMAND_ACTION_NOP, None)
+
+        cmds = {
+            &#39;?&#39;: GetInputCommand(show_help_action),
+            &#39;e&#39;: GetInputCommand(cancel_action),
+            &#39;n&#39;: GetInputCommand(next_action),
+            &#39;m&#39;: GetInputCommand(memory_action),
+            &#39;r&#39;: GetInputCommand(registers_action),
+            &#39;i&#39;: GetInputCommand(instruction_action),
+            &#39;c&#39;: GetInputCommand(cycles_action),
+        }
+
+        while True:
+            try:
+                result = ci.get_string(prompt=prompt, commands=cmds)
+
+                if result[0] == &#39;!&#39;:
+
+                    res = result[1:].split(&#39; &#39;)
+                    return {
+                         &#34;cmd&#34;: eval(res[0]),
+                         &#34;args&#34;: res[1:]
+                    }
+                else:
+                    print(f&#34;Unknown command {result}, enter ? for help&#34;)
+            except ValueError as e:
+                print(f&#34;Bad format: {e}&#34;)
+            except GetInputInterrupt:
+                break</code></pre>
 </details>
 </section>
 <section>
@@ -134,6 +271,56 @@ class Emu6502():
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="shazzam.Emu6502.Action"><code class="flex name class">
+<span>class <span class="ident">Action</span></span>
+<span>(</span><span>value, names=None, *, module=None, qualname=None, type=None, start=1)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>An enumeration.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Action(Enum):
+    READ_MEMORY = auto()
+    READ_REGISTERS = auto()
+    EXIT = auto()
+    RUN_NEXT = auto()
+    SHOW_INSTRUCTION = auto()
+    SHOW_CYCLES_COUNT = auto()</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>enum.Enum</li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="shazzam.Emu6502.Action.EXIT"><code class="name">var <span class="ident">EXIT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Emu6502.Action.READ_MEMORY"><code class="name">var <span class="ident">READ_MEMORY</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Emu6502.Action.READ_REGISTERS"><code class="name">var <span class="ident">READ_REGISTERS</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Emu6502.Action.RUN_NEXT"><code class="name">var <span class="ident">RUN_NEXT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Emu6502.Action.SHOW_CYCLES_COUNT"><code class="name">var <span class="ident">SHOW_CYCLES_COUNT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Emu6502.Action.SHOW_INSTRUCTION"><code class="name">var <span class="ident">SHOW_INSTRUCTION</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+</dd>
 <dt id="shazzam.Emu6502.Emu6502"><code class="flex name class">
 <span>class <span class="ident">Emu6502</span></span>
 </code></dt>
@@ -208,16 +395,19 @@ class Emu6502():
                 if counting_enabled:
                     nb_cycles_used += cpu.cc
 
-                if counting_enabled and nb_cycles_used % 1000 == 0:
-                    self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
-
                 if debug_mode:
-                    self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                    self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                    self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
-                    input()
-
-                cpu.step()
+                    # self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
+                    # self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                    # self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
+                    inputs = self.get_input(f&#34;${cpu.r.pc:04X}&#34;)
+                    if inputs:
+                        self.process_input(inputs, cpu, mmu, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), nb_cycles_used, cycles_count_start)
+                    else:
+                        debug_mode = False
+                else:
+                    if counting_enabled and nb_cycles_used % 1000 == 0:
+                        self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
+                    cpu.step()
 
             except Exception as e:
                 self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
@@ -227,12 +417,231 @@ class Emu6502():
                 break
 
         self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
-        # exit()
 
-        return cpu, mmu, nb_cycles_used</code></pre>
+        return cpu, mmu, nb_cycles_used
+
+    def process_input(self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start):
+
+        if inputs[&#39;cmd&#39;] == Action.READ_MEMORY:
+            vals = [int(x) for x in inputs[&#39;args&#39;]]
+
+            if len(vals) == 1:
+                print(f&#34;${vals[0]:04X}: {mmu.read(vals[0])}&#34;)
+            else:
+                delta = vals[1] - vals[0]
+                modulo = 1 if delta % 16 != 0 else 0
+
+                for i in range((delta // 16) + modulo):
+                    print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
+                    for j in range(min(16, delta - (i*16))):
+                        print(f&#34;{mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
+                    print()
+
+        elif inputs[&#39;cmd&#39;] == Action.READ_REGISTERS:
+            if len(inputs[&#39;args&#39;]) == 0:
+                print(f&#34;Registers: {cpu.r}&#34;)
+            else:
+                for r in inputs[&#39;args&#39;]:
+                    print(f&#34;Register {r}: {eval(f&#39;cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;cpu.r.{r.lower()}&#39;):0b}&#34;)
+
+        elif inputs[&#39;cmd&#39;] == Action.RUN_NEXT:
+            if len(inputs[&#39;args&#39;]) == 0:
+                print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+                cpu.step()
+
+        elif inputs[&#39;cmd&#39;] == Action.SHOW_INSTRUCTION:
+            print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+
+        elif inputs[&#39;cmd&#39;] == Action.SHOW_CYCLES_COUNT:
+            if nb_cycles_start:
+                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
+            else:
+                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used&#34;)
+
+    def get_input(self, prompt: str):
+
+        def memory_action(cmd_str, cmd_vars, cmd_dict):
+            list_loc = cmd_vars.split(&#39; &#39;)
+            if len(list_loc) &gt; 2:
+                raise ValueError(&#34;too many locations&#34;)
+
+            # check hex
+            vals = [int(x, 0) for x in list_loc]
+            if len(vals) == 2:
+                if vals[1] - vals[0] &lt; 0:
+                   raise ValueError(&#34;negative memory range&#34;)
+
+            res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(list_loc)}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def registers_action(cmd_str, cmd_vars, cmd_dict):
+            if cmd_vars:
+                list_reg = [reg.upper() for reg in cmd_vars.split(&#39; &#39;)]
+                for reg in list_reg:
+                    if reg not in [&#39;A&#39;, &#39;Y&#39;, &#39;X&#39;, &#39;P&#39;, &#39;S&#39;, &#39;PC&#39;]:
+                        raise ValueError(f&#34;Unknown register {reg}&#34;)
+
+                res = f&#34;!{Action.READ_REGISTERS} {&#39; &#39;.join(list_reg)}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+            else:
+                res = f&#34;!{Action.READ_REGISTERS}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+
+        def next_action(cmd_str, cmd_vars, cmd_dict):
+            if cmd_vars:
+                cmd_vars = int(cmd_vars, 0)
+
+            res = f&#34;!{Action.RUN_NEXT} {cmd_vars}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def instruction_action(cmd_str, cmd_vars, cmd_dict):
+            res = f&#34;!{Action.SHOW_INSTRUCTION}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def cycles_action(cmd_str, cmd_vars, cmd_dict):
+            res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+        def cancel_action(cmd_str, cmd_vars, cmd_dict):
+            return (COMMAND_ACTION_CANCEL, None)
+
+        def show_help_action(cmd_str, cmd_vars, cmd_dict):
+            print(&#39;Available commands:&#39;)
+            print(&#39;? - show this message&#39;)
+            print(&#39;e - exit simulator&#39;)
+            print(&#39;n [nb]- run next nb instructions&#39;)
+            print(&#39;m - show memory&#39;)
+            print(&#39;r - show registers&#39;)
+            print(&#39;i - show instruction&#39;)
+            print(&#39;c - show cycles count&#39;)
+            return CommandResponse(COMMAND_ACTION_NOP, None)
+
+        cmds = {
+            &#39;?&#39;: GetInputCommand(show_help_action),
+            &#39;e&#39;: GetInputCommand(cancel_action),
+            &#39;n&#39;: GetInputCommand(next_action),
+            &#39;m&#39;: GetInputCommand(memory_action),
+            &#39;r&#39;: GetInputCommand(registers_action),
+            &#39;i&#39;: GetInputCommand(instruction_action),
+            &#39;c&#39;: GetInputCommand(cycles_action),
+        }
+
+        while True:
+            try:
+                result = ci.get_string(prompt=prompt, commands=cmds)
+
+                if result[0] == &#39;!&#39;:
+
+                    res = result[1:].split(&#39; &#39;)
+                    return {
+                         &#34;cmd&#34;: eval(res[0]),
+                         &#34;args&#34;: res[1:]
+                    }
+                else:
+                    print(f&#34;Unknown command {result}, enter ? for help&#34;)
+            except ValueError as e:
+                print(f&#34;Bad format: {e}&#34;)
+            except GetInputInterrupt:
+                break</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
+<dt id="shazzam.Emu6502.Emu6502.get_input"><code class="name flex">
+<span>def <span class="ident">get_input</span></span>(<span>self, prompt: str)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_input(self, prompt: str):
+
+    def memory_action(cmd_str, cmd_vars, cmd_dict):
+        list_loc = cmd_vars.split(&#39; &#39;)
+        if len(list_loc) &gt; 2:
+            raise ValueError(&#34;too many locations&#34;)
+
+        # check hex
+        vals = [int(x, 0) for x in list_loc]
+        if len(vals) == 2:
+            if vals[1] - vals[0] &lt; 0:
+               raise ValueError(&#34;negative memory range&#34;)
+
+        res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(list_loc)}&#34;
+        return (COMMAND_ACTION_USE_VALUE, res)
+
+    def registers_action(cmd_str, cmd_vars, cmd_dict):
+        if cmd_vars:
+            list_reg = [reg.upper() for reg in cmd_vars.split(&#39; &#39;)]
+            for reg in list_reg:
+                if reg not in [&#39;A&#39;, &#39;Y&#39;, &#39;X&#39;, &#39;P&#39;, &#39;S&#39;, &#39;PC&#39;]:
+                    raise ValueError(f&#34;Unknown register {reg}&#34;)
+
+            res = f&#34;!{Action.READ_REGISTERS} {&#39; &#39;.join(list_reg)}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+        else:
+            res = f&#34;!{Action.READ_REGISTERS}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
+    def next_action(cmd_str, cmd_vars, cmd_dict):
+        if cmd_vars:
+            cmd_vars = int(cmd_vars, 0)
+
+        res = f&#34;!{Action.RUN_NEXT} {cmd_vars}&#34;
+        return (COMMAND_ACTION_USE_VALUE, res)
+
+    def instruction_action(cmd_str, cmd_vars, cmd_dict):
+        res = f&#34;!{Action.SHOW_INSTRUCTION}&#34;
+        return (COMMAND_ACTION_USE_VALUE, res)
+
+    def cycles_action(cmd_str, cmd_vars, cmd_dict):
+        res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+        return (COMMAND_ACTION_USE_VALUE, res)
+
+    def cancel_action(cmd_str, cmd_vars, cmd_dict):
+        return (COMMAND_ACTION_CANCEL, None)
+
+    def show_help_action(cmd_str, cmd_vars, cmd_dict):
+        print(&#39;Available commands:&#39;)
+        print(&#39;? - show this message&#39;)
+        print(&#39;e - exit simulator&#39;)
+        print(&#39;n [nb]- run next nb instructions&#39;)
+        print(&#39;m - show memory&#39;)
+        print(&#39;r - show registers&#39;)
+        print(&#39;i - show instruction&#39;)
+        print(&#39;c - show cycles count&#39;)
+        return CommandResponse(COMMAND_ACTION_NOP, None)
+
+    cmds = {
+        &#39;?&#39;: GetInputCommand(show_help_action),
+        &#39;e&#39;: GetInputCommand(cancel_action),
+        &#39;n&#39;: GetInputCommand(next_action),
+        &#39;m&#39;: GetInputCommand(memory_action),
+        &#39;r&#39;: GetInputCommand(registers_action),
+        &#39;i&#39;: GetInputCommand(instruction_action),
+        &#39;c&#39;: GetInputCommand(cycles_action),
+    }
+
+    while True:
+        try:
+            result = ci.get_string(prompt=prompt, commands=cmds)
+
+            if result[0] == &#39;!&#39;:
+
+                res = result[1:].split(&#39; &#39;)
+                return {
+                     &#34;cmd&#34;: eval(res[0]),
+                     &#34;args&#34;: res[1:]
+                }
+            else:
+                print(f&#34;Unknown command {result}, enter ? for help&#34;)
+        except ValueError as e:
+            print(f&#34;Bad format: {e}&#34;)
+        except GetInputInterrupt:
+            break</code></pre>
+</details>
+</dd>
 <dt id="shazzam.Emu6502.Emu6502.load_and_run"><code class="name flex">
 <span>def <span class="ident">load_and_run</span></span>(<span>self, bytecode: _io.BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) ‑> py65emu.cpu.CPU</span>
 </code></dt>
@@ -318,16 +727,19 @@ class Emu6502():
             if counting_enabled:
                 nb_cycles_used += cpu.cc
 
-            if counting_enabled and nb_cycles_used % 1000 == 0:
-                self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
-
             if debug_mode:
-                self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
-                input()
-
-            cpu.step()
+                # self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
+                # self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
+                # self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
+                inputs = self.get_input(f&#34;${cpu.r.pc:04X}&#34;)
+                if inputs:
+                    self.process_input(inputs, cpu, mmu, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), nb_cycles_used, cycles_count_start)
+                else:
+                    debug_mode = False
+            else:
+                if counting_enabled and nb_cycles_used % 1000 == 0:
+                    self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
+                cpu.step()
 
         except Exception as e:
             self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
@@ -337,9 +749,56 @@ class Emu6502():
             break
 
     self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
-    # exit()
 
     return cpu, mmu, nb_cycles_used</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Emu6502.Emu6502.process_input"><code class="name flex">
+<span>def <span class="ident">process_input</span></span>(<span>self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def process_input(self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start):
+
+    if inputs[&#39;cmd&#39;] == Action.READ_MEMORY:
+        vals = [int(x) for x in inputs[&#39;args&#39;]]
+
+        if len(vals) == 1:
+            print(f&#34;${vals[0]:04X}: {mmu.read(vals[0])}&#34;)
+        else:
+            delta = vals[1] - vals[0]
+            modulo = 1 if delta % 16 != 0 else 0
+
+            for i in range((delta // 16) + modulo):
+                print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
+                for j in range(min(16, delta - (i*16))):
+                    print(f&#34;{mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
+                print()
+
+    elif inputs[&#39;cmd&#39;] == Action.READ_REGISTERS:
+        if len(inputs[&#39;args&#39;]) == 0:
+            print(f&#34;Registers: {cpu.r}&#34;)
+        else:
+            for r in inputs[&#39;args&#39;]:
+                print(f&#34;Register {r}: {eval(f&#39;cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;cpu.r.{r.lower()}&#39;):0b}&#34;)
+
+    elif inputs[&#39;cmd&#39;] == Action.RUN_NEXT:
+        if len(inputs[&#39;args&#39;]) == 0:
+            print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+            cpu.step()
+
+    elif inputs[&#39;cmd&#39;] == Action.SHOW_INSTRUCTION:
+        print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+
+    elif inputs[&#39;cmd&#39;] == Action.SHOW_CYCLES_COUNT:
+        if nb_cycles_start:
+            print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
+        else:
+            print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -361,9 +820,22 @@ class Emu6502():
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
 <li>
+<h4><code><a title="shazzam.Emu6502.Action" href="#shazzam.Emu6502.Action">Action</a></code></h4>
+<ul class="two-column">
+<li><code><a title="shazzam.Emu6502.Action.EXIT" href="#shazzam.Emu6502.Action.EXIT">EXIT</a></code></li>
+<li><code><a title="shazzam.Emu6502.Action.READ_MEMORY" href="#shazzam.Emu6502.Action.READ_MEMORY">READ_MEMORY</a></code></li>
+<li><code><a title="shazzam.Emu6502.Action.READ_REGISTERS" href="#shazzam.Emu6502.Action.READ_REGISTERS">READ_REGISTERS</a></code></li>
+<li><code><a title="shazzam.Emu6502.Action.RUN_NEXT" href="#shazzam.Emu6502.Action.RUN_NEXT">RUN_NEXT</a></code></li>
+<li><code><a title="shazzam.Emu6502.Action.SHOW_CYCLES_COUNT" href="#shazzam.Emu6502.Action.SHOW_CYCLES_COUNT">SHOW_CYCLES_COUNT</a></code></li>
+<li><code><a title="shazzam.Emu6502.Action.SHOW_INSTRUCTION" href="#shazzam.Emu6502.Action.SHOW_INSTRUCTION">SHOW_INSTRUCTION</a></code></li>
+</ul>
+</li>
+<li>
 <h4><code><a title="shazzam.Emu6502.Emu6502" href="#shazzam.Emu6502.Emu6502">Emu6502</a></code></h4>
 <ul class="">
+<li><code><a title="shazzam.Emu6502.Emu6502.get_input" href="#shazzam.Emu6502.Emu6502.get_input">get_input</a></code></li>
 <li><code><a title="shazzam.Emu6502.Emu6502.load_and_run" href="#shazzam.Emu6502.Emu6502.load_and_run">load_and_run</a></code></li>
+<li><code><a title="shazzam.Emu6502.Emu6502.process_input" href="#shazzam.Emu6502.Emu6502.process_input">process_input</a></code></li>
 </ul>
 </li>
 </ul>

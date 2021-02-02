@@ -27,7 +27,7 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">import shazzam.globals as g
-from shazzam.defs import CommentsFormat, DirectiveFormat, CodeFormat, Alias
+from shazzam.defs import CommentsFormat, DirectiveFormat, CodeFormat, Alias, DirectiveDelimiter
 from shazzam.Instruction import Instruction
 from shazzam.Address import Address
 from shazzam.ByteData import ByteData
@@ -86,9 +86,14 @@ class Segment():
         DirectiveFormat.USE_EXCLAMATION: &#39;!&#39;
     }
 
+    directive_delimiter = {
+        DirectiveDelimiter.NO_DELIMITER : &#34;&#34;,
+        DirectiveDelimiter.DOUBLE_QUOTE : &#39;&#34;&#39;
+    }
+
     def __init__(self, start_adr: int, name: str,
                 code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None,
-                directive_prefix: DirectiveFormat = None, use_relative_addressing: bool = False,
+                directive_prefix: DirectiveFormat = None, directive_delimiter: DirectiveDelimiter = None, use_relative_addressing: bool = False,
                 fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None):
         &#34;&#34;&#34;[summary]
 
@@ -119,6 +124,8 @@ class Segment():
             comments_format = g._COMMENTS_FORMAT
         if directive_prefix is None:
             directive_prefix = g._DIRECTIVE_PREFIX
+        if directive_delimiter is None:
+            directive_delimiter = g._DIRECTIVE_DELIMITER
 
         self.logger.debug(&#34;Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
 
@@ -131,6 +138,7 @@ class Segment():
 
         self.comment_char = Segment.comments_chars[comments_format]
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
+        self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
 
         self.rasterlines = {}
         self.anonymous_labels = {}
@@ -144,8 +152,9 @@ class Segment():
         code_format = g._CODE_FORMAT
         comments_format = g._COMMENTS_FORMAT
         directive_prefix = g._DIRECTIVE_PREFIX
+        directive_delimiter = g._DIRECTIVE_DELIMITER
 
-        self.logger.debug(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
+        self.logger.info(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter}&#34;)
 
         self.show_address = True if CodeFormat.ADDRESS in code_format else False
         self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
@@ -153,6 +162,8 @@ class Segment():
         self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
         self.use_hex = True if CodeFormat.USE_HEX in code_format else False
         self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
+        self.directive_prefix = Segment.directive_prefix[directive_prefix]
+        self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
 
     def close(self) -&gt; None:
         &#34;&#34;&#34;[summary]&#34;&#34;&#34;
@@ -652,7 +663,7 @@ class Segment():
         code.append(&#39;\n&#39;)
 
         # add segment directive
-        code.append(f&#39;\t\t{self.directive_prefix}segment &#34;{self.name}&#34;\n&#39;)
+        code.append(f&#39;\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n&#39;)
 
         # get longest label
         if len(locals_labels) &gt; 0:
@@ -719,7 +730,7 @@ class Segment():
         self.logger.info(f&#34;Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}&#34;)
         if cycles_count_start and cycles_count_end:
             self.logger.info(f&#34;Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}&#34;)
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode)
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
         else:
             cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
 
@@ -801,7 +812,7 @@ class Segment():
 <dl>
 <dt id="shazzam.Segment.Segment"><code class="flex name class">
 <span>class <span class="ident">Segment</span></span>
-<span>(</span><span>start_adr: int, name: str, code_format: List[<a title="shazzam.defs.CodeFormat" href="defs.html#shazzam.defs.CodeFormat">CodeFormat</a>] = None, comments_format: <a title="shazzam.defs.CommentsFormat" href="defs.html#shazzam.defs.CommentsFormat">CommentsFormat</a> = None, directive_prefix: <a title="shazzam.defs.DirectiveFormat" href="defs.html#shazzam.defs.DirectiveFormat">DirectiveFormat</a> = None, use_relative_addressing: bool = False, fixed_address: bool = False, segment_type: <a title="shazzam.Segment.SegmentType" href="#shazzam.Segment.SegmentType">SegmentType</a> = SegmentType.CODE, group: int = None)</span>
+<span>(</span><span>start_adr: int, name: str, code_format: List[<a title="shazzam.defs.CodeFormat" href="defs.html#shazzam.defs.CodeFormat">CodeFormat</a>] = None, comments_format: <a title="shazzam.defs.CommentsFormat" href="defs.html#shazzam.defs.CommentsFormat">CommentsFormat</a> = None, directive_prefix: <a title="shazzam.defs.DirectiveFormat" href="defs.html#shazzam.defs.DirectiveFormat">DirectiveFormat</a> = None, directive_delimiter: <a title="shazzam.defs.DirectiveDelimiter" href="defs.html#shazzam.defs.DirectiveDelimiter">DirectiveDelimiter</a> = None, use_relative_addressing: bool = False, fixed_address: bool = False, segment_type: <a title="shazzam.Segment.SegmentType" href="#shazzam.Segment.SegmentType">SegmentType</a> = SegmentType.CODE, group: int = None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Segment class</p>
@@ -837,9 +848,14 @@ class Segment():
         DirectiveFormat.USE_EXCLAMATION: &#39;!&#39;
     }
 
+    directive_delimiter = {
+        DirectiveDelimiter.NO_DELIMITER : &#34;&#34;,
+        DirectiveDelimiter.DOUBLE_QUOTE : &#39;&#34;&#39;
+    }
+
     def __init__(self, start_adr: int, name: str,
                 code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None,
-                directive_prefix: DirectiveFormat = None, use_relative_addressing: bool = False,
+                directive_prefix: DirectiveFormat = None, directive_delimiter: DirectiveDelimiter = None, use_relative_addressing: bool = False,
                 fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None):
         &#34;&#34;&#34;[summary]
 
@@ -870,6 +886,8 @@ class Segment():
             comments_format = g._COMMENTS_FORMAT
         if directive_prefix is None:
             directive_prefix = g._DIRECTIVE_PREFIX
+        if directive_delimiter is None:
+            directive_delimiter = g._DIRECTIVE_DELIMITER
 
         self.logger.debug(&#34;Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
 
@@ -882,6 +900,7 @@ class Segment():
 
         self.comment_char = Segment.comments_chars[comments_format]
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
+        self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
 
         self.rasterlines = {}
         self.anonymous_labels = {}
@@ -895,8 +914,9 @@ class Segment():
         code_format = g._CODE_FORMAT
         comments_format = g._COMMENTS_FORMAT
         directive_prefix = g._DIRECTIVE_PREFIX
+        directive_delimiter = g._DIRECTIVE_DELIMITER
 
-        self.logger.debug(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
+        self.logger.info(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter}&#34;)
 
         self.show_address = True if CodeFormat.ADDRESS in code_format else False
         self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
@@ -904,6 +924,8 @@ class Segment():
         self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
         self.use_hex = True if CodeFormat.USE_HEX in code_format else False
         self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
+        self.directive_prefix = Segment.directive_prefix[directive_prefix]
+        self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
 
     def close(self) -&gt; None:
         &#34;&#34;&#34;[summary]&#34;&#34;&#34;
@@ -1403,7 +1425,7 @@ class Segment():
         code.append(&#39;\n&#39;)
 
         # add segment directive
-        code.append(f&#39;\t\t{self.directive_prefix}segment &#34;{self.name}&#34;\n&#39;)
+        code.append(f&#39;\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n&#39;)
 
         # get longest label
         if len(locals_labels) &gt; 0:
@@ -1470,7 +1492,7 @@ class Segment():
         self.logger.info(f&#34;Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}&#34;)
         if cycles_count_start and cycles_count_end:
             self.logger.info(f&#34;Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}&#34;)
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode)
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
         else:
             cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
 
@@ -1543,6 +1565,10 @@ class Segment():
 <h3>Class variables</h3>
 <dl>
 <dt id="shazzam.Segment.Segment.comments_chars"><code class="name">var <span class="ident">comments_chars</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Segment.Segment.directive_delimiter"><code class="name">var <span class="ident">directive_delimiter</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -1740,15 +1766,18 @@ def size(self):
     code_format = g._CODE_FORMAT
     comments_format = g._COMMENTS_FORMAT
     directive_prefix = g._DIRECTIVE_PREFIX
+    directive_delimiter = g._DIRECTIVE_DELIMITER
 
-    self.logger.debug(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix}&#34;)
+    self.logger.info(f&#34;Reset Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter}&#34;)
 
     self.show_address = True if CodeFormat.ADDRESS in code_format else False
     self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
     self.show_cycles = True if CodeFormat.CYCLES in code_format else False
     self.use_uppercase = True if CodeFormat.UPPERCASE in code_format else False
     self.use_hex = True if CodeFormat.USE_HEX in code_format else False
-    self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False</code></pre>
+    self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
+    self.directive_prefix = Segment.directive_prefix[directive_prefix]
+    self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.close"><code class="name flex">
@@ -1834,7 +1863,7 @@ def size(self):
     self.logger.info(f&#34;Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}&#34;)
     if cycles_count_start and cycles_count_end:
         self.logger.info(f&#34;Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}&#34;)
-        cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode)
+        cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
     else:
         cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
 
@@ -1879,7 +1908,7 @@ def size(self):
     code.append(&#39;\n&#39;)
 
     # add segment directive
-    code.append(f&#39;\t\t{self.directive_prefix}segment &#34;{self.name}&#34;\n&#39;)
+    code.append(f&#39;\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n&#39;)
 
     # get longest label
     if len(locals_labels) &gt; 0:
@@ -2322,6 +2351,7 @@ def size(self):
 <li><code><a title="shazzam.Segment.Segment.change_format" href="#shazzam.Segment.Segment.change_format">change_format</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.close" href="#shazzam.Segment.Segment.close">close</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.comments_chars" href="#shazzam.Segment.Segment.comments_chars">comments_chars</a></code></li>
+<li><code><a title="shazzam.Segment.Segment.directive_delimiter" href="#shazzam.Segment.Segment.directive_delimiter">directive_delimiter</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.directive_prefix" href="#shazzam.Segment.Segment.directive_prefix">directive_prefix</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.emulate" href="#shazzam.Segment.Segment.emulate">emulate</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.gen_code" href="#shazzam.Segment.Segment.gen_code">gen_code</a></code></li>

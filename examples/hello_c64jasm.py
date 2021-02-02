@@ -7,10 +7,11 @@ from shazzam.Segment import SegmentType
 from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
-from shazzam.drivers.assemblers.CC65 import CC65
+import shazzam.macros.sys as sys
+from shazzam.drivers.assemblers.C64jasm import C64jasm
 
 # define your cross assembler
-assembler = CC65("cc65", "third_party/cc65/bin/cl65")
+assembler = C64jasm("c64jasm", "third_party/c64jasm/c64jasm")
 prefs = assembler.get_code_format()
 set_prefs(
     default_code_segment="start",
@@ -22,15 +23,15 @@ set_prefs(
 
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
-
 @reloading
 def code():
 
     # define here or anywhere, doesn't matter, your variables
 
+    with segment(0x0801, "start") as s:
 
-    # CC65 generates basic header, no macro needed just to define the CODE segment
-    with segment(0x0801, assembler.get_code_segment()) as s:
+        sys.basic_start()
+        label("init")
 
         jsr(at(0xe544))        # ROM routine to clear the screen Clear screen.Input: – Output: – Used registers: A, X, Y.
 
@@ -74,7 +75,7 @@ def code():
         incbin(open("resources/aeg_collection_12.64c", "rb").read())
 
     # generate listing
-    gen_code(assembler, format_code=prefs, gen_listing=True)
+    gen_code(assembler=assembler, format_code=prefs, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)

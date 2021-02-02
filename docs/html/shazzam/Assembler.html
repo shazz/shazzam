@@ -27,6 +27,7 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">import logging
+from typing import List
 
 from shazzam.Segment import Segment
 
@@ -75,7 +76,56 @@ class Assembler():
         Returns:
             str: [description]
         &#34;&#34;&#34;
-        pass</code></pre>
+        pass
+
+    def segments_definition_gen(self, segments: List[Segment]) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            segments (List[Segment]): [description]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return &#34;&#34;
+
+    def _get_segment_by_address(self, address: int, segments: List[Segment]) -&gt; Segment:
+        &#34;&#34;&#34;_get_segment_by_address
+
+        Args:
+            address (int): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        &#34;&#34;&#34;
+        for segment in segments:
+            if segment.start_adr == address:
+                return segment
+
+        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)
+
+    def _get_segment_by_name(self, name: str, segments: List[Segment]) -&gt; Segment:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            name (str): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        &#34;&#34;&#34;
+        for segment in segments:
+            if segment.name == name:
+                return segment
+
+        raise ValueError(f&#34;No Segment found with name {name}&#34;)</code></pre>
 </details>
 </section>
 <section>
@@ -142,10 +192,60 @@ The default one is CC65.</p></div>
         Returns:
             str: [description]
         &#34;&#34;&#34;
-        pass</code></pre>
+        pass
+
+    def segments_definition_gen(self, segments: List[Segment]) -&gt; str:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            segments (List[Segment]): [description]
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return &#34;&#34;
+
+    def _get_segment_by_address(self, address: int, segments: List[Segment]) -&gt; Segment:
+        &#34;&#34;&#34;_get_segment_by_address
+
+        Args:
+            address (int): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        &#34;&#34;&#34;
+        for segment in segments:
+            if segment.start_adr == address:
+                return segment
+
+        raise ValueError(f&#34;No Segment found starting at {address:04X}&#34;)
+
+    def _get_segment_by_name(self, name: str, segments: List[Segment]) -&gt; Segment:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            name (str): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        &#34;&#34;&#34;
+        for segment in segments:
+            if segment.name == name:
+                return segment
+
+        raise ValueError(f&#34;No Segment found with name {name}&#34;)</code></pre>
 </details>
 <h3>Subclasses</h3>
 <ul class="hlist">
+<li><a title="shazzam.drivers.assemblers.C64jasm.C64jasm" href="drivers/assemblers/C64jasm.html#shazzam.drivers.assemblers.C64jasm.C64jasm">C64jasm</a></li>
 <li><a title="shazzam.drivers.assemblers.CC65.CC65" href="drivers/assemblers/CC65.html#shazzam.drivers.assemblers.CC65.CC65">CC65</a></li>
 </ul>
 <h3>Methods</h3>
@@ -252,6 +352,37 @@ The default one is CC65.</p></div>
     pass</code></pre>
 </details>
 </dd>
+<dt id="shazzam.Assembler.Assembler.segments_definition_gen"><code class="name flex">
+<span>def <span class="ident">segments_definition_gen</span></span>(<span>self, segments: List[<a title="shazzam.Segment.Segment" href="Segment.html#shazzam.Segment.Segment">Segment</a>]) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>segments</code></strong> :&ensp;<code>List[Segment]</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def segments_definition_gen(self, segments: List[Segment]) -&gt; str:
+    &#34;&#34;&#34;[summary]
+
+    Args:
+        segments (List[Segment]): [description]
+
+    Returns:
+        str: [description]
+    &#34;&#34;&#34;
+    return &#34;&#34;</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -277,6 +408,7 @@ The default one is CC65.</p></div>
 <li><code><a title="shazzam.Assembler.Assembler.assemble_segment" href="#shazzam.Assembler.Assembler.assemble_segment">assemble_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.get_code_format" href="#shazzam.Assembler.Assembler.get_code_format">get_code_format</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.get_code_segment" href="#shazzam.Assembler.Assembler.get_code_segment">get_code_segment</a></code></li>
+<li><code><a title="shazzam.Assembler.Assembler.segments_definition_gen" href="#shazzam.Assembler.Assembler.segments_definition_gen">segments_definition_gen</a></code></li>
 </ul>
 </li>
 </ul>

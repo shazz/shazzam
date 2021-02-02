@@ -80,7 +80,7 @@ class Emu6502():
                     self.logger.info(f"Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
                     self.logger.info(f"{current_instruction} operand: {int.from_bytes(current_operand, 'big'):02X}")
                     self.logger.info(f"{cpu.r} CC: {cpu.cc}")
-                    input()
+                    self.get_input()
 
                 cpu.step()
 
@@ -92,6 +92,34 @@ class Emu6502():
                 break
 
         self.logger.info(f"Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}")
-        # exit()
 
         return cpu, mmu, nb_cycles_used
+
+    def get_input(self):
+        import cooked_input as ci
+        from cooked_input import GetInputCommand, GetInputInterrupt, CommandResponse, COMMAND_ACTION_NOP, COMMAND_ACTION_CANCEL, COMMAND_ACTION_USE_VALUE
+
+        def use_color_action(cmd_str, cmd_vars, cmd_dict):
+            print('Use "red" as the input value')
+            return (COMMAND_ACTION_USE_VALUE, 'red')
+
+        def cancel_action(cmd_str, cmd_vars, cmd_dict):
+            return CommandResponse(COMMAND_ACTION_CANCEL, None)
+
+        def show_help_action(cmd_str, cmd_vars, cmd_dict):
+            print('Commands:')
+            print('-----------------------------')
+            print('/?      - show this message')
+            print('/cancel - cancel this operation')
+            print('/red    - use red as a value')
+            return CommandResponse(COMMAND_ACTION_NOP, None)
+
+        cmds = { '/?': GetInputCommand(show_help_action),
+                '/cancel': GetInputCommand(cancel_action),
+                '/red': GetInputCommand(use_color_action, {'color': 'red'})
+        }
+
+        try:
+            result = ci.get_string(prompt="> ", commands=cmds)
+        except GetInputInterrupt:
+            print('Operation cancelled (received GetInputInterrupt)')

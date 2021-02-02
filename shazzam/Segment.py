@@ -692,7 +692,7 @@ class Segment():
         self.logger.info(f"Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}")
         if cycles_count_start and cycles_count_end:
             self.logger.info(f"Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}")
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode)
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
         else:
             cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
 

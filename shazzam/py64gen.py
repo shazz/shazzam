@@ -469,7 +469,7 @@ def byte(value: Any) -> bytearray:
         ret_array = []
         for v in value:
             ret_array.append(g._CURRENT_CONTEXT.add_byte(Immediate(value=v)))
-        return bytearray(ret_array)
+        return ret_array
     else:
         raise ValueError("Immediate must be an int or a string")
 
@@ -538,10 +538,11 @@ def get_label_address(label: str) -> int:
             if adr.value is not None:
                 return adr.value
             else:
-                raise ValueError(f"label {start_address} not yet resolved")
+                raise ValueError(f"label {label} not yet resolved")
         else:
-            raise ValueError(f"label {start_address} not found")
-
+            raise ValueError(f"label {label} not found")
+    else:
+        return label
 
 # -----------------------------------------------------------
 # Private functions

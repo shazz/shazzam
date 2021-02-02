@@ -32,33 +32,35 @@ def waste_cycles(n):
 
 
 # ------------------------------------------------------------------------------------------
-# basic start
-# generate a compatible basic header
+# basic start(addr)
+# generate a compatible basic header, if addr bot set, entry point must follow the macro
 # ------------------------------------------------------------------------------------------
-def basic_start(addr):
-    with segment(0x0801, "entry") as s:
-        byte(0x0c)
-        byte(0x08)
-        byte(0x00)
-        byte(0x00)
-        byte(0x9e)
+def basic_start(addr: int = None):
 
-        if (addr >= 10000):
-            byte(0x30 + (addr//10000)%10)
+    addr = addr if isinstance(addr, int) else 0x0801+10
 
-        if (addr >= 1000):
-            byte(0x30 + (addr//1000)%10)
+    byte(0x0c)
+    byte(0x08)
+    byte(0x00)
+    byte(0x00)
+    byte(0x9e)
 
-        if (addr >= 100):
-            byte(0x30 + (addr//100)%10)
+    if (addr >= 10000):
+        byte(0x30 + (addr//10000)%10)
 
-        if (addr >= 10):
-            byte(0x30 + (addr//10)%10)
+    if (addr >= 1000):
+        byte(0x30 + (addr//1000)%10)
 
-        byte(0x30 + addr % 10)
-        byte(0x0, 0x0, 0x0)
+    if (addr >= 100):
+        byte(0x30 + (addr//100)%10)
 
-        logger.info(f"after basic header, program start at {s.get_stats()['current_address']}")
+    if (addr >= 10):
+        byte(0x30 + (addr//10)%10)
+
+    byte(0x30 + addr % 10)
+    byte([0x0, 0x0, 0x0])
+
+    logger.info(f"after basic header, program start at {get_current_address()}")
 
 
 # ------------------------------------------------------------------------

@@ -12,14 +12,14 @@ from shazzam.drivers.assemblers.CC65 import CC65
 
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
-prefs = assembler.get_code_format()
-set_prefs(
-    default_code_segment="start",
-    code_format=prefs.code,
-    comments_format=prefs.comments,
-    directive_prefix=prefs.directive,
-    directive_delimiter=prefs.delimiter
-)
+# prefs = assembler.get_code_format()
+# set_prefs(
+#     default_code_segment="start",
+#     code_format=prefs.code,
+#     comments_format=prefs.comments,
+#     directive_prefix=prefs.directive,
+#     directive_delimiter=prefs.delimiter
+# )
 
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -76,7 +76,7 @@ def code():
         incbin(open("resources/aeg_collection_12.64c", "rb").read())
 
     # generate listing
-    gen_code(assembler, format_code=prefs, gen_listing=True)
+    gen_code(assembler, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)

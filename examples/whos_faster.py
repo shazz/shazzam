@@ -14,18 +14,8 @@ from shazzam.drivers.assemblers.CC65 import CC65
 from shazzam.drivers.crunchers.C64f import C64f
 import shazzam.plugins.plugins as p
 
-program_name = os.path.splitext(os.path.basename(__file__))[0]
-
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
-prefs = assembler.get_code_format()
-set_prefs(
-    default_code_segment="start",
-    code_format=prefs.code,
-    comments_format=prefs.comments,
-    directive_prefix=prefs.directive,
-    directive_delimiter=prefs.delimiter
-)
 data_cruncher = C64f("third_party/c64f/c64f")
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -117,7 +107,7 @@ def code():
         print("--------------------------------------------------------------")
 
     # generate listing
-    gen_code(assembler, format_code=prefs, gen_listing=True)
+    gen_code(assembler, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)

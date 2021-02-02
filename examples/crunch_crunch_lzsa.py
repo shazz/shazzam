@@ -22,14 +22,6 @@ import shazzam.plugins.plugins as p
 
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
-prefs = assembler.get_code_format()
-set_prefs(
-    default_code_segment="start",
-    code_format=prefs.code,
-    comments_format=prefs.comments,
-    directive_prefix=prefs.directive,
-    directive_delimiter=prefs.delimiter
-)
 
 prg_cruncher  = Exomizer("third_party/exomizer/exomizer")
 data_cruncher = Lzsa("third_party/apultra/apultra")
@@ -158,7 +150,7 @@ def code():
         data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast = True)
 
     # generate listing
-    gen_code(assembler, format_code=prefs, gen_listing=True)
+    gen_code(assembler, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)

@@ -145,7 +145,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER = None
 
 
-def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
+def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -165,15 +165,16 @@ def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None
         header += &#34;; \n&#34;
         header += &#34;; https://github.com/shazz/shazzam\n\n&#34;
 
-    if format_code:
-        g.logger.debug(f&#34;Setting assembler pref: {format_code}&#34;)
-        set_prefs(
-            default_code_segment=format_code.default_code_segment,
-            code_format=format_code.code,
-            comments_format=format_code.comments,
-            directive_prefix=format_code.directive,
-            directive_delimiter=format_code.delimiter
-        )
+
+    prefs = assembler.get_code_format()
+    g.logger.debug(f&#34;Setting assembler pref: {prefs}&#34;)
+    set_prefs(
+        default_code_segment=assembler.get_code_segment(),
+        code_format=prefs.code,
+        comments_format=prefs.comments,
+        directive_prefix=prefs.directive,
+        directive_delimiter=prefs.delimiter
+    )
 
     for segment in g._PROGRAM.segments:
 
@@ -190,7 +191,6 @@ def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None
 
     if gen_listing:
         if format_listing is None:
-            g.logger.debug(f&#34;Setting listing format: {format_code}&#34;)
             format_listing = Alias({
                 &#34;default_code_segment&#34;: &#34;CODE&#34;,
                 &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
@@ -199,6 +199,7 @@ def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None
                 &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER
             })
 
+        g.logger.debug(f&#34;Setting listing format: {format_listing}&#34;)
         set_prefs(
             default_code_segment=format_listing.default_code_segment,
             code_format=format_listing.code,
@@ -13019,7 +13020,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.gen_code"><code class="name flex">
-<span>def <span class="ident">gen_code</span></span>(<span>assembler: <a title="shazzam.Assembler.Assembler" href="Assembler.html#shazzam.Assembler.Assembler">Assembler</a>, header: str = None, format_code: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None, gen_listing: bool = True, format_listing: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None) ‑> NoneType</span>
+<span>def <span class="ident">gen_code</span></span>(<span>assembler: <a title="shazzam.Assembler.Assembler" href="Assembler.html#shazzam.Assembler.Assembler">Assembler</a>, header: str = None, gen_listing: bool = True, format_listing: <a title="shazzam.defs.Alias" href="defs.html#shazzam.defs.Alias">Alias</a> = None) ‑> NoneType</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -13038,7 +13039,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
+<pre><code class="python">def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True, format_listing: Alias = None) -&gt; None:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -13058,15 +13059,16 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
         header += &#34;; \n&#34;
         header += &#34;; https://github.com/shazz/shazzam\n\n&#34;
 
-    if format_code:
-        g.logger.debug(f&#34;Setting assembler pref: {format_code}&#34;)
-        set_prefs(
-            default_code_segment=format_code.default_code_segment,
-            code_format=format_code.code,
-            comments_format=format_code.comments,
-            directive_prefix=format_code.directive,
-            directive_delimiter=format_code.delimiter
-        )
+
+    prefs = assembler.get_code_format()
+    g.logger.debug(f&#34;Setting assembler pref: {prefs}&#34;)
+    set_prefs(
+        default_code_segment=assembler.get_code_segment(),
+        code_format=prefs.code,
+        comments_format=prefs.comments,
+        directive_prefix=prefs.directive,
+        directive_delimiter=prefs.delimiter
+    )
 
     for segment in g._PROGRAM.segments:
 
@@ -13083,7 +13085,6 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 
     if gen_listing:
         if format_listing is None:
-            g.logger.debug(f&#34;Setting listing format: {format_code}&#34;)
             format_listing = Alias({
                 &#34;default_code_segment&#34;: &#34;CODE&#34;,
                 &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
@@ -13092,6 +13093,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
                 &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER
             })
 
+        g.logger.debug(f&#34;Setting listing format: {format_listing}&#34;)
         set_prefs(
             default_code_segment=format_listing.default_code_segment,
             code_format=format_listing.code,

@@ -117,7 +117,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
     g._CURRENT_RASTER = None
 
 
-def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None, gen_listing: bool = True, format_listing: Alias = None) -> None:
+def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True, format_listing: Alias = None) -> None:
     """[summary]
 
     Args:
@@ -137,15 +137,16 @@ def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None
         header += "; \n"
         header += "; https://github.com/shazz/shazzam\n\n"
 
-    if format_code:
-        g.logger.debug(f"Setting assembler pref: {format_code}")
-        set_prefs(
-            default_code_segment=format_code.default_code_segment,
-            code_format=format_code.code,
-            comments_format=format_code.comments,
-            directive_prefix=format_code.directive,
-            directive_delimiter=format_code.delimiter
-        )
+
+    prefs = assembler.get_code_format()
+    g.logger.debug(f"Setting assembler pref: {prefs}")
+    set_prefs(
+        default_code_segment=assembler.get_code_segment(),
+        code_format=prefs.code,
+        comments_format=prefs.comments,
+        directive_prefix=prefs.directive,
+        directive_delimiter=prefs.delimiter
+    )
 
     for segment in g._PROGRAM.segments:
 
@@ -162,7 +163,6 @@ def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None
 
     if gen_listing:
         if format_listing is None:
-            g.logger.debug(f"Setting listing format: {format_code}")
             format_listing = Alias({
                 "default_code_segment": "CODE",
                 "code": [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
@@ -171,6 +171,7 @@ def gen_code(assembler: Assembler, header: str = None, format_code: Alias = None
                 "delimiter": DirectiveDelimiter.NO_DELIMITER
             })
 
+        g.logger.debug(f"Setting listing format: {format_listing}")
         set_prefs(
             default_code_segment=format_listing.default_code_segment,
             code_format=format_listing.code,

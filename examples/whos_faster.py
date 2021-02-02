@@ -82,31 +82,33 @@ def code():
         # -------------------------------------------------
         # Depacking routine
         # -------------------------------------------------
-        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast=False)
+        # CHANGE use_fast to True or False to benchmark c64f FAST and SMALL depacking routines
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast=True)
 
         # -------------------------------------------------
         # Packed data
         # -------------------------------------------------
-
         label("packed_data")
         incbin(data_cruncher.crunch_incbin(data=sid.data))
 
         cpu, mmu, cycles_used = s.emulate(start_address="start_perf", cycles_count_start="dc64f", cycles_count_end="end_depack")
-        print(f"Depacker used {cycles_used} cycles (around {round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)} vbls (IDLE/ACTIVE)) since ${get_label_address('dc64f'):04X} (dc64f)")
+        routine_size = get_label_address("packed_data") - get_label_address("dc64f")
+        print(f"Depacker used {routine_size} bytes and {cycles_used} cycles (around [{round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)}] vbls [IDLE/ACTIVE]) since ${get_label_address('dc64f'):04X} (dc64f)")
 
         expected_results = {
             0x4000: [0x4C, 0x40, 0x10, 0x4C, 0xC1, 0x10, 0x01, 0x02, 0x04, 0x0F, 0x10, 0x00, 0x51, 0x27, 0x3A, 0x07],
             0x4C10: [0xA3, 0x18, 0xA0, 0x1F, 0xA2, 0x37, 0x1F, 0xA3, 0x37, 0x7F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]
         }
 
-        print("----------------------------------------------------------------")
+        # checking start / end packed data are well depacked
+        print("--------------------------------------------------------------")
         for adr in expected_results.keys():
-            print(f"Address: {adr:04X}:", end =' ')
+            print(f"Address ${adr:04X}:", end =' ')
             for i in range(16):
                 print(f"{mmu.read(adr + i):02X}", end=' ')
                 assert expected_results[adr][i] == mmu.read(adr + i)
             print("")
-        print("----------------------------------------------------------------")
+        print("--------------------------------------------------------------")
 
     # generate listing and code
     gen_code(format_code=prefs, gen_listing=True)

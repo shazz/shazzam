@@ -368,8 +368,8 @@ class Segment():
             "address": 0,
             "bytecode": 8 if self.show_address else 0,
             "label": 40 if self.show_bytecode else 8 if self.show_address else 0,
-            "instruction": 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
-            "cycles": 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
+            "instruction": 40+label_size+4 if self.show_bytecode else 8+label_size+4 if self.show_address else label_size+4,
+            "cycles": 40+(label_size*2) if self.show_bytecode else 38+(label_size*2) if self.show_address else (label_size*2)+20,
         }
 
         remaining_bytes_to_process = 0
@@ -504,8 +504,8 @@ class Segment():
         self.logger.debug("Generating assembly code")
         code_template_index = {
             "label": 0,
-            "instruction": label_size,
-            "cycles": label_size+30,
+            "instruction": label_size + 5,
+            "cycles": (label_size*2)+10,
         }
 
         remaining_bytes_to_process = 0
@@ -643,12 +643,12 @@ class Segment():
         code.append(f'\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n')
 
         # get longest label
-        if len(locals_labels) > 0:
-            label_size = max(10, len(max(locals_labels)) + 8)
+        all_labels = locals_labels + globals_labels
+        if len(all_labels) > 0:
+            label_size = len(sorted(all_labels, key=len, reverse=True)[0])
         else:
             label_size = 10
-
-        self.logger.debug(f"Label size: {label_size}")
+        self.logger.debug(f"Max label size: {label_size}")
 
         if listing:
             code = self._gen_listing(code, label_size)

@@ -520,32 +520,27 @@ def byte(value: Any) -> bytearray:
     elif isinstance(value, list):
         ret_array = []
         for v in value:
-            ret_array.append(g._CURRENT_CONTEXT.add_byte(Immediate(value=v)))
+            # ret_array.append(g._CURRENT_CONTEXT.add_byte(Immediate(value=v)))
+            ret_array.append(byte(v))
         return ret_array
     else:
         raise ValueError("Immediate must be an int or a string")
 
 
-def word(value: int, label: str) -> None:
+def word(value: int) -> None:
     """[summary]
 
     Args:
         value (int): [description]
-        label (str): [description]
 
     Raises:
         RuntimeError: [description]
         ValueError: [description]
     """
-    global _CURRENT_CONTEXT
-    if g._CURRENT_CONTEXT is None:
-        raise RuntimeError("No segment defined!")
-
     if value > 0xffff:
         raise ValueError(f"Value exceed word size: {value}")
 
-    g._CURRENT_CONTEXT.add_word(value, label)
-
+    byte([value >> 8, value & 0xff])
 
 def incbin(data: bytearray) -> None:
     """[summary]
@@ -618,9 +613,6 @@ def _check_segments_overlap(code_segment: str = "CODE") -> None:
             raise ValueError(
                 f"The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!")
 
-# ---------------------------------------------------------------------
-# Utils
-# ---------------------------------------------------------------------
 def _get_segment_by_address(address: int, segments: List[Segment]) -> Segment:
         """_get_segment_by_address
 
@@ -639,6 +631,10 @@ def _get_segment_by_address(address: int, segments: List[Segment]) -> Segment:
                 return segment
 
         raise ValueError(f"No Segment found starting at {address:04X}")
+
+# ---------------------------------------------------------------------
+# Utils
+# ---------------------------------------------------------------------
 
 _funcs = {}
 def generate(func, program_name: str) -> None:

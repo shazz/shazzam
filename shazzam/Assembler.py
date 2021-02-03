@@ -7,7 +7,6 @@ from shazzam.Segment import Segment
 class Assembler():
     """
     This class defines the interface to be implemented by cross-assembler drivers.
-    The default one is CC65.
     """
 
     def __init__(self, name: str, exe_path: str):
@@ -22,6 +21,14 @@ class Assembler():
             str: [description]
         """
         pass
+
+    def get_vasyl_segment(self) -> str:
+        """get_code_segment
+
+        Returns:
+            str: [description]
+        """
+        return "VASYL"
 
     def get_code_format(self):
         """get_code_format"""

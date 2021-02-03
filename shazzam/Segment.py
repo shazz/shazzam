@@ -79,7 +79,7 @@ class Segment():
         """
         self.logger = logging.getLogger("shazzam")
         self.start_adr = start_adr
-        self.end_adr = start_adr
+        self._end_adr = start_adr
         self.fixed_start_address = start_adr if fixed_address else None
         self.instructions = {}
         self.next_position = start_adr
@@ -117,6 +117,10 @@ class Segment():
         self.anonymous_labels = {}
 
     @property
+    def end_adr(self):
+        return self.next_position
+
+    @property
     def size(self):
         return self.end_adr - self.start_adr
 
@@ -140,7 +144,7 @@ class Segment():
 
     def close(self) -> None:
         """[summary]"""
-        self.end_adr = self.next_position
+        # self._end_adr = self.next_position
 
     def add_instruction(self, instr: Instruction) -> bytearray:
         """[summary]
@@ -698,15 +702,14 @@ class Segment():
 
         self.logger.debug(f"Emulation start address: {start_address:04X}")
         emu = Emu6502()
-        ram = io.BytesIO(self.get_segment_bytecode())
 
         self.logger.info(f"Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}")
         if cycles_count_start and cycles_count_end:
             self.logger.info(f"Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}")
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
-        else:
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, cycles_count_start=cycles_count_start, cycles_count_end=cycles_count_end, debug_mode=debug_mode)
 
+        else:
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, debug_mode=debug_mode)
 
         return cpu_state, mmu_state, cycles_used
 

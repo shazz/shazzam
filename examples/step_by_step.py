@@ -22,7 +22,7 @@ def code():
     with segment(0x0801, "start") as s:
 
         sys.basic_start()
-        label("init")
+        label("init", is_global=True)
 
         # Fibonacci calculator in 6502 asm
         # by Pedro Franceschi (pedrohfranceschi@gmail.com)
@@ -49,14 +49,17 @@ def code():
         dey()               # y -= 1
         bne(rel_at("loop")) # jumps back to loop if Z bit != 0 (y's decremention isn't zero yet)
 
-        cpu, mmu, cycles_used = s.emulate(start_address="init", debug_mode=True)
-        assert cpu.r.a == 13, f"7th fibonacci number is 13 not {cpy.r.a}"
+        cpu, mmu, cycles_used = s.emulate(start_address="init", debug_mode=False)
+        assert cpu.r.a == 13, f"7th fibonacci number is 13 not {cpu.r.a}"
 
     # generate listing
     gen_code(assembler, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
+
+    cpu, mmu, cycles_used = emulate_program(entry_point_address=0x0801+12, debug_mode=True)
+    assert cpu.r.a == 13, f"7th fibonacci number is 13 not {cpu.r.a}"
 
 if __name__ == "__main__":
     generate(code, program_name)

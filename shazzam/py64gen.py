@@ -16,6 +16,7 @@ from shazzam.Address import Address
 from shazzam.Immediate import Immediate
 from shazzam.Cruncher import Cruncher
 from shazzam.Assembler import Assembler
+from shazzam.Emu6502 import Emu6502
 
 from shazzam.optimizer.SegmentOptimizer import SegmentOptimizer, SegmentOptimizerType
 from shazzam.optimizer.C64Mode import C64Mode
@@ -294,6 +295,39 @@ def gen_irqloader_script(irqloader, parts_definition: Dict):
     """
     global _PROGRAM
     raise NotImplementedError()
+
+def emulate_program(entry_point_address: int, debug_mode: bool = False):
+    """[summary]
+
+    Args:
+        start_address (int): [description]
+        debug_mode (bool, optional): [description]. Defaults to False.
+
+    Returns:
+        [type]: [description]
+    """
+    global _PROGRAM
+
+    g.logger.debug(f"Emulation start address: {entry_point_address:04X}")
+    emu = Emu6502()
+    ram = []
+
+    # get boundaries
+    # # TODO: to refactor in Emu6502
+    sorted_adr = sorted([segment.start_adr for segment in g._PROGRAM.segments])
+    start_address = sorted_adr[0]
+    end_address = _get_segment_by_address(sorted_adr[-1], g._PROGRAM.segments)
+
+    # get bytecode in increasing order
+    for adr in sorted_adr:
+        seg = _get_segment_by_address(adr, g._PROGRAM.segments)
+        ram.append(seg)
+
+    g.logger.info(f"Calling Emulation from ${entry_point_address:04X}")
+    cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=ram, entry_address=entry_point_address, debug_mode=debug_mode)
+
+    return cpu_state, mmu_state, cycles_used
+
 
 def optimize_segments(specific_memory_org: List = None, bank_setup: C64Mode = C64Mode.IO_VISIBLE, optimizer_type: SegmentOptimizerType = SegmentOptimizerType.BFD):
     """[summary]
@@ -576,6 +610,25 @@ def _check_segments_overlap(code_segment: str = "CODE") -> None:
 # ---------------------------------------------------------------------
 # Utils
 # ---------------------------------------------------------------------
+def _get_segment_by_address(address: int, segments: List[Segment]) -> Segment:
+        """_get_segment_by_address
+
+        Args:
+            address (int): [description]
+            segments (List[Segment]): [description]
+
+        Raises:
+            ValueError: [description]
+
+        Returns:
+            Segment: [description]
+        """
+        for segment in segments:
+            if segment.start_adr == address:
+                return segment
+
+        raise ValueError(f"No Segment found starting at {address:04X}")
+
 _funcs = {}
 def generate(func, program_name: str) -> None:
     """generate

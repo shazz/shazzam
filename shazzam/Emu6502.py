@@ -2,6 +2,8 @@ import logging
 from io import BytesIO
 import traceback
 from enum import Enum, auto
+from typing import List
+from copy import deepcopy
 
 import cooked_input as ci
 from cooked_input import GetInputCommand, GetInputInterrupt, CommandResponse, COMMAND_ACTION_NOP, COMMAND_ACTION_CANCEL, COMMAND_ACTION_USE_VALUE
@@ -10,6 +12,7 @@ from py65emu.cpu import CPU
 from py65emu.mmu import MMU
 
 from shazzam.Instruction import Instruction
+# from shazzam.Segment import Segment
 
 class Action(Enum):
     READ_MEMORY = auto()
@@ -24,50 +27,52 @@ class Emu6502():
     def __init__(self):
         self.logger = logging.getLogger("shazzam")
 
-    def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -> CPU:
+    def load_and_run(self, segments: List, entry_address: int, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -> (CPU, MMU, int):
         """[summary]
 
         Args:
-            bytecode (BytesIO): [description]
-            seg_start_address (int): [description]
-            seg_stop_address (int): [description]
-            seg_entry_address ([type]): [description]
+            segments (List[Segment]): [description]
+            entry_address (int): [description]
+            cycles_count_start (int, optional): [description]. Defaults to None.
+            cycles_count_end (int, optional): [description]. Defaults to None.
+            debug_mode (bool, optional): [description]. Defaults to False.
 
         Returns:
-            CPU: [description]
+            CPU, MMU, int: [description]
         """
-        self.logger.info(f"Loading code from {seg_start_address:04X} to {seg_stop_address:04X}")
-        self.logger.debug(f"Set PC at {seg_entry_address:04X}")
+        low_ram = (0x0000, segments[0].start_adr, False)
+        hi_ram = (segments[-1].end_adr, 0xffff, False)
 
-        # bytecode copy for debugging as read() advances the buffer
-        from copy import deepcopy
-        debug_bytecode = deepcopy(bytecode).read()
+        mmu_segments = []
 
-        low_ram = (0x00, seg_start_address, False)
-        hi_ram = (seg_stop_address, 0xffff, False)
+        mmu_segments.append(low_ram)
+        for seg in segments:
+            # bytecode copy for debugging as read() advances the buffer
+            # debug_bytecode = deepcopy(bytecode).read()
+            bytecode = BytesIO(seg.get_segment_bytecode())
+            mmu_s = (seg.start_adr, seg.end_adr - seg.start_adr, False, bytecode)
+            mmu_segments.append(mmu_s)
+        mmu_segments.append(hi_ram)
 
-        mmu = MMU([
-            low_ram,
-            (seg_start_address, seg_stop_address - seg_start_address, False, bytecode),
-            hi_ram
-        ])
+        self.logger.info(mmu_segments)
 
-        cpu = CPU(mmu, seg_entry_address)
-
-        # for i in range(seg_stop_address - seg_start_address):
-        #     self.logger.debug(hex(mmu.read(seg_start_address+i)))
-
-        # for i in range(seg_stop_address - seg_start_address):
-        #     self.logger.debug(f"{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}")
-
+        mmu = MMU(mmu_segments)
+        cpu = CPU(mmu, entry_address)
 
         counting_enabled = False if cycles_count_start is not None else True
-        self.logger.debug(f"Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}")
+        stop_address = 0xffff if stop_address is None else stop_address
+
+        self.logger.info(f"Loading code from {segments[0].start_adr:04X} to {segments[-1].end_adr:04X}")
+        self.logger.debug(f"Set PC at {entry_address:04X}")
+        self.logger.debug(f"Emulating from ${cpu.r.pc:04X} to ${stop_address:04X}")
 
         nb_cycles_used = 0
-        current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-        current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
-        while(cpu.r.pc < seg_stop_address and current_instruction[0] != 'brk'):
+        current_bytecode = mmu.read(cpu.r.pc)
+        current_instruction = Instruction.opcodes[current_bytecode]
+        current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
+        current_operand = [mmu.read(cpu.r.pc + 1 + i) for i in range(current_operand_size)]
+
+        while(cpu.r.pc < stop_address and current_instruction[0] != 'brk'):
             try:
                 if cpu.r.pc == cycles_count_start:
                     counting_enabled = True
@@ -76,10 +81,10 @@ class Emu6502():
                     counting_enabled = False
                     self.logger.info(f"Stopping to count cycle at ${cpu.r.pc:04X}")
 
-                current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-                current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
+                current_bytecode = mmu.read(cpu.r.pc)
+                current_instruction = Instruction.opcodes[current_bytecode]
                 current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-                current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
+                current_operand = [mmu.read(cpu.r.pc+1+i) for i in range(current_operand_size)]
 
                 if counting_enabled:
                     nb_cycles_used += cpu.cc
@@ -136,6 +141,7 @@ class Emu6502():
         elif inputs['cmd'] == Action.RUN_NEXT:
             if len(inputs['args']) == 0:
                 print(f"${cpu.r.pc:04X}: {' '.join(inst)} {operand:02X}")
+                print(f"{cpu.r}")
                 cpu.step()
 
         elif inputs['cmd'] == Action.SHOW_INSTRUCTION:

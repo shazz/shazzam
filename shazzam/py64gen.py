@@ -296,24 +296,35 @@ def gen_irqloader_script(irqloader, parts_definition: Dict):
     global _PROGRAM
     raise NotImplementedError()
 
-def emulate_program(entry_point_address: int, debug_mode: bool = False):
+def emulate_program(entry_point_address: Any, debug_mode: bool = False):
     """[summary]
 
     Args:
-        start_address (int): [description]
+        entry_point_address (Any): [description]
         debug_mode (bool, optional): [description]. Defaults to False.
+
+    Raises:
+        ValueError: [description]
 
     Returns:
         [type]: [description]
     """
     global _PROGRAM
 
+    # support global label only
+    if isinstance(entry_point_address, str):
+        g.logger.debug(f"Looking for label {entry_point_address}")
+
+        if entry_point_address in g._PROGRAM.global_labels and g._PROGRAM.global_labels[entry_point_address].value:
+            entry_point_address = g._PROGRAM.global_labels[entry_point_address].value
+        else:
+            raise ValueError(f"Global label '{entry_point_address}' not found")
+
     g.logger.debug(f"Emulation start address: {entry_point_address:04X}")
     emu = Emu6502()
     ram = []
 
     # get boundaries
-    # # TODO: to refactor in Emu6502
     sorted_adr = sorted([segment.start_adr for segment in g._PROGRAM.segments])
     start_address = sorted_adr[0]
     end_address = _get_segment_by_address(sorted_adr[-1], g._PROGRAM.segments)

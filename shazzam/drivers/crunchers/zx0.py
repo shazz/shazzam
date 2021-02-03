@@ -29,70 +29,40 @@ class Pucrunch(Cruncher):
         #   DE: destination address (decompressing)
         # -----------------------------------------------------------------------------
 
-        # label("dzx0_standard")
-        # lda(im(0xff))                    # ld      bc, $ffff               # preserve default offset 1
-        # tax()
-        # pha()
-        # pha()                           # push    bc
-        # clc()
-        # adc(imm(1))
-        # tax
-        # tya()
+        zx0_src_ptr             = 0xf0
 
-        # m.add16()                       #inc     bc
-        # lda(imm(0x80))                  # ld a, $80
+        zx0_bitmask             = 0xf5
+        zx0_bitvalue            = 0xf6
 
-        # label("dzx0s_literals")
-        # jsr(at("dzx0s_elias"))             # obtain length
-        # ldir                            # copy literals
-        # add     a, a                    # copy from last offset or new offset?
-        # jr      c, dzx0s_new_offset
-        # jsr(at("dzx0s_elias"))             # obtain length
+        zx0_src_buffer          = 0xfc
 
-        # label("dzx0s_copy")
-        # ex      (sp), hl                # preserve source, restore offset
-        # push    hl                      # preserve offset
-        # add     hl, de                  # calculate destination - offset
-        # ldir                            # copy from offset
-        # pop     hl                      # restore offset
-        # ex      (sp), hl                # preserve offset, restore source
-        # add     a, a                    # copy from literals or new offset?
-        # jr      nc, dzx0s_literals
+        def inc_src():
+            incsr1 = get_anonymous_label("incsr1")
+            inc(at(zx0_src_ptr))
+            bne(rel_at(incsr1))
+            inc(at(zx0_src_ptr)+1)
+            label(incsr1)
 
-        # label("dzx0s_new_offset")
-        # jsr(at("dzx0s_elias"))             # obtain offset MSB
-        # ex      af, af'
-        # pop     af                      # discard last offset
-        # xor     a                       # adjust for negative offset
-        # sub     c
-        # ret     z                       # check end marker
-        # ld      b, a
-        # ex      af, af'
-        # ld      c, (hl)                 # obtain offset LSB
-        # inc     hl
-        # rr      b                       # last offset bit becomes first length bit
-        # rr      c
-        # push    bc                      # preserve new offset
-        # ld      bc, 1                   # obtain length
-        # call    nc, dzx0s_elias_backtrack
-        # inc     bc
-        # jmp(at("dzx0s_copy"))
+        def read_byte():
+            lda(ind_at(zx0_src_buffer), y)
+            inc_src()
 
-        # label("dzx0s_elias")
-        # inc     c                       # interlaced Elias gamma coding
+        def read_bit():
+            no_reset = get_anonymous_label("no_reset")
+            lda(at(zx0_bitmask))
+            lsr()
+            bne(rel_at(no_reset))
+            lda(imm(128))
+            read_byte()
+            label(no_reset)
 
-        # label("dzx0s_elias_loop")
-        # add     a, a
-        # jr      nz, dzx0s_elias_skip
-        # ld      a, (hl)                 # load another group of 8 bits
-        # inc     hl
-        # rla
+            lda(at(zx0_bitvalue))
+            andr(at(zx0_bitmask))
 
-        # label("dzx0s_elias_skip")
-        # ret     c
+        def read_interlaced_elias_gamma():
+            read = get_anonymous_label("read")
+            label(read)
+            read_bit()
+            bne(rel_at(loop))
 
-        # label("dzx0s_elias_backtrack")
-        # add     a, a
-        # rl      c
-        # rl      b
-        # jmp(at("dzx0s_elias_loop"))
+            

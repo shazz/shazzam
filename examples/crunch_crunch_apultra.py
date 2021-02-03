@@ -11,12 +11,7 @@ from shazzam.macros.aliases import color, vic
 import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
 from shazzam.drivers.crunchers.Exomizer import Exomizer
-from shazzam.drivers.crunchers.Nucrunch import Nucrunch
-from shazzam.drivers.crunchers.Pucrunch import Pucrunch
 from shazzam.drivers.crunchers.Apultra import Apultra, PackingMode
-from shazzam.drivers.crunchers.Doynamite import Doynamite
-from shazzam.drivers.crunchers.Lzsa import Lzsa
-from shazzam.drivers.crunchers.Zx7 import Zx7
 import shazzam.plugins.plugins as p
 
 # define your cross assembler

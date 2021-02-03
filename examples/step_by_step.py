@@ -58,7 +58,7 @@ def code():
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
 
-    cpu, mmu, cycles_used = emulate_program(entry_point_address=0x0801+12, debug_mode=True)
+    cpu, mmu, cycles_used = emulate_program(entry_point_address="init", debug_mode=True)
     assert cpu.r.a == 13, f"7th fibonacci number is 13 not {cpu.r.a}"
 
 if __name__ == "__main__":

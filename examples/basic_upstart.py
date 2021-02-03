@@ -12,15 +12,6 @@ from shazzam.drivers.assemblers.CC65 import CC65
 
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
-# prefs = assembler.get_code_format()
-# set_prefs(
-#     default_code_segment="start",
-#     code_format=prefs.code,
-#     comments_format=prefs.comments,
-#     directive_prefix=prefs.directive,
-#     directive_delimiter=prefs.delimiter
-# )
-
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
 @reloading

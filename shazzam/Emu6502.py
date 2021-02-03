@@ -3,7 +3,6 @@ from io import BytesIO
 import traceback
 from enum import Enum, auto
 from typing import List
-from copy import deepcopy
 
 import cooked_input as ci
 from cooked_input import GetInputCommand, GetInputInterrupt, CommandResponse, COMMAND_ACTION_NOP, COMMAND_ACTION_CANCEL, COMMAND_ACTION_USE_VALUE
@@ -12,7 +11,6 @@ from py65emu.cpu import CPU
 from py65emu.mmu import MMU
 
 from shazzam.Instruction import Instruction
-# from shazzam.Segment import Segment
 
 class Action(Enum):
     READ_MEMORY = auto()
@@ -47,8 +45,6 @@ class Emu6502():
 
         mmu_segments.append(low_ram)
         for seg in segments:
-            # bytecode copy for debugging as read() advances the buffer
-            # debug_bytecode = deepcopy(bytecode).read()
             bytecode = BytesIO(seg.get_segment_bytecode())
             mmu_s = (seg.start_adr, seg.end_adr - seg.start_adr, False, bytecode)
             mmu_segments.append(mmu_s)
@@ -160,7 +156,7 @@ class Emu6502():
             if len(list_loc) > 2:
                 raise ValueError("too many locations")
 
-            # check hex
+            # TODO: check hex
             vals = [int(x, 0) for x in list_loc]
             if len(vals) == 2:
                 if vals[1] - vals[0] < 0:

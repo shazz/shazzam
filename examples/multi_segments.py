@@ -17,10 +17,16 @@ program_name = os.path.splitext(os.path.basename(__file__))[0]
 def code():
 
     # define here or anywhere your variables
+    vic_bank    = 0x4000
+    screen_mem  = 0x2000
+    bitmap_mem  = 0x0000
+    char_mem    = 0x0000            # not used, 0 is fine
+
     nb_sprites = 6
 
     spd = p.read_spd("resources/ball.spd")
     sid = p.read_sid("resources/Meetro.sid")
+    kla = p.read_kla('resources/panda.kla')
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
@@ -53,26 +59,26 @@ def code():
 
         label("top_irq", is_global=True)
         nop()
-        nop()
-        # y_scroll = 0
-        # for y in range(40, 50):
-        #     with rasterline(nb_sprites=8, y_pos=y, y_scroll=y_scroll):
-        #         if (y & 7) == y_scroll:
-        #             nop()
-        #             nop()
-        #             nop()
-        #         else:
-        #             jmp(abs_adr=0x100)
-        #             jmp(abs_adr=0x1000, ind=True)
-
-
         print(f"{s.get_stats()}")
+
+    # set bitmap data at vic_bank + bitmap
+    with segment(vic_bank+bitmap_mem, "bitmap", segment_type=SegmentType.BITMAP) as s:
+        incbin(kla.bitmap)
+
+    with segment(vic_bank+screen_mem, "screen_ram", segment_type=SegmentType.SCREEN_MEM) as s:
+        incbin(kla.scrmem)
+
+    with segment(0xd800, "color_ram", segment_type=SegmentType.REGISTERS) as s:
+        incbin(kla.colorram)
 
     # generate listing
     gen_code(assembler, gen_listing=True)
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
+
+    # Asking the segment optimizer if we can do better
+    optimize_segments()
 
 if __name__ == "__main__":
     generate(code, program_name)

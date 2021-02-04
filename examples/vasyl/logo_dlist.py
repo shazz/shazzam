@@ -12,7 +12,6 @@ from shazzam.Assembler import Assembler
 
 with segment(0x00, "VASYL") as s:
 
- 
     label("dl_start", is_global=True)
     WAIT(48 ,0)
 
@@ -620,6 +619,3 @@ with segment(0x00, "VASYL") as s:
 
     label("preserve_ec", is_global=True)
     byte(0)
-
-    for i in range(0x40):
-        byte(255)

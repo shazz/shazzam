@@ -163,7 +163,12 @@ clean:
             RuntimeError: [description]
         """
         # sort segment by address
-        sorted_adr = sorted([segment.start_adr for segment in program.segments])
+        sorted_adr = list(sorted([segment.start_adr for segment in program.segments]))
+
+        # vasyl expection
+        if sorted_adr[0] == 0 and self._get_segment_by_address(0, program.segments).name == 'VASYL':
+            sorted_adr = sorted_adr[1:] + sorted_adr[0:1]
+
         self.logger.info(f"Segments addresses: {[hex(adr) for adr in sorted_adr]}")
 
         # set load address that will be the 2 PRG first bytes
@@ -178,9 +183,14 @@ clean:
             seg = self._get_segment_by_address(segment_adr, program.segments)
 
             self.logger.info(f"Checking memory for segment {seg.name}")
-            if seg.name not in ["DATA", "BSS"]:
-                if i != len(sorted_adr)-1:
+            if seg.name not in ["DATA", "BSS", "VASYL"]:
+
+                # if next segment exists and not VASYL
+                if (i != len(sorted_adr)-1) and (sorted_adr[-1] != 0):
                     seg_size = self._get_segment_by_address(sorted_adr[i+1], program.segments).start_adr - seg.start_adr
+                elif sorted_adr[-1] == 0:
+                    vasyl_size = self._get_segment_by_name("VASYL", program.segments).size
+                    seg_size = seg.end_adr - seg.start_adr + CC65.basic_header_size + vasyl_size
                 else:
                     seg_size = seg.end_adr - seg.start_adr + CC65.basic_header_size
 
@@ -190,16 +200,23 @@ clean:
                 else:
                     mem_lines.append(f"\t{seg.name}:\tfile = %O, start = ${seg.start_adr:04X},      size = ${seg_size:04X},    fill = yes;\n")
 
+            elif seg.name == 'VASYL':
+                mem_lines.append("\tVASYL:    file = %O, start = 0,      size = $FFFF;\n")
+
         self.logger.info(f"Adding lines: {mem_lines}")
         CC65.memory = CC65.memory.replace("%2", ''.join(mem_lines))
 
         # gen segments
         seg_lines = ""
-        for seg in program.segments:
-            if seg.name not in ["CODE", "DATA", "BSS"]:
+        for i, segment_adr in enumerate(sorted_adr):
+            seg = self._get_segment_by_address(segment_adr, program.segments)
+
+            if seg.name not in ["CODE", "DATA", "BSS", "VASYL"]:
                 seg_lines += f"\t{seg.name}:\tload = {seg.name},\ttype = rw, optional = no, define = yes;\n"
             elif seg.name == 'CODE':
                 seg_lines += CC65.segments_main
+            elif seg.name == 'VASYL':
+                seg_lines += "\tVASYL:    load = MAIN, run=VASYL   type = rw,  optional = yes, define = yes;\n"
             else:
                 self.logger.info(f"{seg.name} segment already managed")
 

@@ -24,9 +24,9 @@ def code():
     import examples.vasyl.logo_dlist
 
     # CC65 generates basic header, no macro needed just to define the CODE segment
-    with segment(0x0801, "start") as s:
+    with segment(0x0801, assembler.get_code_segment()) as s:
 
-        sys.basic_start()
+        # sys.basic_start()
         label("init")
 
         jsr(at("knock_knock"))
@@ -49,6 +49,7 @@ def code():
         sta(at(53265))
         lda(at("preserve_ec"))
         sta(at(0xd020))
+
         rts()
 
         vasyl_segment_load = 0x0

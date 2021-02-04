@@ -10,12 +10,13 @@ It is probably easier to say what Shazzam is NOT:
 
 - a new 6502 cross-assembler (it relies on existing ones)
 - a python compiler for 6502
+- some kind of Micro-Python or Circuit-Python implementation
 
 And where it took its inspiration from multiple famous C64 tools:
 
 - `KickC`: a Kiss Assembler code generator using a C-like language.
 - `C64jasm`: a Cross Assembler supporting inline extensions using pure Javacript.
-- `bass`: an ACME-like cross assembler using Lua for scripting and internal emulator for testing.
+- `Bass`: an ACME-like cross assembler using Lua for scripting and internal emulator for testing.
 - `Sparkle`: an IRQ Loader managing on time loading of data and code segments.
 - `Raistlin's C++ code generator`: Raistlin/G*P's top secret framework to code awesome demos
 
@@ -24,6 +25,22 @@ As a result, by using all those great modern C64 Development tools, I found out 
 So the usage of non assembler tooling became more important than the assembly code itself, that's why I thought that "reversing" the cross assembler idea (meaning providing a good but basic cross-assembler with quite powerful, complex and more or less standard macro language) would make sense: don't extend the cross assembler with some kind of complex scripting language but extend existing high level languages with simple assembler capabilities.
 
 This is the magic of shazzam, write Python code as usual, to process your images, create your lookup tables, read your SID files.... no limit to your creativity then, generate the assembly code required to use this data as you would do with the cross-assembler.
+
+### Features in brief
+
+- Python code generator for official and illegal 6502 instructions
+- Generate `CC65` or `C64jasm` assembly code from your Python application in real-time
+- 6502 emulator to write unit tests and debug step-by-step routines
+- Pre-integrated packers (Exomizer, Apultra, zx7...) for incbin and prg
+- Export Sparkle compatible script (D64 generation on Windows only)
+- Plugins to load and parse SID, SPD, KLA files
+- Support multi-files, multi-segments
+- Segment optimizer to maximize contiguous memory usage
+- Support VASYL opcodes for BeamRacer
+- Rasterline emulation to race the beam
+- Simple disassembler
+- Integrate well in any Python and 6502 assembly code compatible IDE. (Visual code works great)
+- OS agnostic (Linux, MacOS, Windows...)
 
 ## Installation
 
@@ -53,6 +70,7 @@ Then, if you're not using `nox`, you'll have to install the various mandatory an
 - [Dyonamite](https://csdb.dk/release/download.php?id=160764) (optional)
 - [pucrunch](https://github.com/mist64/pucrunch.git) (optional)
 - [nucrunch](https://csdb.dk/release/download.php?id=206619) (optional)
+- [zx7](https://github.com/jsmolina/pyzx7) / [x64f](https://github.com/antoniovillena/c64f) (optional)
 
 #### IRQ Loaders
 
@@ -145,6 +163,8 @@ import shazzam.macros.macros_math as m
     label("result")
     byte(0)
     byte(0)
+
+    [...]
 ````
 
 shazzam provides various sets of ready to use macros to set the VIC banks and memory, some 16bits math operations, to set IRQs, to wate cycles.... Just check `shazzam/macros/`
@@ -174,6 +194,8 @@ Practically, in your code, you can add typical `assert` statements. Here is an e
     print(f"Address: ${get_current_address():04X}")
     print(f"Result: {res}")
     assert res == 256
+
+    [...]
 ````
 
 And you'll see in your IDE or terminal:
@@ -203,6 +225,8 @@ with segment(0x0801, assembler.get_code_segment()) as s:
     lda(imm(0))
     sta(at(vic.border_col)) # set border color
     sta(at(vic.bck_col))    # and window color to black
+
+    [...]
 ````
 
 Within this block, all the code will be starting at address 0x0801, in a segment in this example called CODE (`get_code_segment()`).
@@ -249,6 +273,7 @@ def code():
     with segment(segments["depacker"], "depacker") as s:
         data_cruncher.generate_depacker_routine(s.get_stats().start_address)
 
+    [...]
 ````
 
 With each data cruncher, the depacking routine is also provided, just call `generate_depacker_routine()` as shown in the example.
@@ -303,3 +328,79 @@ def code():
 
     [...]
 ````
+
+## BeamRacer support
+
+The VLIB and VASYL libraries are ported to shazzam using the `shazzam.macros.vlib` and `shazzam.macros.vasyl` packages.
+
+Extract from `examples/hello_vasyl`:
+
+````python
+from shazzam.macros.vasyl import *
+
+with segment(0x00, "VASYL") as s:
+
+    label("dl_start", is_global=True)
+    WAIT(48 ,0)
+
+    dl_line_0 = label("dl_line_0")
+    MASKV(0)
+    WAIT(0, 15)
+    MOV(0x20, 0)
+    DELAYV(1)
+    SKIP()
+    WAIT(55 , 59)
+    BRA(dl_line_0)
+    WAIT(56 ,0)
+
+    [...]
+````
+
+## Multi-files application
+
+If your application/demo/game gets big, you can easily split your code by relocatable segments dispatch your segments' code in various files. Simply use the python `import` statement to include them like in the `examples/multi-files` example:
+
+````python
+@reloading
+def code():
+
+    # define here or anywhere, doesn't matter, your variables
+    import examples.multi_files.segment_start
+    import examples.multi_files.segment_charset
+
+    # generate listing
+    gen_code(assembler, gen_listing=True)
+
+    # finally assemble segments to PRG using cross assembler then crunch it!
+    assemble_prg(assembler, start_address=0x0801)
+
+    [...]
+````
+
+## Simple disassembler
+
+Each time your python code generates some assembly code, the assembly and listing files are generated. But if you want to be sure and check the final generated code, a little 6502 disassembler is provided in `tools/`.
+
+Usage:
+`python tools/disasm.py -i generated/hello_world/hello_word.prg -o /tmp/hello_word.lst`
+
+In case of a prg, the starting address is automatically extracted from the header. Else the -a option can be used to define a specific address.
+
+## Thanks to
+
+All the various open-source projects Shazzam is relying on:
+
+- c64jasm by Nurpax
+- CC65 by cc65 community
+- Doynamite by Bitbreaker
+- Exomizer by Magnus Lind
+- Lzsa by Emmanuel Marty
+- Nucrunch by Christopher Jam
+- Pucrunch by Pasi Ojala
+- Pultra by Emmanuel Marty
+- py65emu by Jeremy Neiman
+- Simple 6502 disassembler by Arthur Ferreira
+- Sparkle by Sparta/OMG
+- zx7 by Einar Saukas and 6502 port by Antonio Villena
+
+And also the beta-testers!

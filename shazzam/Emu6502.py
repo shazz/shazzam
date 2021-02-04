@@ -31,6 +31,7 @@ class Emu6502():
         self.cpu = None
         self.debug_mode = False
         self.breakpoint_in = -1
+        self.nb_cycles_used = 0
 
     def reset_breakpoint(self, address : int):
         if isinstance(address, int) and address in range(0, 0xffff):
@@ -83,7 +84,7 @@ class Emu6502():
         self.logger.debug(f"Set PC at {entry_address:04X}")
         self.logger.debug(f"Emulating from ${self.cpu.r.pc:04X} to ${stop_address:04X}")
 
-        nb_cycles_used = 0
+        self.nb_cycles_used = 0
         current_bytecode = self.mmu.read(self.cpu.r.pc)
         current_instruction = Instruction.opcodes[current_bytecode]
         current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
@@ -104,7 +105,7 @@ class Emu6502():
                 current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
 
                 if counting_enabled:
-                    nb_cycles_used += self.cpu.cc
+                    self.nb_cycles_used += self.cpu.cc
 
                 if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
                     # self.logger.info(f"Emulating at: ${self.cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
@@ -115,12 +116,12 @@ class Emu6502():
 
                     inputs = self.get_input(f"${self.cpu.r.pc:04X}")
                     if inputs:
-                        self.process_input(inputs, current_instruction, int.from_bytes(current_operand, 'big'), nb_cycles_used, cycles_count_start)
+                        self.process_input(inputs, current_instruction, int.from_bytes(current_operand, 'big'), cycles_count_start)
                     else:
                         self.debug_mode = False
                 else:
-                    if counting_enabled and nb_cycles_used % 1000 == 0:
-                        self.logger.info(f"Total: {nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}")
+                    if counting_enabled and self.nb_cycles_used % 1000 == 0:
+                        self.logger.info(f"Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}")
 
                     self.cpu.step()
 
@@ -136,16 +137,16 @@ class Emu6502():
 
         self.logger.info(f"Emulation stopped at ${self.cpu.r.pc:04X} with last instruction executed: {current_instruction[0]}")
 
-        return self.cpu, self.mmu, nb_cycles_used
+        return self.cpu, self.mmu, self.nb_cycles_used
 
-    def process_input(self, inputs, inst, operand, nb_cycles_used, nb_cycles_start):
+    def process_input(self, inputs, inst, operand, nb_cycles_start):
         """[summary]
 
         Args:
             inputs ([type]): [description]
             inst ([type]): [description]
             operand ([type]): [description]
-            nb_cycles_used ([type]): [description]
+            self.nb_cycles_used ([type]): [description]
             nb_cycles_start ([type]): [description]
         """
         if inputs['cmd'] == Action.READ_MEMORY:
@@ -154,9 +155,9 @@ class Emu6502():
             if len(vals) == 1:
                 print(f"${vals[0]:04X}: {self.mmu.read(vals[0])}")
             else:
-                delta = vals[1] - vals[0]
-                if delta < 0:
-                    print(f"-> Memory range cannot be negative: ${vals[1]:04X} - ${vals[0]:04X}")
+                delta = vals[1] - vals[0] + 1
+                if delta < 1:
+                    print(f"-> Memory range cannot be null or negative: ${delta:04X} = ${vals[1]:04X} - ${vals[0]:04X}")
 
                 modulo = 1 if delta % 16 != 0 else 0
 
@@ -186,9 +187,9 @@ class Emu6502():
 
         elif inputs['cmd'] == Action.SHOW_CYCLES_COUNT:
             if nb_cycles_start:
-                print(f"${self.cpu.r.pc:04X}: {nb_cycles_used} cycles used since ${nb_cycles_start:04X}")
+                print(f"${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used since ${nb_cycles_start:04X}")
             else:
-                print(f"${self.cpu.r.pc:04X}: {nb_cycles_used} cycles used")
+                print(f"${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used")
 
         elif inputs['cmd'] == Action.SET_BREAKPOINT:
             if inputs['args']:
@@ -209,7 +210,7 @@ class Emu6502():
             addresses = []
 
             if len(list_loc) > 2:
-                raise ValueError("too many locations")
+                raise ValueError("too many addresses, should be one or a range")
 
             for loc in list_loc:
                 addresses.append(self._parse_string_address(loc))

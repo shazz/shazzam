@@ -56,7 +56,13 @@ else:
 if cmdargs.a:
     address = int(cmdargs.a, 16)
 else:
-    address = 0
+
+    if ".prg" in cmdargs.i.lower():
+        header = input_file.read(2)
+        address = (header[1]<<8) + header[0]
+        print(f"start address from PRG: {address:04X}")
+    else:
+        address = 0
 
 mnemonics = [
   'BRK', 'ORA', '???', '???', '???', 'ORA', 'ASL', '???', 'PHP', 'ORA', 'ASL', '???', '???', 'ORA', 'ASL', '???',
@@ -109,7 +115,7 @@ while True:
 
     # implied
     if addressing[opcode] == 'imp':
-        output_file.write('        ' + mnemonic + '\n')
+        output_file.write('         ' + mnemonic + '\n')
         continue
 
     # accumulator

@@ -34,6 +34,14 @@ class Emu6502():
         self.nb_cycles_used = 0
 
     def reset_breakpoint(self, address : int):
+        """[summary]
+
+        Args:
+            address (int): [description]
+
+        Raises:
+            ValueError: [description]
+        """
         if isinstance(address, int) and address in range(0, 0xffff):
             if address not in self.breakpoints:
                 self.breakpoints.append(address)
@@ -43,6 +51,7 @@ class Emu6502():
             raise ValueError(f"Invalid breakpoint {address}")
 
     def clear_beakpoints(self):
+        """Clear all breakpoints"""
         self.breakpoints = []
         self.logger.debug("All breakpoints are removed")
 
@@ -108,11 +117,10 @@ class Emu6502():
                     self.nb_cycles_used += self.cpu.cc
 
                 if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
-                    # self.logger.info(f"Emulating at: ${self.cpu.r.pc:04X} the bytecode: {current_bytecode:02X}")
-                    # self.logger.info(f"{current_instruction} operand: {int.from_bytes(current_operand, 'big'):02X}")
-                    # self.logger.info(f"{self.cpu.r} CC: {self.cpu.cc}")
-                    print(f"${self.cpu.r.pc:04X}: {current_instruction} {int.from_bytes(current_operand, 'big'):02X}")
+                    print(f"${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, 'big'):02X})")
                     print(f"{self.cpu.r}")
+                    if self.breakpoints:
+                        print(f"Breakpoints: {[f'${bp:04X}' for bp in self.breakpoints]}")
 
                     inputs = self.get_input(f"${self.cpu.r.pc:04X}")
                     if inputs:
@@ -146,7 +154,6 @@ class Emu6502():
             inputs ([type]): [description]
             inst ([type]): [description]
             operand ([type]): [description]
-            self.nb_cycles_used ([type]): [description]
             nb_cycles_start ([type]): [description]
         """
         if inputs['cmd'] == Action.READ_MEMORY:
@@ -158,14 +165,14 @@ class Emu6502():
                 delta = vals[1] - vals[0] + 1
                 if delta < 1:
                     print(f"-> Memory range cannot be null or negative: ${delta:04X} = ${vals[1]:04X} - ${vals[0]:04X}")
+                else:
+                    modulo = 1 if delta % 16 != 0 else 0
 
-                modulo = 1 if delta % 16 != 0 else 0
-
-                for i in range((delta // 16) + modulo):
-                    print(f"${vals[0]+(i*16):04X}: ", end= '')
-                    for j in range(min(16, delta - (i*16))):
-                        print(f"{self.mmu.read(vals[0]):02X}", end = ' ')
-                    print()
+                    for i in range((delta // 16) + modulo):
+                        print(f"${vals[0]+(i*16):04X}: ", end= '')
+                        for j in range(min(16, delta - (i*16))):
+                            print(f"{self.mmu.read(vals[0]):02X}", end = ' ')
+                        print()
 
         elif inputs['cmd'] == Action.READ_REGISTERS:
             if len(inputs['args']) == 0:
@@ -197,7 +204,7 @@ class Emu6502():
                     self.reset_breakpoint(bp)
                     print(f"-> Breakpoint added at ${bp:04X}")
             else:
-                print(f"-> Breakpoints {self.breakpoints} cleared")
+                print(f"-> Breakpoints {[f'${bp:04X}' for bp in self.breakpoints]} cleared")
                 self.clear_beakpoints()
 
         else:

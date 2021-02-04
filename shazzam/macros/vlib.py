@@ -16,7 +16,8 @@ logger = logging.getLogger("shazzam")
 # Header file for BeamRacer VASYL chip
 # See https://docs.beamracer.net/ for more information.
 #
-# Compatible with ca65 assembler (part of https://github.com/cc65).
+# Ported by Shazz / TRSi
+# Copyright (C)2021 TRSi
 
 tmp_ptr     = 251
 tmp_ptr2    = 253

@@ -64,6 +64,9 @@ def install_3rd_party(session):
     os.makedirs("third_party", exist_ok = True)
     session.cd("third_party")
 
+    # install python libraries not available on pip
+    session.run("pip", "install", "-r", "deployment/requirements_run/txt")
+
     # exomizer
     os.makedirs("exomizer", exist_ok = True)
     session.cd("exomizer")
@@ -124,7 +127,7 @@ def install_3rd_party(session):
     session.run("unzip", "sparkle.zip", "-d", "sparkle")
     session.run("rm", "sparkle.zip")
 
-    # cc65
+    # c64jasm
     session.run("git", "clone", "https://github.com/nurpax/c64jasm.git")
     session.cd("c64jasm")
     session.run("npm", "install", ".")

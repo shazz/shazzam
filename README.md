@@ -88,6 +88,8 @@ nox -s install_3rd_party
 nox -rs docs
 ````
 
+Note that you may need to install some OS packages to compile and install the 3rd party tools. Build tools like `make`, `gcc`, `node`, `npm`, `cargo`... and archiving tools like `unzip`, `tar`...
+
 ## 4 lines example
 
 As `Shazzam` is just a Python library, everything is Python. So even your generated assembly code looks like Python.

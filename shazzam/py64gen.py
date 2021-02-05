@@ -557,13 +557,30 @@ def incbin(data: bytearray) -> None:
 
     if data is not None:
         if not (isinstance(data, bytearray) or isinstance(data, bytes)):
-            raise ValueError(
-                f"incbin argument must be a bytearray and not a {type(data)}")
+            raise ValueError(f"incbin argument must be a bytearray and not a {type(data)}")
 
         g.logger.info(f"Incbin {len(data)} bytes of data")
         for b in data:
             g._CURRENT_CONTEXT.add_byte(Immediate(value=b))
 
+def align(value: int) -> None:
+    """[summary]
+
+    Args:
+        value (int): [description]
+
+    Raises:
+        RuntimeError: [description]
+        ValueError: [description]
+    """
+    global _CURRENT_CONTEXT
+    if g._CURRENT_CONTEXT is None:
+        raise RuntimeError("No segment defined!")
+
+    if isinstance(value, int) and value in range(0, 0xffff):
+        g._CURRENT_CONTEXT.align(value)
+    else:
+        raise ValueError(f"Alignment should be on a positive integer value")
 
 def get_current_address() -> int:
 

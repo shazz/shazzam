@@ -171,10 +171,29 @@ class Segment():
             bcode = self.get_bytecode(instr)
             instr.bytecode = bcode
         except Exception as e:
-            g.logger.debug(
-                f"bytecode cannot be generated yet, will be resolve later! [{e}]")
+            g.logger.debug(f"bytecode cannot be generated yet, will be resolve later! [{e}]")
 
         return instr
+
+    def align(self, alignment: int) -> None:
+        """[summary]
+
+        Args:
+            alignment (int): [description]
+        """
+        padding = (alignment - (self.next_position % alignment)) % alignment
+        aligned = self.next_position + padding
+
+        if aligned > 0xffff:
+            raise ValueError(f"Aligment exceeded C64 memory!")
+
+        self.logger.info(f"Alignment on ${alignment:04X} bytes, next address will be ${aligned:04X}")
+        for i in range(padding):
+            data = ByteData(Immediate(value=0))
+            self.instructions[self.next_position] = data
+            self.next_position += 1
+
+        assert aligned == self.next_position, f"Alignment to ${aligned:04X} failed, next address is ${self.next_position:04X}"
 
     def add_byte(self, immediate: Immediate) -> None:
         """[summary]
@@ -188,8 +207,7 @@ class Segment():
         data = ByteData(immediate)
         self.instructions[self.next_position] = data
         self.next_position += 1
-        self.logger.debug(
-            f"added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}")
+        self.logger.debug(f"added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}")
 
         return self.get_bytecode(data)
 
@@ -206,8 +224,7 @@ class Segment():
             Address: [description]
         """
         if name in self.labels:
-            raise ValueError(
-                f"Label {name} already defined in segment at {self.labels[name]}")
+            raise ValueError(f"Label {name} already defined in segment at {self.labels[name]}")
 
         self.labels[name] = Address(name=name, value=self.next_position)
 
@@ -719,8 +736,7 @@ class Segment():
         Returns:
             Instruction: [description]
         """
-        self.logger.debug(
-            f"Instructions in the current segment: {list(self.instructions.keys())}")
+        self.logger.debug(f"Instructions in the current segment: {[f'${k:04X}: {v}' for k, v in list(self.instructions.items())]}")
         return self.instructions[list(self.instructions.keys())[-1]]
 
     def get_stats(self):
@@ -739,8 +755,8 @@ class Segment():
             "size": self.next_position - self.start_adr,
             "cycles": self.total_cycles_used,
             "instructions": len(self.instructions),
-            "start_address": hex(self.start_adr),
-            "current_address": hex(self.next_position),
+            "start_address": self.start_adr,
+            "current_address": self.next_position,
             "last_instruction": {
                 "code": str(last_instr),
                 "size": last_instr.get_size(),

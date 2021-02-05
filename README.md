@@ -4,6 +4,8 @@ Not your daddy's C64 cross-assembler...
 
 ![Pylint](https://github.com/shazz/`Shazzam`/workflows/Pylint/badge.svg)
 
+Table of Content
+
 - [`Shazzam`](#-shazzam-)
   * [What is `Shazzam`?](#what-is--shazzam--)
     + [Features in brief](#features-in-brief)
@@ -27,7 +29,7 @@ Not your daddy's C64 cross-assembler...
   * [Multi-files application](#multi-files-application)
   * [Simple disassembler](#simple-disassembler)
   * [Shazzam assembler directives](#shazzam-assembler-directives)
-- [Thanks to](#thanks-to)
+  * [Thanks to](#thanks-to)
 
 ## What is `Shazzam`?
 
@@ -177,7 +179,7 @@ def add16(n1, n2, res):
 Then in your code, simply import and call it to perform 256+10
 
 ````python
-import `Shazzam`.macros.macros_math as m
+import Shazzam.macros.macros_math as m
 
     m.add16(at("var1"), at("var2"), at("result"))
 
@@ -194,7 +196,7 @@ import `Shazzam`.macros.macros_math as m
     [...]
 ````
 
-`Shazzam` provides various sets of ready to use macros to set the `VIC` banks and memory, some 16bits math operations, to set IRQs, to wate cycles.... Just check ``Shazzam`/macros/`
+`Shazzam` provides various sets of ready to use macros to set the `VIC` banks and memory, some 16bits math operations, to set IRQs, to waste cycles.... Just check `shazzam/macros/`
 
 ## Inline testing thru emulation
 
@@ -339,7 +341,7 @@ Just import them!
 The `i_love_kaoalas` example shows how to display a Koala picture in a few lines of code. A little extract:
 
 ````python
-import `Shazzam`.plugins.plugins as p
+import Shazzam.plugins.plugins as p
 
 def code():
 
@@ -359,12 +361,12 @@ def code():
 
 ## BeamRacer support
 
-The `VLIB` and `VASYL` libraries are ported to `Shazzam` using the ``Shazzam`.macros.vlib` and ``Shazzam`.macros.vasyl` packages.
+The `VLIB` and `VASYL` libraries are ported to `Shazzam` using the `Shazzam.macros.vlib` and `Shazzam.macros.vasyl` packages.
 
 Extract from `examples/hello_vasyl`:
 
 ````python
-from `Shazzam`.macros.vasyl import *
+from Shazzam.macros.vasyl import *
 
 with segment(0x00, "VASYL") as s:
 
@@ -444,7 +446,11 @@ and associated 6502 registers:
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 ````
 
-# Thanks to
+Notes:
+
+- if you prefer to use lower case mnemonic, `and` is replaced by `andr` to avoid conflict with python operator
+
+## Thanks to
 
 All the various open-source projects `Shazzam` is relying on:
 

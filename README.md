@@ -16,18 +16,19 @@ Table of Content
       - [IRQ Loaders](#irq-loaders)
     + [From sources](#from-sources)
   * [4 lines example](#4-lines-example)
-  * [Python and Assembly](#python-and-assembly)
-  * [Realtime code generation](#realtime-code-generation)
-  * [Python-based macros](#python-based-macros)
-  * [Inline testing thru emulation](#inline-testing-thru-emulation)
-  * [Segments support](#segments-support)
-  * [Crunchers support](#crunchers-support)
-  * [IRQ Loaders support](#irq-loaders-support)
-  * [Rasterline racer](#rasterline-racer)
-  * [Python-based C64 files parsers](#python-based-c64-files-parsers)
-  * [BeamRacer support](#beamracer-support)
-  * [Multi-files application](#multi-files-application)
-  * [Simple disassembler](#simple-disassembler)
+  * [Features](#features)
+    + [Python and Assembly](#python-and-assembly)
+    + [Realtime code generation](#realtime-code-generation)
+    + [Python-based macros](#python-based-macros)
+    + [Inline testing thru emulation](#inline-testing-thru-emulation)
+    + [Segments support](#segments-support)
+    + [Crunchers support](#crunchers-support)
+    + [IRQ Loaders support](#irq-loaders-support)
+    + [Rasterline racer](#rasterline-racer)
+    + [Python-based C64 files parsers](#python-based-c64-files-parsers)
+    + [BeamRacer support](#beamracer-support)
+    + [Multi-files application](#multi-files-application)
+    + [Simple disassembler](#simple-disassembler)
   * [Shazzam assembler directives](#shazzam-assembler-directives)
   * [Thanks to](#thanks-to)
 
@@ -132,7 +133,9 @@ Let's set the C64 border and window color to black:
 
 That's it! That's a little more chatty than your traditional assembler but also less prone to error as, as you can see, you have to clearly state if the opcode argument is an address (`at`), an immediate (`imm`),...
 
-## Python and Assembly
+## Features
+
+### Python and Assembly
 
 As you can see, this is not some kind of python libraries to generate code, you really write your assembly code, surrounded by any Python code that can interact with the assembly code.
 Let's try another example, setting the Sprite X and Y coordinates to given values:
@@ -153,7 +156,7 @@ Let's try another example, setting the Sprite X and Y coordinates to given value
 
 I hope this gave you a basic idea of how Python and the assembly code can mix, the only limit is your imagination :)
 
-## Realtime code generation
+### Realtime code generation
 
 One of the funny feature of `Shazzam`, that's that in real-time the assembly code is generated and assembled (and crunched, and...). So that means, each time you type any assembly function in Python, you can see the result without executing any python script of whatever except your current code.
 
@@ -161,7 +164,7 @@ A little video is probably better than a lot of words:
 
 [ Insert vscode video here ]
 
-## Python-based macros
+### Python-based macros
 
 Like any cross-assembler, you can code in Python generic and reusable snippets to simplify your assembly code. But in this case, this is simple Python function. Here is the `16bits addition` macro provided in the library:
 
@@ -198,7 +201,7 @@ import Shazzam.macros.macros_math as m
 
 `Shazzam` provides various sets of ready to use macros to set the `VIC` banks and memory, some 16bits math operations, to set IRQs, to waste cycles.... Just check `shazzam/macros/`
 
-## Inline testing thru emulation
+### Inline testing thru emulation
 
 Inspired from bass, `Shazzam` includes [py65emu](https://github.com/docmarionum1/py65emu), a generic 6502 emulator written in Python, it doesn't emulate a C64 or any other hardware than the 6502 CPU. But that's good enough to emulate your routines and check the registers and what is written in the memory.
 
@@ -238,7 +241,7 @@ So this is good news, the macro works :)
 
 And using the built-in 6502 emulator you can do more, check how many cycles were really used between 2 locations in the code, or even step-by-step debugging.
 
-## Segments support
+### Segments support
 
 The main weakness I found in most 6502 cross-assemblers is the non-existent to minimal support of code segments. At worst you can specify the memory location of the next block (`* = $1000` for example), at best some inline segment definition is possible. But fortunately a few cross-assemblers like [c64jasm](http://github.com/nurpax/c64jasm) or [cc65](https://github.com/cc65/cc65) have a real great support for relocatable segments and `Shazzam` is using it.
 
@@ -262,7 +265,7 @@ Within this block, all the code will be starting at address 0x0801, in a segment
 
 And icing on the cake, `Shazzam` features a Segment Optimizer which automatically finds the best memory arrangement based on the application and C64 constraints.
 
-## Crunchers support
+### Crunchers support
 
 Obviously, you can add any cruncher/packer to shrink your data (`incbin`) or generated `PRG` but by default, `Shazzam` supports:
 
@@ -307,11 +310,11 @@ def code():
 
 With each data cruncher, the depacking routine is also provided, just call `generate_depacker_routine()` as shown in the example.
 
-## IRQ Loaders support
+### IRQ Loaders support
 
 As segments and data can be managed independently, using an IRQ Loader is straight forward. `Shazzam` is able to generate the Sparkle configuration script and run the Sparkle image builder.
 
-## Rasterline racer
+### Rasterline racer
 
 Racing the beam is probably the traditional hobby of most C64 coders. So to help a little, `Shazzam` can track the instructions timings to be sure your code will fit in the rasterline (including DMA stealing periods, badlines,...).
 
@@ -328,7 +331,7 @@ for y in range(y_scroll, y_scroll+10):
             nop()
 ````
 
-## Python-based C64 files parsers
+### Python-based C64 files parsers
 
 As this is just Python, up to you to do what you like to do but if it helps, `Shazzam` includes some useful parsers ready to use:
 
@@ -359,7 +362,7 @@ def code():
     [...]
 ````
 
-## BeamRacer support
+### BeamRacer support
 
 The `VLIB` and `VASYL` libraries are ported to `Shazzam` using the `Shazzam.macros.vlib` and `Shazzam.macros.vasyl` packages.
 
@@ -386,7 +389,7 @@ with segment(0x00, "VASYL") as s:
     [...]
 ````
 
-## Multi-files application
+### Multi-files application
 
 If your application/demo/game gets big, you can easily split your code by relocatable segments dispatch your segments' code in various files. Simply use the python `import` statement to include them like in the `examples/multi-files` example:
 
@@ -407,7 +410,7 @@ def code():
     [...]
 ````
 
-## Simple disassembler
+### Simple disassembler
 
 Each time your python code generates some assembly code, the assembly and listing files are generated. But if you want to be sure and check the final generated code, a little 6502 disassembler is provided in `tools/`.
 

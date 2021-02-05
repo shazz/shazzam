@@ -4,6 +4,31 @@ Not your daddy's C64 cross-assembler...
 
 ![Pylint](https://github.com/shazz/`Shazzam`/workflows/Pylint/badge.svg)
 
+- [`Shazzam`](#-shazzam-)
+  * [What is `Shazzam`?](#what-is--shazzam--)
+    + [Features in brief](#features-in-brief)
+  * [Installation](#installation)
+    + [From pypi](#from-pypi)
+      - [Cross-Assemblers](#cross-assemblers)
+      - [Packers](#packers)
+      - [IRQ Loaders](#irq-loaders)
+    + [From sources](#from-sources)
+  * [4 lines example](#4-lines-example)
+  * [Python and Assembly](#python-and-assembly)
+  * [Realtime code generation](#realtime-code-generation)
+  * [Python-based macros](#python-based-macros)
+  * [Inline testing thru emulation](#inline-testing-thru-emulation)
+  * [Segments support](#segments-support)
+  * [Crunchers support](#crunchers-support)
+  * [IRQ Loaders support](#irq-loaders-support)
+  * [Rasterline racer](#rasterline-racer)
+  * [Python-based C64 files parsers](#python-based-c64-files-parsers)
+  * [BeamRacer support](#beamracer-support)
+  * [Multi-files application](#multi-files-application)
+  * [Simple disassembler](#simple-disassembler)
+  * [Shazzam assembler directives](#shazzam-assembler-directives)
+- [Thanks to](#thanks-to)
+
 ## What is `Shazzam`?
 
 It is probably easier to say what `Shazzam` is NOT:
@@ -389,7 +414,37 @@ Usage:
 
 In case of a prg, the starting address is automatically extracted from the header. Else the -a option can be used to define a specific address.
 
-## Thanks to
+## Shazzam assembler directives
+
+As a lot of things can be done directly in Python, `shazzam` support a minimal set of specific assembler directives:
+
+````python
+from shazzam.py64gen import *
+````
+
+- `align(value: int)`: align the next instruction at a `value` boundary (will generate call to `byte(0)` to pad the data)
+- `byte(value :int or List[value]`: add a byte or a sequence of bytes
+- `word(value: int or List[value]`: add a word or a sequence of words
+- `label(name: str, is_global: bool)`: define a local or global label at the current address
+- `get_anonymous_label(name: str)`: define an anonymous label
+- `incbin(data: bytearray)`: include a sequence of bytes from an external source (code, file... will generate call to `byte()`)
+- `get_current_address()`: return current address in the segment
+- `get_label_address(label: str)`: get address for a given label
+
+For each 6502 opcode function (ex `lda()` or `LDA()`), the operand type (immediate, address, relative address) has to be specified using the functions:
+
+- `at(value: Any)`: for an absolute address
+- `ind_at(value: Any)`: for an indirect address
+- `rel_at(value: Any)`: for a relative address
+- `imm(value: Any)`: for an immediate value
+
+and associated 6502 registers:
+
+````python
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+````
+
+# Thanks to
 
 All the various open-source projects `Shazzam` is relying on:
 

@@ -39,12 +39,7 @@ from shazzam.macros.aliases import color, vic
 import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
 from shazzam.drivers.crunchers.Exomizer import Exomizer
-from shazzam.drivers.crunchers.Nucrunch import Nucrunch
-from shazzam.drivers.crunchers.Pucrunch import Pucrunch
-from shazzam.drivers.crunchers.Apultra import Apultra, PackingMode
-from shazzam.drivers.crunchers.Doynamite import Doynamite
 from shazzam.drivers.crunchers.Lzsa import Lzsa
-from shazzam.drivers.crunchers.Zx7 import Zx7
 import shazzam.plugins.plugins as p
 
 
@@ -52,7 +47,7 @@ import shazzam.plugins.plugins as p
 assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
 
 prg_cruncher  = Exomizer(&#34;third_party/exomizer/exomizer&#34;)
-data_cruncher = Lzsa(&#34;third_party/apultra/apultra&#34;)
+data_cruncher = Lzsa(&#34;third_party/lzsa/lzsa&#34;)
 
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -139,7 +134,7 @@ def code():
         sta(at(0x01))
 
         inc(at(vic.border_col))
-        jsr(at(0x1003))   # call SID player
+        jsr(at(0x1003))     # call SID player
         dec(at(vic.border_col))
 
         lda(imm(0x37))      # TURN BASIC ROM ON
@@ -150,32 +145,35 @@ def code():
         # -------------------------------------------------
         # Depacking caller routine, need access to zp
         # -------------------------------------------------
+        # in:
+        # * LZSA_SRC (LO+1, HI+2) contains the compressed raw block address
+        # * LZSA_DST (LO+1, HI+2) contains the destination buffer address
+        #
+        # out:
+        # * LZSA_DST_LO (LO+1, HI+2) contains the last decompressed byte address, +1
         label(&#34;depack&#34;)
         packed_data = get_segment_addresses(&#34;packedata&#34;).start_address
         print(f&#34;Packed data ends at {packed_data:04X}&#34;)
 
         # set packed data src / dst
         lda(imm(packed_data &amp; 0xff))
-        sta(at(apl_srcptr))
+        sta(at(&#34;LZSA_SRC&#34;)+1)
 
         lda(imm(packed_data &gt;&gt; 8))
-        sta(at(apl_srcptr)+1)
+        sta(at(&#34;LZSA_SRC&#34;)+2)
 
-        # depacked data are located at apl_dstptr+126 bytes
         lda(imm(0x1000 &amp; 0xff))
-        sta(at(apl_dstptr))
+        sta(at(&#34;LZSA_DST&#34;)+1)
 
         lda(imm(0x1000 &gt;&gt; 8))
-        sta(at(apl_dstptr)+1)
+        sta(at(&#34;LZSA_DST&#34;)+2)
 
         # unpack data forward.
-        # Args: apl_srcptr = ptr to compessed data
-        # Args: apl_dstptr = ptr to output buffer (126 first bytes used for buffer)
-        jsr(at(&#34;apl_decompress&#34;))
+        jsr(at(&#34;DECOMPRESS_LZSA2_FAST&#34;))
         rts()
 
     with segment(segments[&#34;depacker&#34;], &#34;depacker&#34;) as s:
-        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast = True)
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast=True)
 
     # generate listing
     gen_code(assembler, gen_listing=True)

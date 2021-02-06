@@ -20,6 +20,16 @@ class Address():
         self._sub_modifier = None
 
     @property
+    def fullname(self):
+        fullname = self.name
+        if self._add_modifier:
+            fullname += f"+{self._add_modifier}"
+        elif self._sub_modifier:
+            fullname += f"-{self._sub_modifier}"
+
+        return fullname
+
+    @property
     def value(self):
         if self._value is None:
             return None

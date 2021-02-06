@@ -191,7 +191,12 @@ clean:
             RuntimeError: [description]
         &#34;&#34;&#34;
         # sort segment by address
-        sorted_adr = sorted([segment.start_adr for segment in program.segments])
+        sorted_adr = list(sorted([segment.start_adr for segment in program.segments]))
+
+        # vasyl expection
+        if sorted_adr[0] == 0 and self._get_segment_by_address(0, program.segments).name == &#39;VASYL&#39;:
+            sorted_adr = sorted_adr[1:] + sorted_adr[0:1]
+
         self.logger.info(f&#34;Segments addresses: {[hex(adr) for adr in sorted_adr]}&#34;)
 
         # set load address that will be the 2 PRG first bytes
@@ -206,9 +211,14 @@ clean:
             seg = self._get_segment_by_address(segment_adr, program.segments)
 
             self.logger.info(f&#34;Checking memory for segment {seg.name}&#34;)
-            if seg.name not in [&#34;DATA&#34;, &#34;BSS&#34;]:
-                if i != len(sorted_adr)-1:
+            if seg.name not in [&#34;DATA&#34;, &#34;BSS&#34;, &#34;VASYL&#34;]:
+
+                # if next segment exists and not VASYL
+                if (i != len(sorted_adr)-1) and (sorted_adr[-1] != 0):
                     seg_size = self._get_segment_by_address(sorted_adr[i+1], program.segments).start_adr - seg.start_adr
+                elif sorted_adr[-1] == 0:
+                    vasyl_size = self._get_segment_by_name(&#34;VASYL&#34;, program.segments).size
+                    seg_size = seg.end_adr - seg.start_adr + CC65.basic_header_size + vasyl_size
                 else:
                     seg_size = seg.end_adr - seg.start_adr + CC65.basic_header_size
 
@@ -218,16 +228,23 @@ clean:
                 else:
                     mem_lines.append(f&#34;\t{seg.name}:\tfile = %O, start = ${seg.start_adr:04X},      size = ${seg_size:04X},    fill = yes;\n&#34;)
 
+            elif seg.name == &#39;VASYL&#39;:
+                mem_lines.append(&#34;\tVASYL:    file = %O, start = 0,      size = $FFFF;\n&#34;)
+
         self.logger.info(f&#34;Adding lines: {mem_lines}&#34;)
         CC65.memory = CC65.memory.replace(&#34;%2&#34;, &#39;&#39;.join(mem_lines))
 
         # gen segments
         seg_lines = &#34;&#34;
-        for seg in program.segments:
-            if seg.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
+        for i, segment_adr in enumerate(sorted_adr):
+            seg = self._get_segment_by_address(segment_adr, program.segments)
+
+            if seg.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;, &#34;VASYL&#34;]:
                 seg_lines += f&#34;\t{seg.name}:\tload = {seg.name},\ttype = rw, optional = no, define = yes;\n&#34;
             elif seg.name == &#39;CODE&#39;:
                 seg_lines += CC65.segments_main
+            elif seg.name == &#39;VASYL&#39;:
+                seg_lines += &#34;\tVASYL:    load = MAIN, run=VASYL   type = rw,  optional = yes, define = yes;\n&#34;
             else:
                 self.logger.info(f&#34;{seg.name} segment already managed&#34;)
 
@@ -319,8 +336,7 @@ clean:
 <span>(</span><span>name: str, exe_path: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>This class defines the interface to be implemented by cross-assembler drivers.
-The default one is CC65.</p></div>
+<div class="desc"><p>This class defines the interface to be implemented by cross-assembler drivers.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -480,7 +496,12 @@ clean:
             RuntimeError: [description]
         &#34;&#34;&#34;
         # sort segment by address
-        sorted_adr = sorted([segment.start_adr for segment in program.segments])
+        sorted_adr = list(sorted([segment.start_adr for segment in program.segments]))
+
+        # vasyl expection
+        if sorted_adr[0] == 0 and self._get_segment_by_address(0, program.segments).name == &#39;VASYL&#39;:
+            sorted_adr = sorted_adr[1:] + sorted_adr[0:1]
+
         self.logger.info(f&#34;Segments addresses: {[hex(adr) for adr in sorted_adr]}&#34;)
 
         # set load address that will be the 2 PRG first bytes
@@ -495,9 +516,14 @@ clean:
             seg = self._get_segment_by_address(segment_adr, program.segments)
 
             self.logger.info(f&#34;Checking memory for segment {seg.name}&#34;)
-            if seg.name not in [&#34;DATA&#34;, &#34;BSS&#34;]:
-                if i != len(sorted_adr)-1:
+            if seg.name not in [&#34;DATA&#34;, &#34;BSS&#34;, &#34;VASYL&#34;]:
+
+                # if next segment exists and not VASYL
+                if (i != len(sorted_adr)-1) and (sorted_adr[-1] != 0):
                     seg_size = self._get_segment_by_address(sorted_adr[i+1], program.segments).start_adr - seg.start_adr
+                elif sorted_adr[-1] == 0:
+                    vasyl_size = self._get_segment_by_name(&#34;VASYL&#34;, program.segments).size
+                    seg_size = seg.end_adr - seg.start_adr + CC65.basic_header_size + vasyl_size
                 else:
                     seg_size = seg.end_adr - seg.start_adr + CC65.basic_header_size
 
@@ -507,16 +533,23 @@ clean:
                 else:
                     mem_lines.append(f&#34;\t{seg.name}:\tfile = %O, start = ${seg.start_adr:04X},      size = ${seg_size:04X},    fill = yes;\n&#34;)
 
+            elif seg.name == &#39;VASYL&#39;:
+                mem_lines.append(&#34;\tVASYL:    file = %O, start = 0,      size = $FFFF;\n&#34;)
+
         self.logger.info(f&#34;Adding lines: {mem_lines}&#34;)
         CC65.memory = CC65.memory.replace(&#34;%2&#34;, &#39;&#39;.join(mem_lines))
 
         # gen segments
         seg_lines = &#34;&#34;
-        for seg in program.segments:
-            if seg.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;]:
+        for i, segment_adr in enumerate(sorted_adr):
+            seg = self._get_segment_by_address(segment_adr, program.segments)
+
+            if seg.name not in [&#34;CODE&#34;, &#34;DATA&#34;, &#34;BSS&#34;, &#34;VASYL&#34;]:
                 seg_lines += f&#34;\t{seg.name}:\tload = {seg.name},\ttype = rw, optional = no, define = yes;\n&#34;
             elif seg.name == &#39;CODE&#39;:
                 seg_lines += CC65.segments_main
+            elif seg.name == &#39;VASYL&#39;:
+                seg_lines += &#34;\tVASYL:    load = MAIN, run=VASYL   type = rw,  optional = yes, define = yes;\n&#34;
             else:
                 self.logger.info(f&#34;{seg.name} segment already managed&#34;)
 
@@ -780,6 +813,7 @@ clean:
 <ul class="hlist">
 <li><code><a title="shazzam.Assembler.Assembler.assemble_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.assemble_segment">assemble_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.get_code_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.get_code_segment">get_code_segment</a></code></li>
+<li><code><a title="shazzam.Assembler.Assembler.get_vasyl_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.get_vasyl_segment">get_vasyl_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.segments_definition_gen" href="../../Assembler.html#shazzam.Assembler.Assembler.segments_definition_gen">segments_definition_gen</a></code></li>
 </ul>
 </li>

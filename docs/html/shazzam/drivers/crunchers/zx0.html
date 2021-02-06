@@ -57,73 +57,43 @@ class Pucrunch(Cruncher):
         #   DE: destination address (decompressing)
         # -----------------------------------------------------------------------------
 
-        # label(&#34;dzx0_standard&#34;)
-        # lda(im(0xff))                    # ld      bc, $ffff               # preserve default offset 1
-        # tax()
-        # pha()
-        # pha()                           # push    bc
-        # clc()
-        # adc(imm(1))
-        # tax
-        # tya()
+        zx0_src_ptr             = 0xf0
 
-        # m.add16()                       #inc     bc
-        # lda(imm(0x80))                  # ld a, $80
+        zx0_bitmask             = 0xf5
+        zx0_bitvalue            = 0xf6
 
-        # label(&#34;dzx0s_literals&#34;)
-        # jsr(at(&#34;dzx0s_elias&#34;))             # obtain length
-        # ldir                            # copy literals
-        # add     a, a                    # copy from last offset or new offset?
-        # jr      c, dzx0s_new_offset
-        # jsr(at(&#34;dzx0s_elias&#34;))             # obtain length
+        zx0_src_buffer          = 0xfc
 
-        # label(&#34;dzx0s_copy&#34;)
-        # ex      (sp), hl                # preserve source, restore offset
-        # push    hl                      # preserve offset
-        # add     hl, de                  # calculate destination - offset
-        # ldir                            # copy from offset
-        # pop     hl                      # restore offset
-        # ex      (sp), hl                # preserve offset, restore source
-        # add     a, a                    # copy from literals or new offset?
-        # jr      nc, dzx0s_literals
+        def inc_src():
+            incsr1 = get_anonymous_label(&#34;incsr1&#34;)
+            inc(at(zx0_src_ptr))
+            bne(rel_at(incsr1))
+            inc(at(zx0_src_ptr)+1)
+            label(incsr1)
 
-        # label(&#34;dzx0s_new_offset&#34;)
-        # jsr(at(&#34;dzx0s_elias&#34;))             # obtain offset MSB
-        # ex      af, af&#39;
-        # pop     af                      # discard last offset
-        # xor     a                       # adjust for negative offset
-        # sub     c
-        # ret     z                       # check end marker
-        # ld      b, a
-        # ex      af, af&#39;
-        # ld      c, (hl)                 # obtain offset LSB
-        # inc     hl
-        # rr      b                       # last offset bit becomes first length bit
-        # rr      c
-        # push    bc                      # preserve new offset
-        # ld      bc, 1                   # obtain length
-        # call    nc, dzx0s_elias_backtrack
-        # inc     bc
-        # jmp(at(&#34;dzx0s_copy&#34;))
+        def read_byte():
+            lda(ind_at(zx0_src_buffer), y)
+            inc_src()
 
-        # label(&#34;dzx0s_elias&#34;)
-        # inc     c                       # interlaced Elias gamma coding
+        def read_bit():
+            no_reset = get_anonymous_label(&#34;no_reset&#34;)
+            lda(at(zx0_bitmask))
+            lsr()
+            bne(rel_at(no_reset))
+            lda(imm(128))
+            read_byte()
+            label(no_reset)
 
-        # label(&#34;dzx0s_elias_loop&#34;)
-        # add     a, a
-        # jr      nz, dzx0s_elias_skip
-        # ld      a, (hl)                 # load another group of 8 bits
-        # inc     hl
-        # rla
+            lda(at(zx0_bitvalue))
+            andr(at(zx0_bitmask))
 
-        # label(&#34;dzx0s_elias_skip&#34;)
-        # ret     c
+        def read_interlaced_elias_gamma():
+            read = get_anonymous_label(&#34;read&#34;)
+            label(read)
+            read_bit()
+            bne(rel_at(loop))
 
-        # label(&#34;dzx0s_elias_backtrack&#34;)
-        # add     a, a
-        # rl      c
-        # rl      b
-        # jmp(at(&#34;dzx0s_elias_loop&#34;))</code></pre>
+            </code></pre>
 </details>
 </section>
 <section>
@@ -161,7 +131,51 @@ class Pucrunch(Cruncher):
 
         Raises:
             NotImplementedError: [description]
-        &#34;&#34;&#34;</code></pre>
+        &#34;&#34;&#34;
+        # -----------------------------------------------------------------------------
+        # ZX0 decoder by Einar Saukas
+        # &#34;Standard&#34; version (69 bytes only)
+        # -----------------------------------------------------------------------------
+        # Parameters:
+        #   HL: source address (compressed data)
+        #   DE: destination address (decompressing)
+        # -----------------------------------------------------------------------------
+
+        zx0_src_ptr             = 0xf0
+
+        zx0_bitmask             = 0xf5
+        zx0_bitvalue            = 0xf6
+
+        zx0_src_buffer          = 0xfc
+
+        def inc_src():
+            incsr1 = get_anonymous_label(&#34;incsr1&#34;)
+            inc(at(zx0_src_ptr))
+            bne(rel_at(incsr1))
+            inc(at(zx0_src_ptr)+1)
+            label(incsr1)
+
+        def read_byte():
+            lda(ind_at(zx0_src_buffer), y)
+            inc_src()
+
+        def read_bit():
+            no_reset = get_anonymous_label(&#34;no_reset&#34;)
+            lda(at(zx0_bitmask))
+            lsr()
+            bne(rel_at(no_reset))
+            lda(imm(128))
+            read_byte()
+            label(no_reset)
+
+            lda(at(zx0_bitvalue))
+            andr(at(zx0_bitmask))
+
+        def read_interlaced_elias_gamma():
+            read = get_anonymous_label(&#34;read&#34;)
+            label(read)
+            read_bit()
+            bne(rel_at(loop))</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -196,7 +210,51 @@ class Pucrunch(Cruncher):
 
     Raises:
         NotImplementedError: [description]
-    &#34;&#34;&#34;</code></pre>
+    &#34;&#34;&#34;
+    # -----------------------------------------------------------------------------
+    # ZX0 decoder by Einar Saukas
+    # &#34;Standard&#34; version (69 bytes only)
+    # -----------------------------------------------------------------------------
+    # Parameters:
+    #   HL: source address (compressed data)
+    #   DE: destination address (decompressing)
+    # -----------------------------------------------------------------------------
+
+    zx0_src_ptr             = 0xf0
+
+    zx0_bitmask             = 0xf5
+    zx0_bitvalue            = 0xf6
+
+    zx0_src_buffer          = 0xfc
+
+    def inc_src():
+        incsr1 = get_anonymous_label(&#34;incsr1&#34;)
+        inc(at(zx0_src_ptr))
+        bne(rel_at(incsr1))
+        inc(at(zx0_src_ptr)+1)
+        label(incsr1)
+
+    def read_byte():
+        lda(ind_at(zx0_src_buffer), y)
+        inc_src()
+
+    def read_bit():
+        no_reset = get_anonymous_label(&#34;no_reset&#34;)
+        lda(at(zx0_bitmask))
+        lsr()
+        bne(rel_at(no_reset))
+        lda(imm(128))
+        read_byte()
+        label(no_reset)
+
+        lda(at(zx0_bitvalue))
+        andr(at(zx0_bitmask))
+
+    def read_interlaced_elias_gamma():
+        read = get_anonymous_label(&#34;read&#34;)
+        label(read)
+        read_bit()
+        bne(rel_at(loop))</code></pre>
 </details>
 </dd>
 </dl>

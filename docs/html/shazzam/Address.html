@@ -48,6 +48,16 @@ class Address():
         self._sub_modifier = None
 
     @property
+    def fullname(self):
+        fullname = self.name
+        if self._add_modifier:
+            fullname += f&#34;+{self._add_modifier}&#34;
+        elif self._sub_modifier:
+            fullname += f&#34;-{self._sub_modifier}&#34;
+
+        return fullname
+
+    @property
     def value(self):
         if self._value is None:
             return None
@@ -133,6 +143,16 @@ class Address():
         self._sub_modifier = None
 
     @property
+    def fullname(self):
+        fullname = self.name
+        if self._add_modifier:
+            fullname += f&#34;+{self._add_modifier}&#34;
+        elif self._sub_modifier:
+            fullname += f&#34;-{self._sub_modifier}&#34;
+
+        return fullname
+
+    @property
     def value(self):
         if self._value is None:
             return None
@@ -180,6 +200,24 @@ class Address():
 </details>
 <h3>Instance variables</h3>
 <dl>
+<dt id="shazzam.Address.Address.fullname"><code class="name">var <span class="ident">fullname</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def fullname(self):
+    fullname = self.name
+    if self._add_modifier:
+        fullname += f&#34;+{self._add_modifier}&#34;
+    elif self._sub_modifier:
+        fullname += f&#34;-{self._sub_modifier}&#34;
+
+    return fullname</code></pre>
+</details>
+</dd>
 <dt id="shazzam.Address.Address.value"><code class="name">var <span class="ident">value</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -223,6 +261,7 @@ def value(self):
 <li>
 <h4><code><a title="shazzam.Address.Address" href="#shazzam.Address.Address">Address</a></code></h4>
 <ul class="">
+<li><code><a title="shazzam.Address.Address.fullname" href="#shazzam.Address.Address.fullname">fullname</a></code></li>
 <li><code><a title="shazzam.Address.Address.value" href="#shazzam.Address.Address.value">value</a></code></li>
 </ul>
 </li>

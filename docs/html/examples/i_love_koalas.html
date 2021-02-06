@@ -39,10 +39,8 @@ from shazzam.drivers.assemblers.CC65 import CC65
 import shazzam.plugins.plugins as p
 import shazzam.macros.vic as v
 
-
 # define your cross assembler
 assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
-
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
 

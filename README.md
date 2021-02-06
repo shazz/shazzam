@@ -1,13 +1,13 @@
-# `Shazzam`
+# `shazzam`
 
-Not your daddy's C64 cross-assembler...
+Not your daddy's C64 cross-assembler... :)
 
-![Pylint](https://github.com/shazz/`Shazzam`/workflows/Pylint/badge.svg)
+![Pylint](https://github.com/shazz/shazzam/workflows/Pylint/badge.svg)
 
-Table of Content
+**Table of Content**
 
-- [`Shazzam`](#-shazzam-)
-  * [What is `Shazzam`?](#what-is--shazzam--)
+- [`shazzam`](#-shazzam-)
+  * [What is `shazzam`?](#what-is--shazzam--)
     + [Features in brief](#features-in-brief)
   * [Installation](#installation)
     + [From pypi](#from-pypi)
@@ -29,12 +29,12 @@ Table of Content
     + [BeamRacer support](#beamracer-support)
     + [Multi-files application](#multi-files-application)
     + [Simple disassembler](#simple-disassembler)
-  * [Shazzam assembler directives](#shazzam-assembler-directives)
+  * [shazzam assembler directives](#shazzam-assembler-directives)
   * [Thanks to](#thanks-to)
 
-## What is `Shazzam`?
+## What is `shazzam`?
 
-It is probably easier to say what `Shazzam` is NOT:
+It is probably easier to say what `shazzam` is **NOT**:
 
 - a new 6502 cross-assembler (it relies on existing ones)
 - a python compiler for 6502
@@ -42,17 +42,17 @@ It is probably easier to say what `Shazzam` is NOT:
 
 And where it took its inspiration from multiple famous C64 tools:
 
-- `KickC`: a Kiss Assembler code generator using a C-like language.
+- `KickC`: a Kiss Assembler code generator using a subset of C language.
 - `C64jasm`: a Cross Assembler supporting inline extensions using pure Javacript.
-- `Bass`: an `ACME`-like cross assembler using Lua for scripting and internal emulator for testing.
+- `Bass`: an `ACME`-like cross assembler using `Lua` for scripting and internal emulator for testing.
 - `Sparkle`: an IRQ Loader managing on time loading of data and code segments.
-- `Raistlin's C++ code generator`: Raistlin/G*P's top secret framework to code awesome demos
+- `Raistlin's C++ code generator`: Raistlin/G*P's top secret framework to code awesome demos.
 
 As a result, by using all those great modern C64 Development tools, I found out that state of the art demo effects are mostly based on code generation, most of the time using cross-assembler macros and external tools.
 
 So the usage of non assembler tooling became more important than the assembly code itself, that's why I thought that "reversing" the cross assembler idea (meaning providing a good but basic cross-assembler with quite powerful, complex and more or less standard macro language) would make sense: don't extend the cross assembler with some kind of complex scripting language but extend existing high level languages with simple assembler capabilities.
 
-This is the magic of `Shazzam`, write Python code as usual, to process your images, create your lookup tables, read your SID files.... no limit to your creativity then, generate the assembly code required to use this data as you would do with the cross-assembler.
+This is the magic of `shazzam`, write Python code as usual, to process your images, create your lookup tables, read your SID files.... no limit to your creativity then, generate the assembly code required to use this data as you would do with the cross-assembler.
 
 ### Features in brief
 
@@ -60,7 +60,7 @@ This is the magic of `Shazzam`, write Python code as usual, to process your imag
 - Generate `cc65` or `c64jasm` assembly code from your Python application in real-time
 - 6502 emulator to write unit tests and debug step-by-step routines
 - Pre-integrated packers (Exomizer, Apultra, zx7...) for `incbin` and `prg`
-- Export Sparkle compatible script (D64 generation on Windows only)
+- Export Sparkle compatible script (D64 generation available on Windows only)
 - Plugins to load and parse `SID`, `SPD`, `KLA` files
 - Support multi-files, multi-segments
 - Segment optimizer to maximize contiguous memory usage
@@ -77,18 +77,20 @@ This is the magic of `Shazzam`, write Python code as usual, to process your imag
 Requirements
 
 - Python 3.7+ with pip
-- `nox` (`pip install nox`) in your base Python installation if you want to build from sources
+- `nox` (`pip install nox`) in your base Python installation if you want to build the library, docs and run tests from sources
 
 ````bash
-pip install `Shazzam`
+pip install shazzam
 ````
 
 Then, if you're not using `nox`, you'll have to install the various mandatory and optional tools manually:
 
 #### Cross-Assemblers
 
-- [CC65](https://github.com/cc65/cc65) (mandatory)
+- [CC65](https://github.com/cc65/cc65)
 - [c64jasm](https://github.com/nurpax/c64jasm) (supported soon!!!)
+
+At least one of the 2 cross-assemblers should installed.
 
 #### Packers
 
@@ -106,11 +108,11 @@ Then, if you're not using `nox`, you'll have to install the various mandatory an
 
 ### From sources
 
-`Shazzam` provides a `noxfile` to automate the creation of the various virtual environments and install the various tools and docs
+`shazzam` provides a `noxfile` to automate the creation of the various virtual environments and install the various tools and docs
 
 ````bash
-git clone https://github.com/shazz/`Shazzam`
-cd `Shazzam`
+git clone https://github.com/shazz/shazzam
+cd shazzam
 nox -s install
 nox -s install_3rd_party
 nox -rs docs
@@ -120,7 +122,7 @@ Note that you may need to install some OS packages to compile and install the 3r
 
 ## 4 lines example
 
-As `Shazzam` is just a Python library, everything is Python. So even your generated assembly code looks like Python.
+As `shazzam` is just a Python library, everything is Python. So even your assembly code looks like Python.
 
 Let's set the C64 border and window color to black:
 
@@ -158,7 +160,7 @@ I hope this gave you a basic idea of how Python and the assembly code can mix, t
 
 ### Realtime code generation
 
-One of the funny feature of `Shazzam`, that's that in real-time the assembly code is generated and assembled (and crunched, and...). So that means, each time you type any assembly function in Python, you can see the result without executing any python script of whatever except your current code.
+One of the funny feature of `shazzam`, that's that in real-time the assembly code is generated and assembled (and crunched, and...). So that means, each time you type any assembly function in Python, you can see the result without executing any python script of whatever except your current code.
 
 A little video is probably better than a lot of words:
 
@@ -182,7 +184,7 @@ def add16(n1, n2, res):
 Then in your code, simply import and call it to perform 256+10
 
 ````python
-import Shazzam.macros.macros_math as m
+import shazzam.macros.macros_math as m
 
     m.add16(at("var1"), at("var2"), at("result"))
 
@@ -199,11 +201,11 @@ import Shazzam.macros.macros_math as m
     [...]
 ````
 
-`Shazzam` provides various sets of ready to use macros to set the `VIC` banks and memory, some 16bits math operations, to set IRQs, to waste cycles.... Just check `shazzam/macros/`
+`shazzam` provides various sets of ready to use macros to set the `VIC` banks and memory, some 16bits math operations, to set IRQs, to waste cycles.... Just check `shazzam/macros/`
 
 ### Inline testing thru emulation
 
-Inspired from bass, `Shazzam` includes [py65emu](https://github.com/docmarionum1/py65emu), a generic 6502 emulator written in Python, it doesn't emulate a C64 or any other hardware than the 6502 CPU. But that's good enough to emulate your routines and check the registers and what is written in the memory.
+Inspired from bass, `shazzam` includes [py65emu](https://github.com/docmarionum1/py65emu), a generic 6502 emulator written in Python, it doesn't emulate a C64 or any other hardware than the 6502 CPU. But that's good enough to emulate your routines and check the registers and what is written in the memory.
 
 Practically, in your code, you can add typical `assert` statements. Here is an example to
 
@@ -243,7 +245,7 @@ And using the built-in 6502 emulator you can do more, check how many cycles were
 
 ### Segments support
 
-The main weakness I found in most 6502 cross-assemblers is the non-existent to minimal support of code segments. At worst you can specify the memory location of the next block (`* = $1000` for example), at best some inline segment definition is possible. But fortunately a few cross-assemblers like [c64jasm](http://github.com/nurpax/c64jasm) or [cc65](https://github.com/cc65/cc65) have a real great support for relocatable segments and `Shazzam` is using it.
+The main weakness I found in most 6502 cross-assemblers is the non-existent to minimal support of code segments. At worst you can specify the memory location of the next block (`* = $1000` for example), at best some inline segment definition is possible. But fortunately a few cross-assemblers like [c64jasm](http://github.com/nurpax/c64jasm) or [cc65](https://github.com/cc65/cc65) have a real great support for relocatable segments and `shazzam` is using it.
 
 What does it mean? Simply that you can split your code in segment, assemble each one separately and finally link them accordingly by setting the optimal location based on your constraints (VIC banks, memory locations, SID driver...) without tweaking your code, the order of the routines, where sprites should be located...
 
@@ -263,11 +265,11 @@ with segment(0x0801, assembler.get_code_segment()) as s:
 
 Within this block, all the code will be starting at address 0x0801, in a segment in this example called CODE (`get_code_segment()`).
 
-And icing on the cake, `Shazzam` features a Segment Optimizer which automatically finds the best memory arrangement based on the application and C64 constraints.
+And icing on the cake, `shazzam` features a Segment Optimizer which automatically finds the best memory arrangement based on the application and C64 constraints.
 
 ### Crunchers support
 
-Obviously, you can add any cruncher/packer to shrink your data (`incbin`) or generated `PRG` but by default, `Shazzam` supports:
+Obviously, you can add any cruncher/packer to shrink your data (`incbin`) or generated `PRG` but by default, `shazzam` supports:
 
 - `Exomizer` (PRG) (incbin missing)
 - `pucrunch` (PRG) (incbin missing)
@@ -312,11 +314,11 @@ With each data cruncher, the depacking routine is also provided, just call `gene
 
 ### IRQ Loaders support
 
-As segments and data can be managed independently, using an IRQ Loader is straight forward. `Shazzam` is able to generate the Sparkle configuration script and run the Sparkle image builder.
+As segments and data can be managed independently, using an IRQ Loader is straight forward. `shazzam` is able to generate the Sparkle configuration script and run the Sparkle image builder.
 
 ### Rasterline racer
 
-Racing the beam is probably the traditional hobby of most C64 coders. So to help a little, `Shazzam` can track the instructions timings to be sure your code will fit in the rasterline (including DMA stealing periods, badlines,...).
+Racing the beam is probably the traditional hobby of most C64 coders. So to help a little, `shazzam` can track the instructions timings to be sure your code will fit in the rasterline (including DMA stealing periods, badlines,...).
 
 How does it work? Check this extract from the `sprites_galore` example:
 
@@ -333,7 +335,7 @@ for y in range(y_scroll, y_scroll+10):
 
 ### Python-based C64 files parsers
 
-As this is just Python, up to you to do what you like to do but if it helps, `Shazzam` includes some useful parsers ready to use:
+As this is just Python, up to you to do what you like to do but if it helps, `shazzam` includes some useful parsers ready to use:
 
 - `SID` music player files
 - `Koala` multicolor pictures
@@ -344,7 +346,7 @@ Just import them!
 The `i_love_kaoalas` example shows how to display a Koala picture in a few lines of code. A little extract:
 
 ````python
-import Shazzam.plugins.plugins as p
+import shazzam.plugins.plugins as p
 
 def code():
 
@@ -364,12 +366,12 @@ def code():
 
 ### BeamRacer support
 
-The `VLIB` and `VASYL` libraries are ported to `Shazzam` using the `Shazzam.macros.vlib` and `Shazzam.macros.vasyl` packages.
+The `VLIB` and `VASYL` libraries are ported to `shazzam` using the `shazzam.macros.vlib` and `shazzam.macros.vasyl` packages.
 
 Extract from `examples/hello_vasyl`:
 
 ````python
-from Shazzam.macros.vasyl import *
+from shazzam.macros.vasyl import *
 
 with segment(0x00, "VASYL") as s:
 
@@ -419,7 +421,7 @@ Usage:
 
 In case of a prg, the starting address is automatically extracted from the header. Else the -a option can be used to define a specific address.
 
-## Shazzam assembler directives
+## shazzam assembler directives
 
 As a lot of things can be done directly in Python, `shazzam` support a minimal set of specific assembler directives:
 
@@ -455,7 +457,7 @@ Notes:
 
 ## Thanks to
 
-All the various open-source projects `Shazzam` is relying on:
+All the various open-source projects `shazzam` is relying on:
 
 - `c64jasm` by Nurpax
 - `cc65` by cc65 community

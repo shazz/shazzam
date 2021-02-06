@@ -106,7 +106,7 @@ class Segment():
         &#34;&#34;&#34;
         self.logger = logging.getLogger(&#34;shazzam&#34;)
         self.start_adr = start_adr
-        self.end_adr = start_adr
+        self._end_adr = start_adr
         self.fixed_start_address = start_adr if fixed_address else None
         self.instructions = {}
         self.next_position = start_adr
@@ -144,6 +144,10 @@ class Segment():
         self.anonymous_labels = {}
 
     @property
+    def end_adr(self):
+        return self.next_position
+
+    @property
     def size(self):
         return self.end_adr - self.start_adr
 
@@ -167,7 +171,7 @@ class Segment():
 
     def close(self) -&gt; None:
         &#34;&#34;&#34;[summary]&#34;&#34;&#34;
-        self.end_adr = self.next_position
+        # self._end_adr = self.next_position
 
     def add_instruction(self, instr: Instruction) -&gt; bytearray:
         &#34;&#34;&#34;[summary]
@@ -194,10 +198,29 @@ class Segment():
             bcode = self.get_bytecode(instr)
             instr.bytecode = bcode
         except Exception as e:
-            g.logger.debug(
-                f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
+            g.logger.debug(f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
 
         return instr
+
+    def align(self, alignment: int) -&gt; None:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            alignment (int): [description]
+        &#34;&#34;&#34;
+        padding = (alignment - (self.next_position % alignment)) % alignment
+        aligned = self.next_position + padding
+
+        if aligned &gt; 0xffff:
+            raise ValueError(f&#34;Aligment exceeded C64 memory!&#34;)
+
+        self.logger.info(f&#34;Alignment on ${alignment:04X} bytes, next address will be ${aligned:04X}&#34;)
+        for i in range(padding):
+            data = ByteData(Immediate(value=0))
+            self.instructions[self.next_position] = data
+            self.next_position += 1
+
+        assert aligned == self.next_position, f&#34;Alignment to ${aligned:04X} failed, next address is ${self.next_position:04X}&#34;
 
     def add_byte(self, immediate: Immediate) -&gt; None:
         &#34;&#34;&#34;[summary]
@@ -211,8 +234,7 @@ class Segment():
         data = ByteData(immediate)
         self.instructions[self.next_position] = data
         self.next_position += 1
-        self.logger.debug(
-            f&#34;added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
+        self.logger.debug(f&#34;added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
 
         return self.get_bytecode(data)
 
@@ -229,8 +251,7 @@ class Segment():
             Address: [description]
         &#34;&#34;&#34;
         if name in self.labels:
-            raise ValueError(
-                f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
+            raise ValueError(f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
 
         self.labels[name] = Address(name=name, value=self.next_position)
 
@@ -391,8 +412,8 @@ class Segment():
             &#34;address&#34;: 0,
             &#34;bytecode&#34;: 8 if self.show_address else 0,
             &#34;label&#34;: 40 if self.show_bytecode else 8 if self.show_address else 0,
-            &#34;instruction&#34;: 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
-            &#34;cycles&#34;: 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
+            &#34;instruction&#34;: 40+label_size+4 if self.show_bytecode else 8+label_size+4 if self.show_address else label_size+4,
+            &#34;cycles&#34;: 40+(label_size*2) if self.show_bytecode else 38+(label_size*2) if self.show_address else (label_size*2)+20,
         }
 
         remaining_bytes_to_process = 0
@@ -527,8 +548,8 @@ class Segment():
         self.logger.debug(&#34;Generating assembly code&#34;)
         code_template_index = {
             &#34;label&#34;: 0,
-            &#34;instruction&#34;: label_size,
-            &#34;cycles&#34;: label_size+30,
+            &#34;instruction&#34;: label_size + 5,
+            &#34;cycles&#34;: (label_size*2)+10,
         }
 
         remaining_bytes_to_process = 0
@@ -666,12 +687,12 @@ class Segment():
         code.append(f&#39;\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n&#39;)
 
         # get longest label
-        if len(locals_labels) &gt; 0:
-            label_size = max(10, len(max(locals_labels)) + 8)
+        all_labels = locals_labels + globals_labels
+        if len(all_labels) &gt; 0:
+            label_size = len(sorted(all_labels, key=len, reverse=True)[0])
         else:
             label_size = 10
-
-        self.logger.debug(f&#34;Label size: {label_size}&#34;)
+        self.logger.debug(f&#34;Max label size: {label_size}&#34;)
 
         if listing:
             code = self._gen_listing(code, label_size)
@@ -725,15 +746,14 @@ class Segment():
 
         self.logger.debug(f&#34;Emulation start address: {start_address:04X}&#34;)
         emu = Emu6502()
-        ram = io.BytesIO(self.get_segment_bytecode())
 
         self.logger.info(f&#34;Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}&#34;)
         if cycles_count_start and cycles_count_end:
             self.logger.info(f&#34;Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}&#34;)
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
-        else:
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, cycles_count_start=cycles_count_start, cycles_count_end=cycles_count_end, debug_mode=debug_mode)
 
+        else:
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, debug_mode=debug_mode)
 
         return cpu_state, mmu_state, cycles_used
 
@@ -743,8 +763,7 @@ class Segment():
         Returns:
             Instruction: [description]
         &#34;&#34;&#34;
-        self.logger.debug(
-            f&#34;Instructions in the current segment: {list(self.instructions.keys())}&#34;)
+        self.logger.debug(f&#34;Instructions in the current segment: {[f&#39;${k:04X}: {v}&#39; for k, v in list(self.instructions.items())]}&#34;)
         return self.instructions[list(self.instructions.keys())[-1]]
 
     def get_stats(self):
@@ -763,8 +782,8 @@ class Segment():
             &#34;size&#34;: self.next_position - self.start_adr,
             &#34;cycles&#34;: self.total_cycles_used,
             &#34;instructions&#34;: len(self.instructions),
-            &#34;start_address&#34;: hex(self.start_adr),
-            &#34;current_address&#34;: hex(self.next_position),
+            &#34;start_address&#34;: self.start_adr,
+            &#34;current_address&#34;: self.next_position,
             &#34;last_instruction&#34;: {
                 &#34;code&#34;: str(last_instr),
                 &#34;size&#34;: last_instr.get_size(),
@@ -868,7 +887,7 @@ class Segment():
         &#34;&#34;&#34;
         self.logger = logging.getLogger(&#34;shazzam&#34;)
         self.start_adr = start_adr
-        self.end_adr = start_adr
+        self._end_adr = start_adr
         self.fixed_start_address = start_adr if fixed_address else None
         self.instructions = {}
         self.next_position = start_adr
@@ -906,6 +925,10 @@ class Segment():
         self.anonymous_labels = {}
 
     @property
+    def end_adr(self):
+        return self.next_position
+
+    @property
     def size(self):
         return self.end_adr - self.start_adr
 
@@ -929,7 +952,7 @@ class Segment():
 
     def close(self) -&gt; None:
         &#34;&#34;&#34;[summary]&#34;&#34;&#34;
-        self.end_adr = self.next_position
+        # self._end_adr = self.next_position
 
     def add_instruction(self, instr: Instruction) -&gt; bytearray:
         &#34;&#34;&#34;[summary]
@@ -956,10 +979,29 @@ class Segment():
             bcode = self.get_bytecode(instr)
             instr.bytecode = bcode
         except Exception as e:
-            g.logger.debug(
-                f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
+            g.logger.debug(f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
 
         return instr
+
+    def align(self, alignment: int) -&gt; None:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            alignment (int): [description]
+        &#34;&#34;&#34;
+        padding = (alignment - (self.next_position % alignment)) % alignment
+        aligned = self.next_position + padding
+
+        if aligned &gt; 0xffff:
+            raise ValueError(f&#34;Aligment exceeded C64 memory!&#34;)
+
+        self.logger.info(f&#34;Alignment on ${alignment:04X} bytes, next address will be ${aligned:04X}&#34;)
+        for i in range(padding):
+            data = ByteData(Immediate(value=0))
+            self.instructions[self.next_position] = data
+            self.next_position += 1
+
+        assert aligned == self.next_position, f&#34;Alignment to ${aligned:04X} failed, next address is ${self.next_position:04X}&#34;
 
     def add_byte(self, immediate: Immediate) -&gt; None:
         &#34;&#34;&#34;[summary]
@@ -973,8 +1015,7 @@ class Segment():
         data = ByteData(immediate)
         self.instructions[self.next_position] = data
         self.next_position += 1
-        self.logger.debug(
-            f&#34;added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
+        self.logger.debug(f&#34;added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
 
         return self.get_bytecode(data)
 
@@ -991,8 +1032,7 @@ class Segment():
             Address: [description]
         &#34;&#34;&#34;
         if name in self.labels:
-            raise ValueError(
-                f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
+            raise ValueError(f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
 
         self.labels[name] = Address(name=name, value=self.next_position)
 
@@ -1153,8 +1193,8 @@ class Segment():
             &#34;address&#34;: 0,
             &#34;bytecode&#34;: 8 if self.show_address else 0,
             &#34;label&#34;: 40 if self.show_bytecode else 8 if self.show_address else 0,
-            &#34;instruction&#34;: 40+label_size if self.show_bytecode else 8+label_size if self.show_address else label_size,
-            &#34;cycles&#34;: 40+label_size+20 if self.show_bytecode else 38+label_size+20 if self.show_address else label_size+20,
+            &#34;instruction&#34;: 40+label_size+4 if self.show_bytecode else 8+label_size+4 if self.show_address else label_size+4,
+            &#34;cycles&#34;: 40+(label_size*2) if self.show_bytecode else 38+(label_size*2) if self.show_address else (label_size*2)+20,
         }
 
         remaining_bytes_to_process = 0
@@ -1289,8 +1329,8 @@ class Segment():
         self.logger.debug(&#34;Generating assembly code&#34;)
         code_template_index = {
             &#34;label&#34;: 0,
-            &#34;instruction&#34;: label_size,
-            &#34;cycles&#34;: label_size+30,
+            &#34;instruction&#34;: label_size + 5,
+            &#34;cycles&#34;: (label_size*2)+10,
         }
 
         remaining_bytes_to_process = 0
@@ -1428,12 +1468,12 @@ class Segment():
         code.append(f&#39;\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n&#39;)
 
         # get longest label
-        if len(locals_labels) &gt; 0:
-            label_size = max(10, len(max(locals_labels)) + 8)
+        all_labels = locals_labels + globals_labels
+        if len(all_labels) &gt; 0:
+            label_size = len(sorted(all_labels, key=len, reverse=True)[0])
         else:
             label_size = 10
-
-        self.logger.debug(f&#34;Label size: {label_size}&#34;)
+        self.logger.debug(f&#34;Max label size: {label_size}&#34;)
 
         if listing:
             code = self._gen_listing(code, label_size)
@@ -1487,15 +1527,14 @@ class Segment():
 
         self.logger.debug(f&#34;Emulation start address: {start_address:04X}&#34;)
         emu = Emu6502()
-        ram = io.BytesIO(self.get_segment_bytecode())
 
         self.logger.info(f&#34;Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}&#34;)
         if cycles_count_start and cycles_count_end:
             self.logger.info(f&#34;Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}&#34;)
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
-        else:
-            cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, cycles_count_start=cycles_count_start, cycles_count_end=cycles_count_end, debug_mode=debug_mode)
 
+        else:
+            cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, debug_mode=debug_mode)
 
         return cpu_state, mmu_state, cycles_used
 
@@ -1505,8 +1544,7 @@ class Segment():
         Returns:
             Instruction: [description]
         &#34;&#34;&#34;
-        self.logger.debug(
-            f&#34;Instructions in the current segment: {list(self.instructions.keys())}&#34;)
+        self.logger.debug(f&#34;Instructions in the current segment: {[f&#39;${k:04X}: {v}&#39; for k, v in list(self.instructions.items())]}&#34;)
         return self.instructions[list(self.instructions.keys())[-1]]
 
     def get_stats(self):
@@ -1525,8 +1563,8 @@ class Segment():
             &#34;size&#34;: self.next_position - self.start_adr,
             &#34;cycles&#34;: self.total_cycles_used,
             &#34;instructions&#34;: len(self.instructions),
-            &#34;start_address&#34;: hex(self.start_adr),
-            &#34;current_address&#34;: hex(self.next_position),
+            &#34;start_address&#34;: self.start_adr,
+            &#34;current_address&#34;: self.next_position,
             &#34;last_instruction&#34;: {
                 &#34;code&#34;: str(last_instr),
                 &#34;size&#34;: last_instr.get_size(),
@@ -1579,6 +1617,18 @@ class Segment():
 </dl>
 <h3>Instance variables</h3>
 <dl>
+<dt id="shazzam.Segment.Segment.end_adr"><code class="name">var <span class="ident">end_adr</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def end_adr(self):
+    return self.next_position</code></pre>
+</details>
+</dd>
 <dt id="shazzam.Segment.Segment.size"><code class="name">var <span class="ident">size</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -1625,8 +1675,7 @@ def size(self):
     data = ByteData(immediate)
     self.instructions[self.next_position] = data
     self.next_position += 1
-    self.logger.debug(
-        f&#34;added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
+    self.logger.debug(f&#34;added byte {immediate.value} at {self.next_position-1:04X}, next pos is not {self.next_position:04X}&#34;)
 
     return self.get_bytecode(data)</code></pre>
 </details>
@@ -1675,8 +1724,7 @@ def size(self):
         bcode = self.get_bytecode(instr)
         instr.bytecode = bcode
     except Exception as e:
-        g.logger.debug(
-            f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
+        g.logger.debug(f&#34;bytecode cannot be generated yet, will be resolve later! [{e}]&#34;)
 
     return instr</code></pre>
 </details>
@@ -1718,8 +1766,7 @@ def size(self):
         Address: [description]
     &#34;&#34;&#34;
     if name in self.labels:
-        raise ValueError(
-            f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
+        raise ValueError(f&#34;Label {name} already defined in segment at {self.labels[name]}&#34;)
 
     self.labels[name] = Address(name=name, value=self.next_position)
 
@@ -1750,6 +1797,41 @@ def size(self):
         rasterline (Rasterline): [description]
     &#34;&#34;&#34;
     self.rasterlines[index] = rasterline</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Segment.Segment.align"><code class="name flex">
+<span>def <span class="ident">align</span></span>(<span>self, alignment: int) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>alignment</code></strong> :&ensp;<code>int</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def align(self, alignment: int) -&gt; None:
+    &#34;&#34;&#34;[summary]
+
+    Args:
+        alignment (int): [description]
+    &#34;&#34;&#34;
+    padding = (alignment - (self.next_position % alignment)) % alignment
+    aligned = self.next_position + padding
+
+    if aligned &gt; 0xffff:
+        raise ValueError(f&#34;Aligment exceeded C64 memory!&#34;)
+
+    self.logger.info(f&#34;Alignment on ${alignment:04X} bytes, next address will be ${aligned:04X}&#34;)
+    for i in range(padding):
+        data = ByteData(Immediate(value=0))
+        self.instructions[self.next_position] = data
+        self.next_position += 1
+
+    assert aligned == self.next_position, f&#34;Alignment to ${aligned:04X} failed, next address is ${self.next_position:04X}&#34;</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.change_format"><code class="name flex">
@@ -1790,8 +1872,7 @@ def size(self):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def close(self) -&gt; None:
-    &#34;&#34;&#34;[summary]&#34;&#34;&#34;
-    self.end_adr = self.next_position</code></pre>
+    &#34;&#34;&#34;[summary]&#34;&#34;&#34;</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Segment.Segment.emulate"><code class="name flex">
@@ -1858,15 +1939,14 @@ def size(self):
 
     self.logger.debug(f&#34;Emulation start address: {start_address:04X}&#34;)
     emu = Emu6502()
-    ram = io.BytesIO(self.get_segment_bytecode())
 
     self.logger.info(f&#34;Emulating from ${self.start_adr:04X}, to ${self.next_position:04X} starting at ${start_address:04X}&#34;)
     if cycles_count_start and cycles_count_end:
         self.logger.info(f&#34;Counting cycles between ${cycles_count_start:04X} and ${cycles_count_end:04X}&#34;)
-        cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, cycles_count_start, cycles_count_end, debug_mode=debug_mode)
-    else:
-        cpu_state, mmu_state, cycles_used = emu.load_and_run(ram, self.start_adr, self.next_position, start_address, debug_mode=debug_mode)
+        cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, cycles_count_start=cycles_count_start, cycles_count_end=cycles_count_end, debug_mode=debug_mode)
 
+    else:
+        cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=[self], stop_address=self.next_position, entry_address=start_address, debug_mode=debug_mode)
 
     return cpu_state, mmu_state, cycles_used</code></pre>
 </details>
@@ -1911,12 +1991,12 @@ def size(self):
     code.append(f&#39;\t\t{self.directive_prefix}segment {self.directive_delimiter}{self.name}{self.directive_delimiter}\n&#39;)
 
     # get longest label
-    if len(locals_labels) &gt; 0:
-        label_size = max(10, len(max(locals_labels)) + 8)
+    all_labels = locals_labels + globals_labels
+    if len(all_labels) &gt; 0:
+        label_size = len(sorted(all_labels, key=len, reverse=True)[0])
     else:
         label_size = 10
-
-    self.logger.debug(f&#34;Label size: {label_size}&#34;)
+    self.logger.debug(f&#34;Max label size: {label_size}&#34;)
 
     if listing:
         code = self._gen_listing(code, label_size)
@@ -2072,8 +2152,7 @@ def size(self):
     Returns:
         Instruction: [description]
     &#34;&#34;&#34;
-    self.logger.debug(
-        f&#34;Instructions in the current segment: {list(self.instructions.keys())}&#34;)
+    self.logger.debug(f&#34;Instructions in the current segment: {[f&#39;${k:04X}: {v}&#39; for k, v in list(self.instructions.items())]}&#34;)
     return self.instructions[list(self.instructions.keys())[-1]]</code></pre>
 </details>
 </dd>
@@ -2137,8 +2216,8 @@ def size(self):
         &#34;size&#34;: self.next_position - self.start_adr,
         &#34;cycles&#34;: self.total_cycles_used,
         &#34;instructions&#34;: len(self.instructions),
-        &#34;start_address&#34;: hex(self.start_adr),
-        &#34;current_address&#34;: hex(self.next_position),
+        &#34;start_address&#34;: self.start_adr,
+        &#34;current_address&#34;: self.next_position,
         &#34;last_instruction&#34;: {
             &#34;code&#34;: str(last_instr),
             &#34;size&#34;: last_instr.get_size(),
@@ -2348,12 +2427,14 @@ def size(self):
 <li><code><a title="shazzam.Segment.Segment.add_instruction" href="#shazzam.Segment.Segment.add_instruction">add_instruction</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.add_label" href="#shazzam.Segment.Segment.add_label">add_label</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.add_rasterline" href="#shazzam.Segment.Segment.add_rasterline">add_rasterline</a></code></li>
+<li><code><a title="shazzam.Segment.Segment.align" href="#shazzam.Segment.Segment.align">align</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.change_format" href="#shazzam.Segment.Segment.change_format">change_format</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.close" href="#shazzam.Segment.Segment.close">close</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.comments_chars" href="#shazzam.Segment.Segment.comments_chars">comments_chars</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.directive_delimiter" href="#shazzam.Segment.Segment.directive_delimiter">directive_delimiter</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.directive_prefix" href="#shazzam.Segment.Segment.directive_prefix">directive_prefix</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.emulate" href="#shazzam.Segment.Segment.emulate">emulate</a></code></li>
+<li><code><a title="shazzam.Segment.Segment.end_adr" href="#shazzam.Segment.Segment.end_adr">end_adr</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.gen_code" href="#shazzam.Segment.Segment.gen_code">gen_code</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.get_anonymous_label" href="#shazzam.Segment.Segment.get_anonymous_label">get_anonymous_label</a></code></li>
 <li><code><a title="shazzam.Segment.Segment.get_bytecode" href="#shazzam.Segment.Segment.get_bytecode">get_bytecode</a></code></li>

@@ -472,7 +472,6 @@ def label(name: str, is_global: bool = False) -> Address:
 
     return label
 
-
 def get_anonymous_label(name: str) -> str:
     """[summary]
 

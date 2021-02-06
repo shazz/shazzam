@@ -35,7 +35,6 @@ from shazzam.Segment import Segment
 class Assembler():
     &#34;&#34;&#34;
     This class defines the interface to be implemented by cross-assembler drivers.
-    The default one is CC65.
     &#34;&#34;&#34;
 
     def __init__(self, name: str, exe_path: str):
@@ -50,6 +49,14 @@ class Assembler():
             str: [description]
         &#34;&#34;&#34;
         pass
+
+    def get_vasyl_segment(self) -&gt; str:
+        &#34;&#34;&#34;get_code_segment
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return &#34;VASYL&#34;
 
     def get_code_format(self):
         &#34;&#34;&#34;get_code_format&#34;&#34;&#34;
@@ -142,8 +149,7 @@ class Assembler():
 <span>(</span><span>name: str, exe_path: str)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>This class defines the interface to be implemented by cross-assembler drivers.
-The default one is CC65.</p></div>
+<div class="desc"><p>This class defines the interface to be implemented by cross-assembler drivers.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -151,7 +157,6 @@ The default one is CC65.</p></div>
 <pre><code class="python">class Assembler():
     &#34;&#34;&#34;
     This class defines the interface to be implemented by cross-assembler drivers.
-    The default one is CC65.
     &#34;&#34;&#34;
 
     def __init__(self, name: str, exe_path: str):
@@ -166,6 +171,14 @@ The default one is CC65.</p></div>
             str: [description]
         &#34;&#34;&#34;
         pass
+
+    def get_vasyl_segment(self) -&gt; str:
+        &#34;&#34;&#34;get_code_segment
+
+        Returns:
+            str: [description]
+        &#34;&#34;&#34;
+        return &#34;VASYL&#34;
 
     def get_code_format(self):
         &#34;&#34;&#34;get_code_format&#34;&#34;&#34;
@@ -352,6 +365,29 @@ The default one is CC65.</p></div>
     pass</code></pre>
 </details>
 </dd>
+<dt id="shazzam.Assembler.Assembler.get_vasyl_segment"><code class="name flex">
+<span>def <span class="ident">get_vasyl_segment</span></span>(<span>self) ‑> str</span>
+</code></dt>
+<dd>
+<div class="desc"><p>get_code_segment</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>str</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_vasyl_segment(self) -&gt; str:
+    &#34;&#34;&#34;get_code_segment
+
+    Returns:
+        str: [description]
+    &#34;&#34;&#34;
+    return &#34;VASYL&#34;</code></pre>
+</details>
+</dd>
 <dt id="shazzam.Assembler.Assembler.segments_definition_gen"><code class="name flex">
 <span>def <span class="ident">segments_definition_gen</span></span>(<span>self, segments: List[<a title="shazzam.Segment.Segment" href="Segment.html#shazzam.Segment.Segment">Segment</a>]) ‑> str</span>
 </code></dt>
@@ -408,6 +444,7 @@ The default one is CC65.</p></div>
 <li><code><a title="shazzam.Assembler.Assembler.assemble_segment" href="#shazzam.Assembler.Assembler.assemble_segment">assemble_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.get_code_format" href="#shazzam.Assembler.Assembler.get_code_format">get_code_format</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.get_code_segment" href="#shazzam.Assembler.Assembler.get_code_segment">get_code_segment</a></code></li>
+<li><code><a title="shazzam.Assembler.Assembler.get_vasyl_segment" href="#shazzam.Assembler.Assembler.get_vasyl_segment">get_vasyl_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.segments_definition_gen" href="#shazzam.Assembler.Assembler.segments_definition_gen">segments_definition_gen</a></code></li>
 </ul>
 </li>

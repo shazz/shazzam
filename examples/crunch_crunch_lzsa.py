@@ -19,7 +19,7 @@ import shazzam.plugins.plugins as p
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
 
 prg_cruncher  = Exomizer("third_party/exomizer/exomizer")
-data_cruncher = Lzsa("third_party/apultra/apultra")
+data_cruncher = Lzsa("third_party/lzsa/lzsa")
 
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -106,7 +106,7 @@ def code():
         sta(at(0x01))
 
         inc(at(vic.border_col))
-        jsr(at(0x1003))   # call SID player
+        jsr(at(0x1003))     # call SID player
         dec(at(vic.border_col))
 
         lda(imm(0x37))      # TURN BASIC ROM ON
@@ -117,32 +117,35 @@ def code():
         # -------------------------------------------------
         # Depacking caller routine, need access to zp
         # -------------------------------------------------
+        # in:
+        # * LZSA_SRC (LO+1, HI+2) contains the compressed raw block address
+        # * LZSA_DST (LO+1, HI+2) contains the destination buffer address
+        #
+        # out:
+        # * LZSA_DST_LO (LO+1, HI+2) contains the last decompressed byte address, +1
         label("depack")
         packed_data = get_segment_addresses("packedata").start_address
         print(f"Packed data ends at {packed_data:04X}")
 
         # set packed data src / dst
         lda(imm(packed_data & 0xff))
-        sta(at(apl_srcptr))
+        sta(at("LZSA_SRC")+1)
 
         lda(imm(packed_data >> 8))
-        sta(at(apl_srcptr)+1)
+        sta(at("LZSA_SRC")+2)
 
-        # depacked data are located at apl_dstptr+126 bytes
         lda(imm(0x1000 & 0xff))
-        sta(at(apl_dstptr))
+        sta(at("LZSA_DST")+1)
 
         lda(imm(0x1000 >> 8))
-        sta(at(apl_dstptr)+1)
+        sta(at("LZSA_DST")+2)
 
         # unpack data forward.
-        # Args: apl_srcptr = ptr to compessed data
-        # Args: apl_dstptr = ptr to output buffer (126 first bytes used for buffer)
-        jsr(at("apl_decompress"))
+        jsr(at("DECOMPRESS_LZSA2_FAST"))
         rts()
 
     with segment(segments["depacker"], "depacker") as s:
-        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast = True)
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast=True)
 
     # generate listing
     gen_code(assembler, gen_listing=True)
@@ -152,6 +155,4 @@ def code():
 
 if __name__ == "__main__":
     generate(code, program_name)
-
-
 

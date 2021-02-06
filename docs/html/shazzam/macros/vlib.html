@@ -1,0 +1,597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>shazzam.macros.vlib API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>shazzam.macros.vlib</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import math
+import logging
+from shazzam.py64gen import *
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+from shazzam.macros.aliases import color, vic
+from shazzam.macros.vasyl import *
+
+logger = logging.getLogger(&#34;shazzam&#34;)
+
+# BeamRacer * https://beamracer.net
+# Video and Display List coprocessor board for the Commodore 64
+# Copyright (C)2019-2020 Mad Hackers Lab
+#
+# https://github.com/madhackerslab/
+#
+# Header file for BeamRacer VASYL chip
+# See https://docs.beamracer.net/ for more information.
+#
+# Ported by Shazz / TRSi
+# Copyright (C)2021 TRSi
+
+tmp_ptr     = 251
+tmp_ptr2    = 253
+
+def init(vasyl_segment_load, vasyl_segment_size, autostart : bool = False):
+
+    import shazzam.macros.vasyl
+
+    # this only gets assembled if there is no knocking ahead of it
+    # .ifnref knock_knock
+    if autostart:
+        copy_and_activate_dlist()
+
+        label(&#34;autostart&#34;)
+        jsr(at(&#34;knock_knock&#34;))
+
+        ldx(imm(0x2e))
+        label(&#34;vlib_preserve_loop&#34;)
+        lda(at(0xd000), x)
+        sta(at(&#34;vlib_preserve_vic&#34;), x)
+        dex()
+        bpl(rel_at(&#34;vlib_preserve_loop&#34;))
+
+        jsr(at(&#34;copy_and_activate_dlist&#34;))
+        label(&#34;vlib_keyloop&#34;)
+        jsr(at(0xffe4))                     # check if key pressed
+        beq(rel_at(&#34;vlib_keyloop&#34;))
+
+        cmp(imm(3))
+        beq(rel_at(&#34;vlib_no_restore&#34;))
+
+        lda(imm(0))                         # turn off display list
+        sta(at(VREG_CONTROL))
+
+        ldx(imm(0x2e))
+        label(&#34;vlib_preserve_loop2&#34;)
+        lda(at(&#34;vlib_preserve_vic&#34;), x)
+        sta(at(0xd000), x)
+        dex()
+        bpl(rel_at(&#34;vlib_preserve_loop2&#34;))
+        label(&#34;vlib_no_restore&#34;)
+        rts()
+        label(&#34;vlib_preserve_vic&#34;)
+        byte([0] * 47)                      # .res 47
+    # .endif
+
+
+# .ifref knock_knock
+    # Attempt activation of the BeamRacer, on failure (BeamRacer missing) exits the program
+    label(&#34;knock_knock&#34;, is_global=True)
+    ldx(imm(255))
+    cpx(at(VREG_CONTROL))
+    bne(rel_at(&#34;vlib_active&#34;))
+
+    lda(imm(0x42))
+    sta(at(VREG_CONTROL))
+
+    lda(imm(0x52))
+    sta(at(VREG_CONTROL))
+    cpx(at(VREG_CONTROL))
+    bne(rel_at(&#34;vlib_active&#34;))
+
+    # exit the program
+    pla()
+    pla()
+    label(&#34;vlib_active&#34;)
+    # jsr(at(&#34;print_info&#34;))
+    rts()
+# .endif
+
+def copy_and_activate_dlist(vasyl_segment_load, vasyl_segment_size):
+    copy_dlist(vasyl_segment_load, vasyl_segment_size)
+
+# .ifref copy_and_activate_dlist
+    # Copy a dlist to local RAM and activate it:
+    # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM and then the display list is activated.
+    label(&#34;copy_and_activate_dlist&#34;)
+    jsr(at(&#34;copy_dlist&#34;))
+
+    # start using the new Display List
+    lda(imm(&#34;&lt;dl_start&#34;))
+    sta(at(VREG_DLIST))
+    lda(imm(&#34;&gt;dl_start&#34;))
+    sta(at(VREG_DLIST + 1))
+    lda(imm(1 &lt;&lt; CONTROL_DLIST_ON_BIT))
+    sta(at(VREG_CONTROL))
+    rts()
+# .endif
+
+def copy_dlist(vasyl_segment_load, vasyl_segment_size):
+    copy_to_lmem()
+
+# .ifref copy_dlist
+    # Copy a dlist to local RAM:
+    # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM.
+    label(&#34;copy_dlist&#34;)
+    lda(imm(vasyl_segment_load &amp; 0xff))
+    sta(at(tmp_ptr))
+    lda(imm(vasyl_segment_load &gt;&gt; 8))
+    sta(at(tmp_ptr + 1))
+    lda(imm(0))
+    sta(at(tmp_ptr2))
+    sta(at(tmp_ptr2) + 1)
+
+    lda(imm(vasyl_segment_size % 0xff))
+    ldx(imm(vasyl_segment_size &gt;&gt; 8))
+    jmp(at(&#34;copy_to_lmem&#34;))
+# .endif
+
+def copy_to_lmem():
+# .ifref copy_to_lmem
+    # Copy data to lram:
+    # 0xFA/0xFB - source
+    # 0xFC/0xFD - destination (in VASYL&#39;s local RAM)
+    # AX - lo/hi byte count
+    label(&#34;copy_to_lmem&#34;)
+    ldy(at(tmp_ptr2))
+    sty(at(VREG_ADR0))
+    ldy(at(tmp_ptr2) + 1)
+    sty(at(VREG_ADR0) + 1)
+    ldy(imm(1))
+    sty(at(VREG_STEP0))
+
+    clc()
+    adc(at(tmp_ptr))
+    sta(at(tmp_ptr2))
+    txa()
+    adc(at(tmp_ptr) + 1)
+    sta(at(tmp_ptr2) + 1)
+
+    ldy(imm(0))
+    label(&#34;vlib_loop&#34;)
+    lda(ind_at(tmp_ptr), y)
+    sta(at(VREG_PORT0))
+    inc(at(tmp_ptr))
+    bne(rel_at(&#34;vlib_no_carry&#34;))
+    inc(at(tmp_ptr) + 1)
+    label(&#34;vlib_no_carry&#34;)
+    lda(at(tmp_ptr2))
+    cmp(at(tmp_ptr))
+    bne(rel_at(&#34;vlib_loop&#34;))
+    lda(at(tmp_ptr2) + 1)
+    cmp(at(tmp_ptr) + 1)
+    bne(rel_at(&#34;vlib_loop&#34;))
+    rts()
+# .endif
+
+def set_pages():
+# .ifref set_pages
+    # Set VASYL memory pages to a value.
+    # A - value
+    # Y - starting page
+    # X - page count
+    UNROLL_FACTOR = 8
+    label(&#34;set_pages&#34;)
+    sty(at(VREG_ADR0) + 1)
+    ldy(imm(1))
+    sty(at(VREG_STEP0))
+    dey()                           # 0
+    sty(at(VREG_ADR0))
+    dey()                           # 255
+    sta(at(VREG_PORT0))             # Store one byte.
+    label(&#34;vlib_next_page&#34;)
+    sty(at(VREG_REP0))              # Repeat 255 times on first iteration, 256 on subsequent ones.
+    label(&#34;vlib_waitrep&#34;)
+    ldy(at(VREG_REP0))              # Wait for REP transfer to end.
+    bne(rel_at(&#34;vlib_waitrep&#34;))
+    dex()
+    bne(rel_at(&#34;vlib_next_page&#34;))
+    rts()
+# .endif
+
+def print_info():
+# .ifref print_info
+    # Print information about VASYL and VIC-II versions.
+    label(&#34;print_info&#34;)
+    lda(imm(&#34;&lt;version_text&#34;))
+    ldy(imm(&#34;&gt;version_text&#34;))
+    jsr(at(0xab1e))                 # print null terminated string
+    lda(at(VREG_DLSTROBE))
+    lsr(a)
+    lsr(a)
+    lsr(a)
+    tax()
+
+    lda(imm(0))
+    jsr(at(0xbdcd))                 # print XA as unsigned integer
+    lda(imm(&#34;&lt;type_text&#34;))
+    ldy(imm(&#34;&gt;type_text&#34;))
+    jsr(at(0xab1e))                 # print null terminated string
+
+    lda(at(VREG_DLSTROBE))
+    andr(imm(0x07))
+    tax()
+    lda(at(&#34;type_table_lo&#34;), x)
+    ldy(at(&#34;type_table_hi&#34;), x)
+    jmp(at(0xab1e))                 # print null terminated string
+
+    label(&#34;version_text&#34;)
+    byte([&#34;vasyl ID: &#34;, 0])
+
+    label(&#34;type_text&#34;)
+    byte([ 0xd,&#34;vic-ii type  : &#34;, 0])
+
+    l_ntsc = label(&#34;type_ntsc&#34;)
+    byte([&#34;ntsc (6567r8 or 8562)&#34;, 0])
+
+    l_pal = label(&#34;type_pal&#34;)
+    byte([&#34;pal (6569 or 8565)&#34;, 0])
+
+    l_paln = label(&#34;type_paln&#34;)
+    byte([&#34;pal-n (6572)&#34;, 0])
+
+    l_ntsc_old = label(&#34;type_ntsc_old&#34;)
+    byte([&#34;ntsc (6567r56a)&#34;, 0])
+
+    l_unknown = label(&#34;type_unknown&#34;)
+    byte([&#34;unknown&#34;, 0])
+
+    label(&#34;type_table_lo&#34;)
+    byte([l_ntsc.value &amp; 0xff, l_unknown.value &amp; 0xff, l_unknown.value &amp; 0xff, l_ntsc_old.value &amp; 0xff])
+    byte([l_paln.value &amp; 0xff, l_unknown.value &amp; 0xff, l_pal.value &amp; 0xff, l_unknown.value &amp; 0xff])
+
+    label(&#34;type_table_hi&#34;)
+    byte([l_ntsc.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8, l_ntsc_old.value &gt;&gt; 8])
+    byte([l_paln.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8, l_pal.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8])
+
+# .endif</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="shazzam.macros.vlib.copy_and_activate_dlist"><code class="name flex">
+<span>def <span class="ident">copy_and_activate_dlist</span></span>(<span>vasyl_segment_load, vasyl_segment_size)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_and_activate_dlist(vasyl_segment_load, vasyl_segment_size):
+    copy_dlist(vasyl_segment_load, vasyl_segment_size)
+
+# .ifref copy_and_activate_dlist
+    # Copy a dlist to local RAM and activate it:
+    # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM and then the display list is activated.
+    label(&#34;copy_and_activate_dlist&#34;)
+    jsr(at(&#34;copy_dlist&#34;))
+
+    # start using the new Display List
+    lda(imm(&#34;&lt;dl_start&#34;))
+    sta(at(VREG_DLIST))
+    lda(imm(&#34;&gt;dl_start&#34;))
+    sta(at(VREG_DLIST + 1))
+    lda(imm(1 &lt;&lt; CONTROL_DLIST_ON_BIT))
+    sta(at(VREG_CONTROL))
+    rts()</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.vlib.copy_dlist"><code class="name flex">
+<span>def <span class="ident">copy_dlist</span></span>(<span>vasyl_segment_load, vasyl_segment_size)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_dlist(vasyl_segment_load, vasyl_segment_size):
+    copy_to_lmem()
+
+# .ifref copy_dlist
+    # Copy a dlist to local RAM:
+    # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM.
+    label(&#34;copy_dlist&#34;)
+    lda(imm(vasyl_segment_load &amp; 0xff))
+    sta(at(tmp_ptr))
+    lda(imm(vasyl_segment_load &gt;&gt; 8))
+    sta(at(tmp_ptr + 1))
+    lda(imm(0))
+    sta(at(tmp_ptr2))
+    sta(at(tmp_ptr2) + 1)
+
+    lda(imm(vasyl_segment_size % 0xff))
+    ldx(imm(vasyl_segment_size &gt;&gt; 8))
+    jmp(at(&#34;copy_to_lmem&#34;))</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.vlib.copy_to_lmem"><code class="name flex">
+<span>def <span class="ident">copy_to_lmem</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def copy_to_lmem():
+# .ifref copy_to_lmem
+    # Copy data to lram:
+    # 0xFA/0xFB - source
+    # 0xFC/0xFD - destination (in VASYL&#39;s local RAM)
+    # AX - lo/hi byte count
+    label(&#34;copy_to_lmem&#34;)
+    ldy(at(tmp_ptr2))
+    sty(at(VREG_ADR0))
+    ldy(at(tmp_ptr2) + 1)
+    sty(at(VREG_ADR0) + 1)
+    ldy(imm(1))
+    sty(at(VREG_STEP0))
+
+    clc()
+    adc(at(tmp_ptr))
+    sta(at(tmp_ptr2))
+    txa()
+    adc(at(tmp_ptr) + 1)
+    sta(at(tmp_ptr2) + 1)
+
+    ldy(imm(0))
+    label(&#34;vlib_loop&#34;)
+    lda(ind_at(tmp_ptr), y)
+    sta(at(VREG_PORT0))
+    inc(at(tmp_ptr))
+    bne(rel_at(&#34;vlib_no_carry&#34;))
+    inc(at(tmp_ptr) + 1)
+    label(&#34;vlib_no_carry&#34;)
+    lda(at(tmp_ptr2))
+    cmp(at(tmp_ptr))
+    bne(rel_at(&#34;vlib_loop&#34;))
+    lda(at(tmp_ptr2) + 1)
+    cmp(at(tmp_ptr) + 1)
+    bne(rel_at(&#34;vlib_loop&#34;))
+    rts()</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.vlib.init"><code class="name flex">
+<span>def <span class="ident">init</span></span>(<span>vasyl_segment_load, vasyl_segment_size, autostart: bool = False)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def init(vasyl_segment_load, vasyl_segment_size, autostart : bool = False):
+
+    import shazzam.macros.vasyl
+
+    # this only gets assembled if there is no knocking ahead of it
+    # .ifnref knock_knock
+    if autostart:
+        copy_and_activate_dlist()
+
+        label(&#34;autostart&#34;)
+        jsr(at(&#34;knock_knock&#34;))
+
+        ldx(imm(0x2e))
+        label(&#34;vlib_preserve_loop&#34;)
+        lda(at(0xd000), x)
+        sta(at(&#34;vlib_preserve_vic&#34;), x)
+        dex()
+        bpl(rel_at(&#34;vlib_preserve_loop&#34;))
+
+        jsr(at(&#34;copy_and_activate_dlist&#34;))
+        label(&#34;vlib_keyloop&#34;)
+        jsr(at(0xffe4))                     # check if key pressed
+        beq(rel_at(&#34;vlib_keyloop&#34;))
+
+        cmp(imm(3))
+        beq(rel_at(&#34;vlib_no_restore&#34;))
+
+        lda(imm(0))                         # turn off display list
+        sta(at(VREG_CONTROL))
+
+        ldx(imm(0x2e))
+        label(&#34;vlib_preserve_loop2&#34;)
+        lda(at(&#34;vlib_preserve_vic&#34;), x)
+        sta(at(0xd000), x)
+        dex()
+        bpl(rel_at(&#34;vlib_preserve_loop2&#34;))
+        label(&#34;vlib_no_restore&#34;)
+        rts()
+        label(&#34;vlib_preserve_vic&#34;)
+        byte([0] * 47)                      # .res 47
+    # .endif
+
+
+# .ifref knock_knock
+    # Attempt activation of the BeamRacer, on failure (BeamRacer missing) exits the program
+    label(&#34;knock_knock&#34;, is_global=True)
+    ldx(imm(255))
+    cpx(at(VREG_CONTROL))
+    bne(rel_at(&#34;vlib_active&#34;))
+
+    lda(imm(0x42))
+    sta(at(VREG_CONTROL))
+
+    lda(imm(0x52))
+    sta(at(VREG_CONTROL))
+    cpx(at(VREG_CONTROL))
+    bne(rel_at(&#34;vlib_active&#34;))
+
+    # exit the program
+    pla()
+    pla()
+    label(&#34;vlib_active&#34;)
+    # jsr(at(&#34;print_info&#34;))
+    rts()</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.vlib.print_info"><code class="name flex">
+<span>def <span class="ident">print_info</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def print_info():
+# .ifref print_info
+    # Print information about VASYL and VIC-II versions.
+    label(&#34;print_info&#34;)
+    lda(imm(&#34;&lt;version_text&#34;))
+    ldy(imm(&#34;&gt;version_text&#34;))
+    jsr(at(0xab1e))                 # print null terminated string
+    lda(at(VREG_DLSTROBE))
+    lsr(a)
+    lsr(a)
+    lsr(a)
+    tax()
+
+    lda(imm(0))
+    jsr(at(0xbdcd))                 # print XA as unsigned integer
+    lda(imm(&#34;&lt;type_text&#34;))
+    ldy(imm(&#34;&gt;type_text&#34;))
+    jsr(at(0xab1e))                 # print null terminated string
+
+    lda(at(VREG_DLSTROBE))
+    andr(imm(0x07))
+    tax()
+    lda(at(&#34;type_table_lo&#34;), x)
+    ldy(at(&#34;type_table_hi&#34;), x)
+    jmp(at(0xab1e))                 # print null terminated string
+
+    label(&#34;version_text&#34;)
+    byte([&#34;vasyl ID: &#34;, 0])
+
+    label(&#34;type_text&#34;)
+    byte([ 0xd,&#34;vic-ii type  : &#34;, 0])
+
+    l_ntsc = label(&#34;type_ntsc&#34;)
+    byte([&#34;ntsc (6567r8 or 8562)&#34;, 0])
+
+    l_pal = label(&#34;type_pal&#34;)
+    byte([&#34;pal (6569 or 8565)&#34;, 0])
+
+    l_paln = label(&#34;type_paln&#34;)
+    byte([&#34;pal-n (6572)&#34;, 0])
+
+    l_ntsc_old = label(&#34;type_ntsc_old&#34;)
+    byte([&#34;ntsc (6567r56a)&#34;, 0])
+
+    l_unknown = label(&#34;type_unknown&#34;)
+    byte([&#34;unknown&#34;, 0])
+
+    label(&#34;type_table_lo&#34;)
+    byte([l_ntsc.value &amp; 0xff, l_unknown.value &amp; 0xff, l_unknown.value &amp; 0xff, l_ntsc_old.value &amp; 0xff])
+    byte([l_paln.value &amp; 0xff, l_unknown.value &amp; 0xff, l_pal.value &amp; 0xff, l_unknown.value &amp; 0xff])
+
+    label(&#34;type_table_hi&#34;)
+    byte([l_ntsc.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8, l_ntsc_old.value &gt;&gt; 8])
+    byte([l_paln.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8, l_pal.value &gt;&gt; 8, l_unknown.value &gt;&gt; 8])</code></pre>
+</details>
+</dd>
+<dt id="shazzam.macros.vlib.set_pages"><code class="name flex">
+<span>def <span class="ident">set_pages</span></span>(<span>)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def set_pages():
+# .ifref set_pages
+    # Set VASYL memory pages to a value.
+    # A - value
+    # Y - starting page
+    # X - page count
+    UNROLL_FACTOR = 8
+    label(&#34;set_pages&#34;)
+    sty(at(VREG_ADR0) + 1)
+    ldy(imm(1))
+    sty(at(VREG_STEP0))
+    dey()                           # 0
+    sty(at(VREG_ADR0))
+    dey()                           # 255
+    sta(at(VREG_PORT0))             # Store one byte.
+    label(&#34;vlib_next_page&#34;)
+    sty(at(VREG_REP0))              # Repeat 255 times on first iteration, 256 on subsequent ones.
+    label(&#34;vlib_waitrep&#34;)
+    ldy(at(VREG_REP0))              # Wait for REP transfer to end.
+    bne(rel_at(&#34;vlib_waitrep&#34;))
+    dex()
+    bne(rel_at(&#34;vlib_next_page&#34;))
+    rts()</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="shazzam.macros" href="index.html">shazzam.macros</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="shazzam.macros.vlib.copy_and_activate_dlist" href="#shazzam.macros.vlib.copy_and_activate_dlist">copy_and_activate_dlist</a></code></li>
+<li><code><a title="shazzam.macros.vlib.copy_dlist" href="#shazzam.macros.vlib.copy_dlist">copy_dlist</a></code></li>
+<li><code><a title="shazzam.macros.vlib.copy_to_lmem" href="#shazzam.macros.vlib.copy_to_lmem">copy_to_lmem</a></code></li>
+<li><code><a title="shazzam.macros.vlib.init" href="#shazzam.macros.vlib.init">init</a></code></li>
+<li><code><a title="shazzam.macros.vlib.print_info" href="#shazzam.macros.vlib.print_info">print_info</a></code></li>
+<li><code><a title="shazzam.macros.vlib.set_pages" href="#shazzam.macros.vlib.set_pages">set_pages</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

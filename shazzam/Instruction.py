@@ -239,49 +239,49 @@ class Instruction():
 
         elif self.mode == 'abs':
             if (self.address.name and self.show_labels) or self.address.value is None:
-                val = self.address.name
+                val = self.address.fullname
             else:
                 val = f"${self.address.value:04X}" if self.use_upper else f"${self.address.value:04x}"
 
         elif self.mode == 'ind':
             if self.address.name and self.show_labels:
-                val = f"({self.address.name})"
+                val = f"({self.address.fullname})"
             else:
                 val = f"(${self.address.value:04X})" if self.use_upper else f"(${self.address.value:04x})"
 
         elif self.mode == 'zpg':
             if self.address.name and self.show_labels:
-                val = f"{self.address.name}"
+                val = f"{self.address.fullname}"
             else:
                 val = f"${self.address.value:02X}" if self.use_upper else f"${self.address.value:02x}"
 
         elif self.mode == 'zpx':
             if self.address.name and self.show_labels:
-                val = f"{self.address.name},X" if self.use_upper else f"{self.address.name},x"
+                val = f"{self.address.fullname},X" if self.use_upper else f"{self.address.fullname},x"
             else:
                 val = f"${self.address.value:02X},X" if self.use_upper else f"${self.address.value:02x},x"
 
         elif self.mode == 'zpy':
             if self.address.name and self.show_labels:
-                val = f"{self.address.name},Y" if self.use_upper else f"{self.address.name},y"
+                val = f"{self.address.fullname},Y" if self.use_upper else f"{self.address.fullname},y"
             else:
                 val = f"${self.address.value:02X},Y" if self.use_upper else f"${self.address.value:02x},y"
 
         elif self.mode == 'abx':
             if self.address.name and self.show_labels:
-                val = f"{self.address.name},X" if self.use_upper else f"{self.address.name},x"
+                val = f"{self.address.fullname},X" if self.use_upper else f"{self.address.fullname},x"
             else:
                 val = f"${self.address.value:04X},X" if self.use_upper else f"${self.address.value:04x},x"
 
         elif self.mode == 'aby':
             if self.address.name and self.show_labels:
-                val = f"{self.address.name},Y" if self.use_upper else f"{self.address.name},y"
+                val = f"{self.address.fullname},Y" if self.use_upper else f"{self.address.fullname},y"
             else:
                 val = f"${self.address.value:04X},Y" if self.use_upper else f"${self.address.value:04x},y"
 
         elif self.mode == 'rel':
             if self.address.name and (self.show_labels or self.address.value is None):
-                val = self.address.name
+                val = self.address.fullname
             else:
                 val = f"${self.address.value:04X}" if self.use_upper else f"${self.address.value:04x}"
 

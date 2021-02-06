@@ -30,6 +30,7 @@
 from io import BytesIO
 import traceback
 from enum import Enum, auto
+from typing import List
 
 import cooked_input as ci
 from cooked_input import GetInputCommand, GetInputInterrupt, CommandResponse, COMMAND_ACTION_NOP, COMMAND_ACTION_CANCEL, COMMAND_ACTION_USE_VALUE
@@ -46,149 +47,210 @@ class Action(Enum):
     RUN_NEXT = auto()
     SHOW_INSTRUCTION = auto()
     SHOW_CYCLES_COUNT = auto()
+    SET_BREAKPOINT = auto()
+    CLEAR_BREAKPOINT = auto()
 
 class Emu6502():
 
     def __init__(self):
         self.logger = logging.getLogger(&#34;shazzam&#34;)
+        self.breakpoints = []
+        self.mmu = None
+        self.cpu = None
+        self.debug_mode = False
+        self.breakpoint_in = -1
+        self.nb_cycles_used = 0
 
-    def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; CPU:
+    def reset_breakpoint(self, address : int):
         &#34;&#34;&#34;[summary]
 
         Args:
-            bytecode (BytesIO): [description]
-            seg_start_address (int): [description]
-            seg_stop_address (int): [description]
-            seg_entry_address ([type]): [description]
+            address (int): [description]
+
+        Raises:
+            ValueError: [description]
+        &#34;&#34;&#34;
+        if isinstance(address, int) and address in range(0, 0xffff):
+            if address not in self.breakpoints:
+                self.breakpoints.append(address)
+            else:
+                self.breakpoints.remove(address)
+        else:
+            raise ValueError(f&#34;Invalid breakpoint {address}&#34;)
+
+    def clear_beakpoints(self):
+        &#34;&#34;&#34;Clear all breakpoints&#34;&#34;&#34;
+        self.breakpoints = []
+        self.logger.debug(&#34;All breakpoints are removed&#34;)
+
+    def load_and_run(self, segments: List, entry_address: int, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; (CPU, MMU, int):
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            segments (List[Segment]): [description]
+            entry_address (int): [description]
+            cycles_count_start (int, optional): [description]. Defaults to None.
+            cycles_count_end (int, optional): [description]. Defaults to None.
+            debug_mode (bool, optional): [description]. Defaults to False.
 
         Returns:
-            CPU: [description]
+            CPU, MMU, int: [description]
         &#34;&#34;&#34;
-        self.logger.info(f&#34;Loading code from {seg_start_address:04X} to {seg_stop_address:04X}&#34;)
-        self.logger.debug(f&#34;Set PC at {seg_entry_address:04X}&#34;)
+        low_ram = (0x0000, segments[0].start_adr, False)
+        hi_ram = (segments[-1].end_adr, 0xffff, False)
 
-        # bytecode copy for debugging as read() advances the buffer
-        from copy import deepcopy
-        debug_bytecode = deepcopy(bytecode).read()
+        mmu_segments = []
 
-        low_ram = (0x00, seg_start_address, False)
-        hi_ram = (seg_stop_address, 0xffff, False)
+        mmu_segments.append(low_ram)
+        for seg in segments:
+            bytecode = BytesIO(seg.get_segment_bytecode())
+            mmu_s = (seg.start_adr, seg.end_adr - seg.start_adr, False, bytecode)
+            mmu_segments.append(mmu_s)
+        mmu_segments.append(hi_ram)
 
-        mmu = MMU([
-            low_ram,
-            (seg_start_address, seg_stop_address - seg_start_address, False, bytecode),
-            hi_ram
-        ])
+        self.logger.info(mmu_segments)
+        self.debug_mode = debug_mode
 
-        cpu = CPU(mmu, seg_entry_address)
-
-        # for i in range(seg_stop_address - seg_start_address):
-        #     self.logger.debug(hex(mmu.read(seg_start_address+i)))
-
-        # for i in range(seg_stop_address - seg_start_address):
-        #     self.logger.debug(f&#34;{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}&#34;)
-
+        self.mmu = MMU(mmu_segments)
+        self.cpu = CPU(self.mmu, entry_address)
 
         counting_enabled = False if cycles_count_start is not None else True
-        self.logger.debug(f&#34;Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}&#34;)
+        stop_address = 0xffff if stop_address is None else stop_address
 
-        nb_cycles_used = 0
-        current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-        current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
-        while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
+        self.logger.info(f&#34;Loading code from {segments[0].start_adr:04X} to {segments[-1].end_adr:04X}&#34;)
+        self.logger.debug(f&#34;Set PC at {entry_address:04X}&#34;)
+        self.logger.debug(f&#34;Emulating from ${self.cpu.r.pc:04X} to ${stop_address:04X}&#34;)
+
+        self.nb_cycles_used = 0
+        current_bytecode = self.mmu.read(self.cpu.r.pc)
+        current_instruction = Instruction.opcodes[current_bytecode]
+        current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
+        current_operand = [self.mmu.read(self.cpu.r.pc + 1 + i) for i in range(current_operand_size)]
+
+        while(self.cpu.r.pc &lt; stop_address and current_instruction[0] != &#39;brk&#39;):
             try:
-                if cpu.r.pc == cycles_count_start:
+                if self.cpu.r.pc == cycles_count_start:
                     counting_enabled = True
-                    self.logger.info(f&#34;Starting to count cycle at ${cpu.r.pc:04X}&#34;)
-                if cpu.r.pc == cycles_count_end:
+                    self.logger.info(f&#34;Starting to count cycle at ${self.cpu.r.pc:04X}&#34;)
+                if self.cpu.r.pc == cycles_count_end:
                     counting_enabled = False
-                    self.logger.info(f&#34;Stopping to count cycle at ${cpu.r.pc:04X}&#34;)
+                    self.logger.info(f&#34;Stopping to count cycle at ${self.cpu.r.pc:04X}&#34;)
 
-                current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-                current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
+                current_bytecode = self.mmu.read(self.cpu.r.pc)
+                current_instruction = Instruction.opcodes[current_bytecode]
                 current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-                current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
+                current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
 
                 if counting_enabled:
-                    nb_cycles_used += cpu.cc
+                    self.nb_cycles_used += self.cpu.cc
 
-                if debug_mode:
-                    # self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                    # self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                    # self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
-                    inputs = self.get_input(f&#34;${cpu.r.pc:04X}&#34;)
+                if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
+                    print(f&#34;${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, &#39;big&#39;):02X})&#34;)
+                    print(f&#34;{self.cpu.r}&#34;)
+                    if self.breakpoints:
+                        print(f&#34;Breakpoints: {[f&#39;${bp:04X}&#39; for bp in self.breakpoints]}&#34;)
+
+                    inputs = self.get_input(f&#34;${self.cpu.r.pc:04X}&#34;)
                     if inputs:
-                        self.process_input(inputs, cpu, mmu, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), nb_cycles_used, cycles_count_start)
+                        self.process_input(inputs, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), cycles_count_start)
                     else:
-                        debug_mode = False
+                        self.debug_mode = False
                 else:
-                    if counting_enabled and nb_cycles_used % 1000 == 0:
-                        self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
-                    cpu.step()
+                    if counting_enabled and self.nb_cycles_used % 1000 == 0:
+                        self.logger.info(f&#34;Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}&#34;)
+
+                    self.cpu.step()
+
+                    if self.breakpoint_in &gt; 0:
+                        self.breakpoint_in -= 1
 
             except Exception as e:
-                self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
+                self.logger.critical(f&#34;Emulation crashed at ${self.cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
                 self.logger.critical(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                self.logger.critical(f&#34;Registers: {cpu.r}&#34;)
+                self.logger.critical(f&#34;Registers: {self.cpu.r}&#34;)
                 self.logger.critical(traceback.format_exc())
                 break
 
-        self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
+        self.logger.info(f&#34;Emulation stopped at ${self.cpu.r.pc:04X} with last instruction executed: {current_instruction[0]}&#34;)
 
-        return cpu, mmu, nb_cycles_used
+        return self.cpu, self.mmu, self.nb_cycles_used
 
-    def process_input(self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start):
+    def process_input(self, inputs, inst, operand, nb_cycles_start):
+        &#34;&#34;&#34;[summary]
 
+        Args:
+            inputs ([type]): [description]
+            inst ([type]): [description]
+            operand ([type]): [description]
+            nb_cycles_start ([type]): [description]
+        &#34;&#34;&#34;
         if inputs[&#39;cmd&#39;] == Action.READ_MEMORY:
             vals = [int(x) for x in inputs[&#39;args&#39;]]
 
             if len(vals) == 1:
-                print(f&#34;${vals[0]:04X}: {mmu.read(vals[0])}&#34;)
+                print(f&#34;${vals[0]:04X}: {self.mmu.read(vals[0])}&#34;)
             else:
-                delta = vals[1] - vals[0]
-                modulo = 1 if delta % 16 != 0 else 0
+                delta = vals[1] - vals[0] + 1
+                if delta &lt; 1:
+                    print(f&#34;-&gt; Memory range cannot be null or negative: ${delta:04X} = ${vals[1]:04X} - ${vals[0]:04X}&#34;)
+                else:
+                    modulo = 1 if delta % 16 != 0 else 0
 
-                for i in range((delta // 16) + modulo):
-                    print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
-                    for j in range(min(16, delta - (i*16))):
-                        print(f&#34;{mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
-                    print()
+                    for i in range((delta // 16) + modulo):
+                        print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
+                        for j in range(min(16, delta - (i*16))):
+                            print(f&#34;{self.mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
+                        print()
 
         elif inputs[&#39;cmd&#39;] == Action.READ_REGISTERS:
             if len(inputs[&#39;args&#39;]) == 0:
-                print(f&#34;Registers: {cpu.r}&#34;)
+                print(f&#34;Registers: {self.cpu.r}&#34;)
             else:
                 for r in inputs[&#39;args&#39;]:
-                    print(f&#34;Register {r}: {eval(f&#39;cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;cpu.r.{r.lower()}&#39;):0b}&#34;)
+                    print(f&#34;Register {r}: {eval(f&#39;self.cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;self.cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;self.cpu.r.{r.lower()}&#39;):0b}&#34;)
 
         elif inputs[&#39;cmd&#39;] == Action.RUN_NEXT:
             if len(inputs[&#39;args&#39;]) == 0:
-                print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
-                cpu.step()
+                self.cpu.step()
+            else:
+                self.debug_mode = False
+                self.breakpoint_in = int(inputs[&#39;args&#39;][0])
+                print(f&#34;-&gt; Program will stop in {self.breakpoint_in} instructions&#34;)
 
         elif inputs[&#39;cmd&#39;] == Action.SHOW_INSTRUCTION:
-            print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+            print(f&#34;${self.cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
 
         elif inputs[&#39;cmd&#39;] == Action.SHOW_CYCLES_COUNT:
             if nb_cycles_start:
-                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
+                print(f&#34;${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
             else:
-                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used&#34;)
+                print(f&#34;${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used&#34;)
+
+        elif inputs[&#39;cmd&#39;] == Action.SET_BREAKPOINT:
+            if inputs[&#39;args&#39;]:
+                for bp in [int(v) for v in inputs[&#39;args&#39;]]:
+                    self.reset_breakpoint(bp)
+                    print(f&#34;-&gt; Breakpoint added at ${bp:04X}&#34;)
+            else:
+                print(f&#34;-&gt; Breakpoints {[f&#39;${bp:04X}&#39; for bp in self.breakpoints]} cleared&#34;)
+                self.clear_beakpoints()
+
+        else:
+            self.logger.warning(f&#34;-&gt; Debugger input {inputs} not managed!&#34;)
 
     def get_input(self, prompt: str):
 
         def memory_action(cmd_str, cmd_vars, cmd_dict):
             list_loc = cmd_vars.split(&#39; &#39;)
+            addresses = []
+
             if len(list_loc) &gt; 2:
-                raise ValueError(&#34;too many locations&#34;)
+                raise ValueError(&#34;too many addresses, should be one or a range&#34;)
 
-            # check hex
-            vals = [int(x, 0) for x in list_loc]
-            if len(vals) == 2:
-                if vals[1] - vals[0] &lt; 0:
-                   raise ValueError(&#34;negative memory range&#34;)
+            for loc in list_loc:
+                addresses.append(self._parse_string_address(loc))
 
-            res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(list_loc)}&#34;
+            res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(addresses)}&#34;
             return (COMMAND_ACTION_USE_VALUE, res)
 
         def registers_action(cmd_str, cmd_vars, cmd_dict):
@@ -216,8 +278,30 @@ class Emu6502():
             return (COMMAND_ACTION_USE_VALUE, res)
 
         def cycles_action(cmd_str, cmd_vars, cmd_dict):
-            res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+            if cmd_vars:
+                try:
+                    nb = int(cmd_vars)
+                except:
+                    raise ValueError(&#34;Invalid number of instructions&#34;)
+                res = f&#34;!{Action.SHOW_CYCLES_COUNT} {cmd_vars}&#34;
+            else:
+                res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+
             return (COMMAND_ACTION_USE_VALUE, res)
+
+        def breakpoint_action(cmd_str, cmd_vars, cmd_dict):
+            if cmd_vars:
+                list_loc = cmd_vars.split(&#39; &#39;)
+                adresses = []
+                for loc in list_loc:
+                    adresses.append(self._parse_string_address(loc))
+
+                res = f&#34;!{Action.SET_BREAKPOINT} {&#39; &#39;.join(adresses)}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+            else:
+                res = f&#34;!{Action.SET_BREAKPOINT}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+
 
         def cancel_action(cmd_str, cmd_vars, cmd_dict):
             return (COMMAND_ACTION_CANCEL, None)
@@ -231,6 +315,8 @@ class Emu6502():
             print(&#39;r - show registers&#39;)
             print(&#39;i - show instruction&#39;)
             print(&#39;c - show cycles count&#39;)
+            print(&#39;b - set/reset/clear breakpoints&#39;)
+
             return CommandResponse(COMMAND_ACTION_NOP, None)
 
         cmds = {
@@ -241,6 +327,7 @@ class Emu6502():
             &#39;r&#39;: GetInputCommand(registers_action),
             &#39;i&#39;: GetInputCommand(instruction_action),
             &#39;c&#39;: GetInputCommand(cycles_action),
+            &#39;b&#39;: GetInputCommand(breakpoint_action),
         }
 
         while True:
@@ -259,7 +346,20 @@ class Emu6502():
             except ValueError as e:
                 print(f&#34;Bad format: {e}&#34;)
             except GetInputInterrupt:
-                break</code></pre>
+                break
+
+    def _parse_string_address(self, adr_string: str) -&gt; str:
+        try:
+            if &#34;$&#34; in adr_string:
+                val = str(int(adr_string[1:], 16))
+            elif &#34;0x&#34; in adr_string:
+                val = str(int(adr_string[2:], 16))
+            else:
+                val = str(int(adr_string))
+        except Exception as e:
+            raise ValueError(f&#34;Cannot convert {adr_string} into address due to: {e}&#34;)
+
+        return val</code></pre>
 </details>
 </section>
 <section>
@@ -287,7 +387,9 @@ class Emu6502():
     EXIT = auto()
     RUN_NEXT = auto()
     SHOW_INSTRUCTION = auto()
-    SHOW_CYCLES_COUNT = auto()</code></pre>
+    SHOW_CYCLES_COUNT = auto()
+    SET_BREAKPOINT = auto()
+    CLEAR_BREAKPOINT = auto()</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -295,6 +397,10 @@ class Emu6502():
 </ul>
 <h3>Class variables</h3>
 <dl>
+<dt id="shazzam.Emu6502.Action.CLEAR_BREAKPOINT"><code class="name">var <span class="ident">CLEAR_BREAKPOINT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
 <dt id="shazzam.Emu6502.Action.EXIT"><code class="name">var <span class="ident">EXIT</span></code></dt>
 <dd>
 <div class="desc"></div>
@@ -308,6 +414,10 @@ class Emu6502():
 <div class="desc"></div>
 </dd>
 <dt id="shazzam.Emu6502.Action.RUN_NEXT"><code class="name">var <span class="ident">RUN_NEXT</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="shazzam.Emu6502.Action.SET_BREAKPOINT"><code class="name">var <span class="ident">SET_BREAKPOINT</span></code></dt>
 <dd>
 <div class="desc"></div>
 </dd>
@@ -334,144 +444,203 @@ class Emu6502():
 
     def __init__(self):
         self.logger = logging.getLogger(&#34;shazzam&#34;)
+        self.breakpoints = []
+        self.mmu = None
+        self.cpu = None
+        self.debug_mode = False
+        self.breakpoint_in = -1
+        self.nb_cycles_used = 0
 
-    def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; CPU:
+    def reset_breakpoint(self, address : int):
         &#34;&#34;&#34;[summary]
 
         Args:
-            bytecode (BytesIO): [description]
-            seg_start_address (int): [description]
-            seg_stop_address (int): [description]
-            seg_entry_address ([type]): [description]
+            address (int): [description]
+
+        Raises:
+            ValueError: [description]
+        &#34;&#34;&#34;
+        if isinstance(address, int) and address in range(0, 0xffff):
+            if address not in self.breakpoints:
+                self.breakpoints.append(address)
+            else:
+                self.breakpoints.remove(address)
+        else:
+            raise ValueError(f&#34;Invalid breakpoint {address}&#34;)
+
+    def clear_beakpoints(self):
+        &#34;&#34;&#34;Clear all breakpoints&#34;&#34;&#34;
+        self.breakpoints = []
+        self.logger.debug(&#34;All breakpoints are removed&#34;)
+
+    def load_and_run(self, segments: List, entry_address: int, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; (CPU, MMU, int):
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            segments (List[Segment]): [description]
+            entry_address (int): [description]
+            cycles_count_start (int, optional): [description]. Defaults to None.
+            cycles_count_end (int, optional): [description]. Defaults to None.
+            debug_mode (bool, optional): [description]. Defaults to False.
 
         Returns:
-            CPU: [description]
+            CPU, MMU, int: [description]
         &#34;&#34;&#34;
-        self.logger.info(f&#34;Loading code from {seg_start_address:04X} to {seg_stop_address:04X}&#34;)
-        self.logger.debug(f&#34;Set PC at {seg_entry_address:04X}&#34;)
+        low_ram = (0x0000, segments[0].start_adr, False)
+        hi_ram = (segments[-1].end_adr, 0xffff, False)
 
-        # bytecode copy for debugging as read() advances the buffer
-        from copy import deepcopy
-        debug_bytecode = deepcopy(bytecode).read()
+        mmu_segments = []
 
-        low_ram = (0x00, seg_start_address, False)
-        hi_ram = (seg_stop_address, 0xffff, False)
+        mmu_segments.append(low_ram)
+        for seg in segments:
+            bytecode = BytesIO(seg.get_segment_bytecode())
+            mmu_s = (seg.start_adr, seg.end_adr - seg.start_adr, False, bytecode)
+            mmu_segments.append(mmu_s)
+        mmu_segments.append(hi_ram)
 
-        mmu = MMU([
-            low_ram,
-            (seg_start_address, seg_stop_address - seg_start_address, False, bytecode),
-            hi_ram
-        ])
+        self.logger.info(mmu_segments)
+        self.debug_mode = debug_mode
 
-        cpu = CPU(mmu, seg_entry_address)
-
-        # for i in range(seg_stop_address - seg_start_address):
-        #     self.logger.debug(hex(mmu.read(seg_start_address+i)))
-
-        # for i in range(seg_stop_address - seg_start_address):
-        #     self.logger.debug(f&#34;{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}&#34;)
-
+        self.mmu = MMU(mmu_segments)
+        self.cpu = CPU(self.mmu, entry_address)
 
         counting_enabled = False if cycles_count_start is not None else True
-        self.logger.debug(f&#34;Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}&#34;)
+        stop_address = 0xffff if stop_address is None else stop_address
 
-        nb_cycles_used = 0
-        current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-        current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
-        while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
+        self.logger.info(f&#34;Loading code from {segments[0].start_adr:04X} to {segments[-1].end_adr:04X}&#34;)
+        self.logger.debug(f&#34;Set PC at {entry_address:04X}&#34;)
+        self.logger.debug(f&#34;Emulating from ${self.cpu.r.pc:04X} to ${stop_address:04X}&#34;)
+
+        self.nb_cycles_used = 0
+        current_bytecode = self.mmu.read(self.cpu.r.pc)
+        current_instruction = Instruction.opcodes[current_bytecode]
+        current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
+        current_operand = [self.mmu.read(self.cpu.r.pc + 1 + i) for i in range(current_operand_size)]
+
+        while(self.cpu.r.pc &lt; stop_address and current_instruction[0] != &#39;brk&#39;):
             try:
-                if cpu.r.pc == cycles_count_start:
+                if self.cpu.r.pc == cycles_count_start:
                     counting_enabled = True
-                    self.logger.info(f&#34;Starting to count cycle at ${cpu.r.pc:04X}&#34;)
-                if cpu.r.pc == cycles_count_end:
+                    self.logger.info(f&#34;Starting to count cycle at ${self.cpu.r.pc:04X}&#34;)
+                if self.cpu.r.pc == cycles_count_end:
                     counting_enabled = False
-                    self.logger.info(f&#34;Stopping to count cycle at ${cpu.r.pc:04X}&#34;)
+                    self.logger.info(f&#34;Stopping to count cycle at ${self.cpu.r.pc:04X}&#34;)
 
-                current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-                current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
+                current_bytecode = self.mmu.read(self.cpu.r.pc)
+                current_instruction = Instruction.opcodes[current_bytecode]
                 current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-                current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
+                current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
 
                 if counting_enabled:
-                    nb_cycles_used += cpu.cc
+                    self.nb_cycles_used += self.cpu.cc
 
-                if debug_mode:
-                    # self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                    # self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                    # self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
-                    inputs = self.get_input(f&#34;${cpu.r.pc:04X}&#34;)
+                if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
+                    print(f&#34;${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, &#39;big&#39;):02X})&#34;)
+                    print(f&#34;{self.cpu.r}&#34;)
+                    if self.breakpoints:
+                        print(f&#34;Breakpoints: {[f&#39;${bp:04X}&#39; for bp in self.breakpoints]}&#34;)
+
+                    inputs = self.get_input(f&#34;${self.cpu.r.pc:04X}&#34;)
                     if inputs:
-                        self.process_input(inputs, cpu, mmu, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), nb_cycles_used, cycles_count_start)
+                        self.process_input(inputs, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), cycles_count_start)
                     else:
-                        debug_mode = False
+                        self.debug_mode = False
                 else:
-                    if counting_enabled and nb_cycles_used % 1000 == 0:
-                        self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
-                    cpu.step()
+                    if counting_enabled and self.nb_cycles_used % 1000 == 0:
+                        self.logger.info(f&#34;Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}&#34;)
+
+                    self.cpu.step()
+
+                    if self.breakpoint_in &gt; 0:
+                        self.breakpoint_in -= 1
 
             except Exception as e:
-                self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
+                self.logger.critical(f&#34;Emulation crashed at ${self.cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
                 self.logger.critical(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                self.logger.critical(f&#34;Registers: {cpu.r}&#34;)
+                self.logger.critical(f&#34;Registers: {self.cpu.r}&#34;)
                 self.logger.critical(traceback.format_exc())
                 break
 
-        self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
+        self.logger.info(f&#34;Emulation stopped at ${self.cpu.r.pc:04X} with last instruction executed: {current_instruction[0]}&#34;)
 
-        return cpu, mmu, nb_cycles_used
+        return self.cpu, self.mmu, self.nb_cycles_used
 
-    def process_input(self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start):
+    def process_input(self, inputs, inst, operand, nb_cycles_start):
+        &#34;&#34;&#34;[summary]
 
+        Args:
+            inputs ([type]): [description]
+            inst ([type]): [description]
+            operand ([type]): [description]
+            nb_cycles_start ([type]): [description]
+        &#34;&#34;&#34;
         if inputs[&#39;cmd&#39;] == Action.READ_MEMORY:
             vals = [int(x) for x in inputs[&#39;args&#39;]]
 
             if len(vals) == 1:
-                print(f&#34;${vals[0]:04X}: {mmu.read(vals[0])}&#34;)
+                print(f&#34;${vals[0]:04X}: {self.mmu.read(vals[0])}&#34;)
             else:
-                delta = vals[1] - vals[0]
-                modulo = 1 if delta % 16 != 0 else 0
+                delta = vals[1] - vals[0] + 1
+                if delta &lt; 1:
+                    print(f&#34;-&gt; Memory range cannot be null or negative: ${delta:04X} = ${vals[1]:04X} - ${vals[0]:04X}&#34;)
+                else:
+                    modulo = 1 if delta % 16 != 0 else 0
 
-                for i in range((delta // 16) + modulo):
-                    print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
-                    for j in range(min(16, delta - (i*16))):
-                        print(f&#34;{mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
-                    print()
+                    for i in range((delta // 16) + modulo):
+                        print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
+                        for j in range(min(16, delta - (i*16))):
+                            print(f&#34;{self.mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
+                        print()
 
         elif inputs[&#39;cmd&#39;] == Action.READ_REGISTERS:
             if len(inputs[&#39;args&#39;]) == 0:
-                print(f&#34;Registers: {cpu.r}&#34;)
+                print(f&#34;Registers: {self.cpu.r}&#34;)
             else:
                 for r in inputs[&#39;args&#39;]:
-                    print(f&#34;Register {r}: {eval(f&#39;cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;cpu.r.{r.lower()}&#39;):0b}&#34;)
+                    print(f&#34;Register {r}: {eval(f&#39;self.cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;self.cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;self.cpu.r.{r.lower()}&#39;):0b}&#34;)
 
         elif inputs[&#39;cmd&#39;] == Action.RUN_NEXT:
             if len(inputs[&#39;args&#39;]) == 0:
-                print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
-                cpu.step()
+                self.cpu.step()
+            else:
+                self.debug_mode = False
+                self.breakpoint_in = int(inputs[&#39;args&#39;][0])
+                print(f&#34;-&gt; Program will stop in {self.breakpoint_in} instructions&#34;)
 
         elif inputs[&#39;cmd&#39;] == Action.SHOW_INSTRUCTION:
-            print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+            print(f&#34;${self.cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
 
         elif inputs[&#39;cmd&#39;] == Action.SHOW_CYCLES_COUNT:
             if nb_cycles_start:
-                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
+                print(f&#34;${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
             else:
-                print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used&#34;)
+                print(f&#34;${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used&#34;)
+
+        elif inputs[&#39;cmd&#39;] == Action.SET_BREAKPOINT:
+            if inputs[&#39;args&#39;]:
+                for bp in [int(v) for v in inputs[&#39;args&#39;]]:
+                    self.reset_breakpoint(bp)
+                    print(f&#34;-&gt; Breakpoint added at ${bp:04X}&#34;)
+            else:
+                print(f&#34;-&gt; Breakpoints {[f&#39;${bp:04X}&#39; for bp in self.breakpoints]} cleared&#34;)
+                self.clear_beakpoints()
+
+        else:
+            self.logger.warning(f&#34;-&gt; Debugger input {inputs} not managed!&#34;)
 
     def get_input(self, prompt: str):
 
         def memory_action(cmd_str, cmd_vars, cmd_dict):
             list_loc = cmd_vars.split(&#39; &#39;)
+            addresses = []
+
             if len(list_loc) &gt; 2:
-                raise ValueError(&#34;too many locations&#34;)
+                raise ValueError(&#34;too many addresses, should be one or a range&#34;)
 
-            # check hex
-            vals = [int(x, 0) for x in list_loc]
-            if len(vals) == 2:
-                if vals[1] - vals[0] &lt; 0:
-                   raise ValueError(&#34;negative memory range&#34;)
+            for loc in list_loc:
+                addresses.append(self._parse_string_address(loc))
 
-            res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(list_loc)}&#34;
+            res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(addresses)}&#34;
             return (COMMAND_ACTION_USE_VALUE, res)
 
         def registers_action(cmd_str, cmd_vars, cmd_dict):
@@ -499,8 +668,30 @@ class Emu6502():
             return (COMMAND_ACTION_USE_VALUE, res)
 
         def cycles_action(cmd_str, cmd_vars, cmd_dict):
-            res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+            if cmd_vars:
+                try:
+                    nb = int(cmd_vars)
+                except:
+                    raise ValueError(&#34;Invalid number of instructions&#34;)
+                res = f&#34;!{Action.SHOW_CYCLES_COUNT} {cmd_vars}&#34;
+            else:
+                res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+
             return (COMMAND_ACTION_USE_VALUE, res)
+
+        def breakpoint_action(cmd_str, cmd_vars, cmd_dict):
+            if cmd_vars:
+                list_loc = cmd_vars.split(&#39; &#39;)
+                adresses = []
+                for loc in list_loc:
+                    adresses.append(self._parse_string_address(loc))
+
+                res = f&#34;!{Action.SET_BREAKPOINT} {&#39; &#39;.join(adresses)}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+            else:
+                res = f&#34;!{Action.SET_BREAKPOINT}&#34;
+                return (COMMAND_ACTION_USE_VALUE, res)
+
 
         def cancel_action(cmd_str, cmd_vars, cmd_dict):
             return (COMMAND_ACTION_CANCEL, None)
@@ -514,6 +705,8 @@ class Emu6502():
             print(&#39;r - show registers&#39;)
             print(&#39;i - show instruction&#39;)
             print(&#39;c - show cycles count&#39;)
+            print(&#39;b - set/reset/clear breakpoints&#39;)
+
             return CommandResponse(COMMAND_ACTION_NOP, None)
 
         cmds = {
@@ -524,6 +717,7 @@ class Emu6502():
             &#39;r&#39;: GetInputCommand(registers_action),
             &#39;i&#39;: GetInputCommand(instruction_action),
             &#39;c&#39;: GetInputCommand(cycles_action),
+            &#39;b&#39;: GetInputCommand(breakpoint_action),
         }
 
         while True:
@@ -542,10 +736,38 @@ class Emu6502():
             except ValueError as e:
                 print(f&#34;Bad format: {e}&#34;)
             except GetInputInterrupt:
-                break</code></pre>
+                break
+
+    def _parse_string_address(self, adr_string: str) -&gt; str:
+        try:
+            if &#34;$&#34; in adr_string:
+                val = str(int(adr_string[1:], 16))
+            elif &#34;0x&#34; in adr_string:
+                val = str(int(adr_string[2:], 16))
+            else:
+                val = str(int(adr_string))
+        except Exception as e:
+            raise ValueError(f&#34;Cannot convert {adr_string} into address due to: {e}&#34;)
+
+        return val</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
+<dt id="shazzam.Emu6502.Emu6502.clear_beakpoints"><code class="name flex">
+<span>def <span class="ident">clear_beakpoints</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Clear all breakpoints</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def clear_beakpoints(self):
+    &#34;&#34;&#34;Clear all breakpoints&#34;&#34;&#34;
+    self.breakpoints = []
+    self.logger.debug(&#34;All breakpoints are removed&#34;)</code></pre>
+</details>
+</dd>
 <dt id="shazzam.Emu6502.Emu6502.get_input"><code class="name flex">
 <span>def <span class="ident">get_input</span></span>(<span>self, prompt: str)</span>
 </code></dt>
@@ -559,16 +781,15 @@ class Emu6502():
 
     def memory_action(cmd_str, cmd_vars, cmd_dict):
         list_loc = cmd_vars.split(&#39; &#39;)
+        addresses = []
+
         if len(list_loc) &gt; 2:
-            raise ValueError(&#34;too many locations&#34;)
+            raise ValueError(&#34;too many addresses, should be one or a range&#34;)
 
-        # check hex
-        vals = [int(x, 0) for x in list_loc]
-        if len(vals) == 2:
-            if vals[1] - vals[0] &lt; 0:
-               raise ValueError(&#34;negative memory range&#34;)
+        for loc in list_loc:
+            addresses.append(self._parse_string_address(loc))
 
-        res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(list_loc)}&#34;
+        res = f&#34;!{Action.READ_MEMORY} {&#39; &#39;.join(addresses)}&#34;
         return (COMMAND_ACTION_USE_VALUE, res)
 
     def registers_action(cmd_str, cmd_vars, cmd_dict):
@@ -596,8 +817,30 @@ class Emu6502():
         return (COMMAND_ACTION_USE_VALUE, res)
 
     def cycles_action(cmd_str, cmd_vars, cmd_dict):
-        res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+        if cmd_vars:
+            try:
+                nb = int(cmd_vars)
+            except:
+                raise ValueError(&#34;Invalid number of instructions&#34;)
+            res = f&#34;!{Action.SHOW_CYCLES_COUNT} {cmd_vars}&#34;
+        else:
+            res = f&#34;!{Action.SHOW_CYCLES_COUNT}&#34;
+
         return (COMMAND_ACTION_USE_VALUE, res)
+
+    def breakpoint_action(cmd_str, cmd_vars, cmd_dict):
+        if cmd_vars:
+            list_loc = cmd_vars.split(&#39; &#39;)
+            adresses = []
+            for loc in list_loc:
+                adresses.append(self._parse_string_address(loc))
+
+            res = f&#34;!{Action.SET_BREAKPOINT} {&#39; &#39;.join(adresses)}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+        else:
+            res = f&#34;!{Action.SET_BREAKPOINT}&#34;
+            return (COMMAND_ACTION_USE_VALUE, res)
+
 
     def cancel_action(cmd_str, cmd_vars, cmd_dict):
         return (COMMAND_ACTION_CANCEL, None)
@@ -611,6 +854,8 @@ class Emu6502():
         print(&#39;r - show registers&#39;)
         print(&#39;i - show instruction&#39;)
         print(&#39;c - show cycles count&#39;)
+        print(&#39;b - set/reset/clear breakpoints&#39;)
+
         return CommandResponse(COMMAND_ACTION_NOP, None)
 
     cmds = {
@@ -621,6 +866,7 @@ class Emu6502():
         &#39;r&#39;: GetInputCommand(registers_action),
         &#39;i&#39;: GetInputCommand(instruction_action),
         &#39;c&#39;: GetInputCommand(cycles_action),
+        &#39;b&#39;: GetInputCommand(breakpoint_action),
     }
 
     while True:
@@ -643,162 +889,244 @@ class Emu6502():
 </details>
 </dd>
 <dt id="shazzam.Emu6502.Emu6502.load_and_run"><code class="name flex">
-<span>def <span class="ident">load_and_run</span></span>(<span>self, bytecode: _io.BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) ‑> py65emu.cpu.CPU</span>
+<span>def <span class="ident">load_and_run</span></span>(<span>self, segments: List, entry_address: int, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) ‑> (<class 'py65emu.cpu.CPU'>, <class 'py65emu.mmu.MMU'>, <class 'int'>)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
 <h2 id="args">Args</h2>
 <dl>
-<dt><strong><code>bytecode</code></strong> :&ensp;<code>BytesIO</code></dt>
+<dt><strong><code>segments</code></strong> :&ensp;<code>List[Segment]</code></dt>
 <dd>[description]</dd>
-<dt><strong><code>seg_start_address</code></strong> :&ensp;<code>int</code></dt>
+<dt><strong><code>entry_address</code></strong> :&ensp;<code>int</code></dt>
 <dd>[description]</dd>
-<dt><strong><code>seg_stop_address</code></strong> :&ensp;<code>int</code></dt>
-<dd>[description]</dd>
-<dt><strong><code>seg_entry_address</code></strong> :&ensp;<code>[type]</code></dt>
-<dd>[description]</dd>
+<dt><strong><code>cycles_count_start</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>[description]. Defaults to None.</dd>
+<dt><strong><code>cycles_count_end</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>[description]. Defaults to None.</dd>
+<dt><strong><code>debug_mode</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>[description]. Defaults to False.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>CPU</code></dt>
+<dt><code>CPU, MMU, int</code></dt>
 <dd>[description]</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def load_and_run(self, bytecode: BytesIO, seg_start_address: int, seg_stop_address: int, seg_entry_address: int, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; CPU:
+<pre><code class="python">def load_and_run(self, segments: List, entry_address: int, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False) -&gt; (CPU, MMU, int):
     &#34;&#34;&#34;[summary]
 
     Args:
-        bytecode (BytesIO): [description]
-        seg_start_address (int): [description]
-        seg_stop_address (int): [description]
-        seg_entry_address ([type]): [description]
+        segments (List[Segment]): [description]
+        entry_address (int): [description]
+        cycles_count_start (int, optional): [description]. Defaults to None.
+        cycles_count_end (int, optional): [description]. Defaults to None.
+        debug_mode (bool, optional): [description]. Defaults to False.
 
     Returns:
-        CPU: [description]
+        CPU, MMU, int: [description]
     &#34;&#34;&#34;
-    self.logger.info(f&#34;Loading code from {seg_start_address:04X} to {seg_stop_address:04X}&#34;)
-    self.logger.debug(f&#34;Set PC at {seg_entry_address:04X}&#34;)
+    low_ram = (0x0000, segments[0].start_adr, False)
+    hi_ram = (segments[-1].end_adr, 0xffff, False)
 
-    # bytecode copy for debugging as read() advances the buffer
-    from copy import deepcopy
-    debug_bytecode = deepcopy(bytecode).read()
+    mmu_segments = []
 
-    low_ram = (0x00, seg_start_address, False)
-    hi_ram = (seg_stop_address, 0xffff, False)
+    mmu_segments.append(low_ram)
+    for seg in segments:
+        bytecode = BytesIO(seg.get_segment_bytecode())
+        mmu_s = (seg.start_adr, seg.end_adr - seg.start_adr, False, bytecode)
+        mmu_segments.append(mmu_s)
+    mmu_segments.append(hi_ram)
 
-    mmu = MMU([
-        low_ram,
-        (seg_start_address, seg_stop_address - seg_start_address, False, bytecode),
-        hi_ram
-    ])
+    self.logger.info(mmu_segments)
+    self.debug_mode = debug_mode
 
-    cpu = CPU(mmu, seg_entry_address)
-
-    # for i in range(seg_stop_address - seg_start_address):
-    #     self.logger.debug(hex(mmu.read(seg_start_address+i)))
-
-    # for i in range(seg_stop_address - seg_start_address):
-    #     self.logger.debug(f&#34;{seg_start_address+i:04X}: {mmu.read(seg_start_address+i):02X}&#34;)
-
+    self.mmu = MMU(mmu_segments)
+    self.cpu = CPU(self.mmu, entry_address)
 
     counting_enabled = False if cycles_count_start is not None else True
-    self.logger.debug(f&#34;Emulating from ${cpu.r.pc:04X} to ${seg_stop_address:04X}&#34;)
+    stop_address = 0xffff if stop_address is None else stop_address
 
-    nb_cycles_used = 0
-    current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-    current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
-    while(cpu.r.pc &lt; seg_stop_address and current_instruction[0] != &#39;brk&#39;):
+    self.logger.info(f&#34;Loading code from {segments[0].start_adr:04X} to {segments[-1].end_adr:04X}&#34;)
+    self.logger.debug(f&#34;Set PC at {entry_address:04X}&#34;)
+    self.logger.debug(f&#34;Emulating from ${self.cpu.r.pc:04X} to ${stop_address:04X}&#34;)
+
+    self.nb_cycles_used = 0
+    current_bytecode = self.mmu.read(self.cpu.r.pc)
+    current_instruction = Instruction.opcodes[current_bytecode]
+    current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
+    current_operand = [self.mmu.read(self.cpu.r.pc + 1 + i) for i in range(current_operand_size)]
+
+    while(self.cpu.r.pc &lt; stop_address and current_instruction[0] != &#39;brk&#39;):
         try:
-            if cpu.r.pc == cycles_count_start:
+            if self.cpu.r.pc == cycles_count_start:
                 counting_enabled = True
-                self.logger.info(f&#34;Starting to count cycle at ${cpu.r.pc:04X}&#34;)
-            if cpu.r.pc == cycles_count_end:
+                self.logger.info(f&#34;Starting to count cycle at ${self.cpu.r.pc:04X}&#34;)
+            if self.cpu.r.pc == cycles_count_end:
                 counting_enabled = False
-                self.logger.info(f&#34;Stopping to count cycle at ${cpu.r.pc:04X}&#34;)
+                self.logger.info(f&#34;Stopping to count cycle at ${self.cpu.r.pc:04X}&#34;)
 
-            current_bytecode = debug_bytecode[cpu.r.pc-seg_start_address]
-            current_instruction = Instruction.opcodes[debug_bytecode[cpu.r.pc-seg_start_address]]
+            current_bytecode = self.mmu.read(self.cpu.r.pc)
+            current_instruction = Instruction.opcodes[current_bytecode]
             current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-            current_operand = debug_bytecode[cpu.r.pc-seg_start_address + 1:cpu.r.pc-seg_start_address+current_operand_size]
+            current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
 
             if counting_enabled:
-                nb_cycles_used += cpu.cc
+                self.nb_cycles_used += self.cpu.cc
 
-            if debug_mode:
-                # self.logger.info(f&#34;Emulating at: ${cpu.r.pc:04X} the bytecode: {current_bytecode:02X}&#34;)
-                # self.logger.info(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-                # self.logger.info(f&#34;{cpu.r} CC: {cpu.cc}&#34;)
-                inputs = self.get_input(f&#34;${cpu.r.pc:04X}&#34;)
+            if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
+                print(f&#34;${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, &#39;big&#39;):02X})&#34;)
+                print(f&#34;{self.cpu.r}&#34;)
+                if self.breakpoints:
+                    print(f&#34;Breakpoints: {[f&#39;${bp:04X}&#39; for bp in self.breakpoints]}&#34;)
+
+                inputs = self.get_input(f&#34;${self.cpu.r.pc:04X}&#34;)
                 if inputs:
-                    self.process_input(inputs, cpu, mmu, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), nb_cycles_used, cycles_count_start)
+                    self.process_input(inputs, current_instruction, int.from_bytes(current_operand, &#39;big&#39;), cycles_count_start)
                 else:
-                    debug_mode = False
+                    self.debug_mode = False
             else:
-                if counting_enabled and nb_cycles_used % 1000 == 0:
-                    self.logger.info(f&#34;Total: {nb_cycles_used} R: {cpu.r} CC: {cpu.cc}&#34;)
-                cpu.step()
+                if counting_enabled and self.nb_cycles_used % 1000 == 0:
+                    self.logger.info(f&#34;Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}&#34;)
+
+                self.cpu.step()
+
+                if self.breakpoint_in &gt; 0:
+                    self.breakpoint_in -= 1
 
         except Exception as e:
-            self.logger.critical(f&#34;Emulation crashed at ${cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
+            self.logger.critical(f&#34;Emulation crashed at ${self.cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}&#34;)
             self.logger.critical(f&#34;{current_instruction} operand: {int.from_bytes(current_operand, &#39;big&#39;):02X}&#34;)
-            self.logger.critical(f&#34;Registers: {cpu.r}&#34;)
+            self.logger.critical(f&#34;Registers: {self.cpu.r}&#34;)
             self.logger.critical(traceback.format_exc())
             break
 
-    self.logger.info(f&#34;Emulation stopped at ${cpu.r.pc:04X} with last instruction {current_instruction[0]}&#34;)
+    self.logger.info(f&#34;Emulation stopped at ${self.cpu.r.pc:04X} with last instruction executed: {current_instruction[0]}&#34;)
 
-    return cpu, mmu, nb_cycles_used</code></pre>
+    return self.cpu, self.mmu, self.nb_cycles_used</code></pre>
 </details>
 </dd>
 <dt id="shazzam.Emu6502.Emu6502.process_input"><code class="name flex">
-<span>def <span class="ident">process_input</span></span>(<span>self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start)</span>
+<span>def <span class="ident">process_input</span></span>(<span>self, inputs, inst, operand, nb_cycles_start)</span>
 </code></dt>
 <dd>
-<div class="desc"></div>
+<div class="desc"><p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>inputs</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>inst</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>operand</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>nb_cycles_start</code></strong> :&ensp;<code>[type]</code></dt>
+<dd>[description]</dd>
+</dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def process_input(self, inputs, cpu, mmu, inst, operand, nb_cycles_used, nb_cycles_start):
+<pre><code class="python">def process_input(self, inputs, inst, operand, nb_cycles_start):
+    &#34;&#34;&#34;[summary]
 
+    Args:
+        inputs ([type]): [description]
+        inst ([type]): [description]
+        operand ([type]): [description]
+        nb_cycles_start ([type]): [description]
+    &#34;&#34;&#34;
     if inputs[&#39;cmd&#39;] == Action.READ_MEMORY:
         vals = [int(x) for x in inputs[&#39;args&#39;]]
 
         if len(vals) == 1:
-            print(f&#34;${vals[0]:04X}: {mmu.read(vals[0])}&#34;)
+            print(f&#34;${vals[0]:04X}: {self.mmu.read(vals[0])}&#34;)
         else:
-            delta = vals[1] - vals[0]
-            modulo = 1 if delta % 16 != 0 else 0
+            delta = vals[1] - vals[0] + 1
+            if delta &lt; 1:
+                print(f&#34;-&gt; Memory range cannot be null or negative: ${delta:04X} = ${vals[1]:04X} - ${vals[0]:04X}&#34;)
+            else:
+                modulo = 1 if delta % 16 != 0 else 0
 
-            for i in range((delta // 16) + modulo):
-                print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
-                for j in range(min(16, delta - (i*16))):
-                    print(f&#34;{mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
-                print()
+                for i in range((delta // 16) + modulo):
+                    print(f&#34;${vals[0]+(i*16):04X}: &#34;, end= &#39;&#39;)
+                    for j in range(min(16, delta - (i*16))):
+                        print(f&#34;{self.mmu.read(vals[0]):02X}&#34;, end = &#39; &#39;)
+                    print()
 
     elif inputs[&#39;cmd&#39;] == Action.READ_REGISTERS:
         if len(inputs[&#39;args&#39;]) == 0:
-            print(f&#34;Registers: {cpu.r}&#34;)
+            print(f&#34;Registers: {self.cpu.r}&#34;)
         else:
             for r in inputs[&#39;args&#39;]:
-                print(f&#34;Register {r}: {eval(f&#39;cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;cpu.r.{r.lower()}&#39;):0b}&#34;)
+                print(f&#34;Register {r}: {eval(f&#39;self.cpu.r.{r.lower()}&#39;)} | ${eval(f&#39;self.cpu.r.{r.lower()}&#39;):0X} | %{eval(f&#39;self.cpu.r.{r.lower()}&#39;):0b}&#34;)
 
     elif inputs[&#39;cmd&#39;] == Action.RUN_NEXT:
         if len(inputs[&#39;args&#39;]) == 0:
-            print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
-            cpu.step()
+            self.cpu.step()
+        else:
+            self.debug_mode = False
+            self.breakpoint_in = int(inputs[&#39;args&#39;][0])
+            print(f&#34;-&gt; Program will stop in {self.breakpoint_in} instructions&#34;)
 
     elif inputs[&#39;cmd&#39;] == Action.SHOW_INSTRUCTION:
-        print(f&#34;${cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
+        print(f&#34;${self.cpu.r.pc:04X}: {&#39; &#39;.join(inst)} {operand:02X}&#34;)
 
     elif inputs[&#39;cmd&#39;] == Action.SHOW_CYCLES_COUNT:
         if nb_cycles_start:
-            print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
+            print(f&#34;${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used since ${nb_cycles_start:04X}&#34;)
         else:
-            print(f&#34;${cpu.r.pc:04X}: {nb_cycles_used} cycles used&#34;)</code></pre>
+            print(f&#34;${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used&#34;)
+
+    elif inputs[&#39;cmd&#39;] == Action.SET_BREAKPOINT:
+        if inputs[&#39;args&#39;]:
+            for bp in [int(v) for v in inputs[&#39;args&#39;]]:
+                self.reset_breakpoint(bp)
+                print(f&#34;-&gt; Breakpoint added at ${bp:04X}&#34;)
+        else:
+            print(f&#34;-&gt; Breakpoints {[f&#39;${bp:04X}&#39; for bp in self.breakpoints]} cleared&#34;)
+            self.clear_beakpoints()
+
+    else:
+        self.logger.warning(f&#34;-&gt; Debugger input {inputs} not managed!&#34;)</code></pre>
+</details>
+</dd>
+<dt id="shazzam.Emu6502.Emu6502.reset_breakpoint"><code class="name flex">
+<span>def <span class="ident">reset_breakpoint</span></span>(<span>self, address: int)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>address</code></strong> :&ensp;<code>int</code></dt>
+<dd>[description]</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>[description]</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reset_breakpoint(self, address : int):
+    &#34;&#34;&#34;[summary]
+
+    Args:
+        address (int): [description]
+
+    Raises:
+        ValueError: [description]
+    &#34;&#34;&#34;
+    if isinstance(address, int) and address in range(0, 0xffff):
+        if address not in self.breakpoints:
+            self.breakpoints.append(address)
+        else:
+            self.breakpoints.remove(address)
+    else:
+        raise ValueError(f&#34;Invalid breakpoint {address}&#34;)</code></pre>
 </details>
 </dd>
 </dl>
@@ -822,10 +1150,12 @@ class Emu6502():
 <li>
 <h4><code><a title="shazzam.Emu6502.Action" href="#shazzam.Emu6502.Action">Action</a></code></h4>
 <ul class="two-column">
+<li><code><a title="shazzam.Emu6502.Action.CLEAR_BREAKPOINT" href="#shazzam.Emu6502.Action.CLEAR_BREAKPOINT">CLEAR_BREAKPOINT</a></code></li>
 <li><code><a title="shazzam.Emu6502.Action.EXIT" href="#shazzam.Emu6502.Action.EXIT">EXIT</a></code></li>
 <li><code><a title="shazzam.Emu6502.Action.READ_MEMORY" href="#shazzam.Emu6502.Action.READ_MEMORY">READ_MEMORY</a></code></li>
 <li><code><a title="shazzam.Emu6502.Action.READ_REGISTERS" href="#shazzam.Emu6502.Action.READ_REGISTERS">READ_REGISTERS</a></code></li>
 <li><code><a title="shazzam.Emu6502.Action.RUN_NEXT" href="#shazzam.Emu6502.Action.RUN_NEXT">RUN_NEXT</a></code></li>
+<li><code><a title="shazzam.Emu6502.Action.SET_BREAKPOINT" href="#shazzam.Emu6502.Action.SET_BREAKPOINT">SET_BREAKPOINT</a></code></li>
 <li><code><a title="shazzam.Emu6502.Action.SHOW_CYCLES_COUNT" href="#shazzam.Emu6502.Action.SHOW_CYCLES_COUNT">SHOW_CYCLES_COUNT</a></code></li>
 <li><code><a title="shazzam.Emu6502.Action.SHOW_INSTRUCTION" href="#shazzam.Emu6502.Action.SHOW_INSTRUCTION">SHOW_INSTRUCTION</a></code></li>
 </ul>
@@ -833,9 +1163,11 @@ class Emu6502():
 <li>
 <h4><code><a title="shazzam.Emu6502.Emu6502" href="#shazzam.Emu6502.Emu6502">Emu6502</a></code></h4>
 <ul class="">
+<li><code><a title="shazzam.Emu6502.Emu6502.clear_beakpoints" href="#shazzam.Emu6502.Emu6502.clear_beakpoints">clear_beakpoints</a></code></li>
 <li><code><a title="shazzam.Emu6502.Emu6502.get_input" href="#shazzam.Emu6502.Emu6502.get_input">get_input</a></code></li>
 <li><code><a title="shazzam.Emu6502.Emu6502.load_and_run" href="#shazzam.Emu6502.Emu6502.load_and_run">load_and_run</a></code></li>
 <li><code><a title="shazzam.Emu6502.Emu6502.process_input" href="#shazzam.Emu6502.Emu6502.process_input">process_input</a></code></li>
+<li><code><a title="shazzam.Emu6502.Emu6502.reset_breakpoint" href="#shazzam.Emu6502.Emu6502.reset_breakpoint">reset_breakpoint</a></code></li>
 </ul>
 </li>
 </ul>

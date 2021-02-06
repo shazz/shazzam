@@ -324,7 +324,7 @@ def gen_irqloader_script(irqloader, parts_definition: Dict):
     global _PROGRAM
     raise NotImplementedError()
 
-def emulate_program(entry_point_address: Any, debug_mode: bool = False):
+def emulate_program(entry_point_address: Any, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False):
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -363,7 +363,7 @@ def emulate_program(entry_point_address: Any, debug_mode: bool = False):
         ram.append(seg)
 
     g.logger.info(f&#34;Calling Emulation from ${entry_point_address:04X}&#34;)
-    cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=ram, entry_address=entry_point_address, debug_mode=debug_mode)
+    cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=ram, entry_address=entry_point_address, stop_address=stop_address, cycles_count_start=cycles_count_start, cycles_count_end=cycles_count_end, debug_mode=debug_mode)
 
     return cpu_state, mmu_state, cycles_used
 
@@ -13013,7 +13013,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.emulate_program"><code class="name flex">
-<span>def <span class="ident">emulate_program</span></span>(<span>entry_point_address: Any, debug_mode: bool = False)</span>
+<span>def <span class="ident">emulate_program</span></span>(<span>entry_point_address: Any, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -13038,7 +13038,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def emulate_program(entry_point_address: Any, debug_mode: bool = False):
+<pre><code class="python">def emulate_program(entry_point_address: Any, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False):
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -13077,7 +13077,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
         ram.append(seg)
 
     g.logger.info(f&#34;Calling Emulation from ${entry_point_address:04X}&#34;)
-    cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=ram, entry_address=entry_point_address, debug_mode=debug_mode)
+    cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=ram, entry_address=entry_point_address, stop_address=stop_address, cycles_count_start=cycles_count_start, cycles_count_end=cycles_count_end, debug_mode=debug_mode)
 
     return cpu_state, mmu_state, cycles_used</code></pre>
 </details>

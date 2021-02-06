@@ -77,13 +77,26 @@ class Emu6502():
         mmu_segments = []
 
         mmu_segments.append(low_ram)
-        for seg in segments:
+        for i, seg in enumerate(segments):
+
             bytecode = BytesIO(seg.get_segment_bytecode())
-            mmu_s = (seg.start_adr, seg.end_adr - seg.start_adr, False, bytecode)
-            mmu_segments.append(mmu_s)
+
+            if i < len(segments) - 1:
+                # mmu_s = (seg.start_adr, seg.end_adr - seg.start_adr, False, bytecode)
+                mmu_s = (seg.start_adr, seg.end_adr-seg.start_adr, False, bytecode)
+                mmu_segments.append(mmu_s)
+
+                # padding gap between segments with 0 segments
+                if seg.end_adr < segments[i+1].start_adr:
+                    mmu_pad = (seg.end_adr, segments[i+1].start_adr - seg.end_adr, False)
+                    mmu_segments.append(mmu_pad)
+            else:
+                mmu_s = (seg.start_adr, seg.end_adr-seg.start_adr, False, bytecode)
+                mmu_segments.append(mmu_s)
+
         mmu_segments.append(hi_ram)
 
-        self.logger.info(mmu_segments)
+        self.logger.info(f"MMU Segments: {[(hex(v[0]), hex(v[1])) for v in mmu_segments]}")
         self.debug_mode = debug_mode
 
         self.mmu = MMU(mmu_segments)
@@ -102,50 +115,50 @@ class Emu6502():
         current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
         current_operand = [self.mmu.read(self.cpu.r.pc + 1 + i) for i in range(current_operand_size)]
 
-        with self.console.status("[bold green]Working on tasks...") as status:
-            while(self.cpu.r.pc < stop_address and current_instruction[0] != 'brk'):
-                try:
-                    if self.cpu.r.pc == cycles_count_start:
-                        counting_enabled = True
-                        self.logger.info(f"Starting to count cycle at ${self.cpu.r.pc:04X}")
-                    if self.cpu.r.pc == cycles_count_end:
-                        counting_enabled = False
-                        self.logger.info(f"Stopping to count cycle at ${self.cpu.r.pc:04X}")
+        # with self.console.status("[bold green]Working on tasks...") as status:
+        while(self.cpu.r.pc != stop_address and current_instruction[0] != 'brk'):
+            try:
+                if self.cpu.r.pc == cycles_count_start:
+                    counting_enabled = True
+                    self.logger.info(f"Starting to count cycle at ${self.cpu.r.pc:04X}")
+                if self.cpu.r.pc == cycles_count_end:
+                    counting_enabled = False
+                    self.logger.info(f"Stopping to count cycle at ${self.cpu.r.pc:04X} : {self.nb_cycles_used} cyles")
 
-                    current_bytecode = self.mmu.read(self.cpu.r.pc)
-                    current_instruction = Instruction.opcodes[current_bytecode]
-                    current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-                    current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
+                current_bytecode = self.mmu.read(self.cpu.r.pc)
+                current_instruction = Instruction.opcodes[current_bytecode]
+                current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
+                current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
 
-                    if counting_enabled:
-                        self.nb_cycles_used += self.cpu.cc
+                if counting_enabled:
+                    self.nb_cycles_used += self.cpu.cc
 
-                    if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
-                        self.console.print(f"${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, 'big'):02X})")
-                        self.console.print(f"{self.cpu.r}")
-                        if self.breakpoints:
-                            self.console.print(f"Breakpoints: {[f'${bp:04X}' for bp in self.breakpoints]}")
+                if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
+                    self.console.print(f"${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, 'big'):02X})")
+                    self.console.print(f"{self.cpu.r}")
+                    if self.breakpoints:
+                        self.console.print(f"Breakpoints: {[f'${bp:04X}' for bp in self.breakpoints]}")
 
-                        inputs = self.get_input(f"${self.cpu.r.pc:04X}")
-                        if inputs:
-                            self.process_input(inputs, current_instruction, int.from_bytes(current_operand, 'big'), cycles_count_start)
-                        else:
-                            self.debug_mode = False
+                    inputs = self.get_input(f"${self.cpu.r.pc:04X}")
+                    if inputs:
+                        self.process_input(inputs, current_instruction, int.from_bytes(current_operand, 'big'), cycles_count_start)
                     else:
-                        if counting_enabled and self.nb_cycles_used % 1000 == 0:
-                            self.logger.info(f"Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}")
+                        self.debug_mode = False
+                else:
+                    if counting_enabled and self.nb_cycles_used % 1000 == 0:
+                        self.logger.info(f"Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}")
 
-                        self.cpu.step()
+                    self.cpu.step()
 
-                        if self.breakpoint_in > 0:
-                            self.breakpoint_in -= 1
+                    if self.breakpoint_in > 0:
+                        self.breakpoint_in -= 1
 
-                except Exception as e:
-                    self.logger.critical(f"Emulation crashed at ${self.cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}")
-                    self.logger.critical(f"{current_instruction} operand: {int.from_bytes(current_operand, 'big'):02X}")
-                    self.logger.critical(f"Registers: {self.cpu.r}")
-                    self.logger.critical(traceback.format_exc())
-                    break
+            except Exception as e:
+                self.logger.critical(f"Emulation crashed at ${self.cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}")
+                self.logger.critical(f"{current_instruction} operand: {int.from_bytes(current_operand, 'big'):02X}")
+                self.logger.critical(f"Registers: {self.cpu.r}")
+                self.logger.critical(traceback.format_exc())
+                break
 
         self.logger.info(f"Emulation stopped at ${self.cpu.r.pc:04X} with last instruction executed: {current_instruction[0]}")
 

@@ -296,7 +296,7 @@ def gen_irqloader_script(irqloader, parts_definition: Dict):
     global _PROGRAM
     raise NotImplementedError()
 
-def emulate_program(entry_point_address: Any, debug_mode: bool = False):
+def emulate_program(entry_point_address: Any, stop_address: int = None, cycles_count_start: int = None, cycles_count_end: int = None, debug_mode: bool = False):
     """[summary]
 
     Args:
@@ -335,7 +335,7 @@ def emulate_program(entry_point_address: Any, debug_mode: bool = False):
         ram.append(seg)
 
     g.logger.info(f"Calling Emulation from ${entry_point_address:04X}")
-    cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=ram, entry_address=entry_point_address, debug_mode=debug_mode)
+    cpu_state, mmu_state, cycles_used = emu.load_and_run(segments=ram, entry_address=entry_point_address, stop_address=stop_address, cycles_count_start=cycles_count_start, cycles_count_end=cycles_count_end, debug_mode=debug_mode)
 
     return cpu_state, mmu_state, cycles_used
 

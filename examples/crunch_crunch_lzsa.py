@@ -141,7 +141,10 @@ def code():
         sta(at("LZSA_DST")+2)
 
         # unpack data forward.
+        depack_start = get_current_address()
         jsr(at("DECOMPRESS_LZSA2_FAST"))
+        depack_end = get_current_address()
+
         rts()
 
     with segment(segments["depacker"], "depacker") as s:
@@ -152,6 +155,13 @@ def code():
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
+
+    print(f"Counting cycles from {depack_start:04X} to {depack_end:04X}")
+    _, _, cycles_used = emulate_program(entry_point_address=0x0801, stop_address=depack_end, cycles_count_start=depack_start, cycles_count_end=depack_end, debug_mode=False)
+
+    routine_size = get_segment_addresses("depacker").end_address - get_segment_addresses("depacker").start_address
+    print(f"Depacker used {routine_size} bytes and {cycles_used} cycles (around [{round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)}] vbls [IDLE/ACTIVE]) or [{round(cycles_used/19656/50*1000, 2)}/{round(cycles_used/18656/50*1000, 2)}] ms")
+
 
 if __name__ == "__main__":
     generate(code, program_name)

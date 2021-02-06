@@ -4,6 +4,8 @@ import traceback
 from enum import Enum, auto
 from typing import List
 
+from rich.console import Console
+
 import cooked_input as ci
 from cooked_input import GetInputCommand, GetInputInterrupt, CommandResponse, COMMAND_ACTION_NOP, COMMAND_ACTION_CANCEL, COMMAND_ACTION_USE_VALUE
 
@@ -32,6 +34,7 @@ class Emu6502():
         self.debug_mode = False
         self.breakpoint_in = -1
         self.nb_cycles_used = 0
+        self.console = Console()
 
     def reset_breakpoint(self, address : int):
         """[summary]
@@ -99,49 +102,50 @@ class Emu6502():
         current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
         current_operand = [self.mmu.read(self.cpu.r.pc + 1 + i) for i in range(current_operand_size)]
 
-        while(self.cpu.r.pc < stop_address and current_instruction[0] != 'brk'):
-            try:
-                if self.cpu.r.pc == cycles_count_start:
-                    counting_enabled = True
-                    self.logger.info(f"Starting to count cycle at ${self.cpu.r.pc:04X}")
-                if self.cpu.r.pc == cycles_count_end:
-                    counting_enabled = False
-                    self.logger.info(f"Stopping to count cycle at ${self.cpu.r.pc:04X}")
+        with self.console.status("[bold green]Working on tasks...") as status:
+            while(self.cpu.r.pc < stop_address and current_instruction[0] != 'brk'):
+                try:
+                    if self.cpu.r.pc == cycles_count_start:
+                        counting_enabled = True
+                        self.logger.info(f"Starting to count cycle at ${self.cpu.r.pc:04X}")
+                    if self.cpu.r.pc == cycles_count_end:
+                        counting_enabled = False
+                        self.logger.info(f"Stopping to count cycle at ${self.cpu.r.pc:04X}")
 
-                current_bytecode = self.mmu.read(self.cpu.r.pc)
-                current_instruction = Instruction.opcodes[current_bytecode]
-                current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
-                current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
+                    current_bytecode = self.mmu.read(self.cpu.r.pc)
+                    current_instruction = Instruction.opcodes[current_bytecode]
+                    current_operand_size = Instruction.operand_sizes[current_instruction[1]]+1
+                    current_operand = [self.mmu.read(self.cpu.r.pc+1+i) for i in range(current_operand_size)]
 
-                if counting_enabled:
-                    self.nb_cycles_used += self.cpu.cc
+                    if counting_enabled:
+                        self.nb_cycles_used += self.cpu.cc
 
-                if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
-                    print(f"${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, 'big'):02X})")
-                    print(f"{self.cpu.r}")
-                    if self.breakpoints:
-                        print(f"Breakpoints: {[f'${bp:04X}' for bp in self.breakpoints]}")
+                    if self.debug_mode or self.cpu.r.pc in self.breakpoints or self.breakpoint_in == 0:
+                        self.console.print(f"${self.cpu.r.pc:04X}: {current_instruction[0]} [{current_instruction[1]}] (${int.from_bytes(current_operand, 'big'):02X})")
+                        self.console.print(f"{self.cpu.r}")
+                        if self.breakpoints:
+                            self.console.print(f"Breakpoints: {[f'${bp:04X}' for bp in self.breakpoints]}")
 
-                    inputs = self.get_input(f"${self.cpu.r.pc:04X}")
-                    if inputs:
-                        self.process_input(inputs, current_instruction, int.from_bytes(current_operand, 'big'), cycles_count_start)
+                        inputs = self.get_input(f"${self.cpu.r.pc:04X}")
+                        if inputs:
+                            self.process_input(inputs, current_instruction, int.from_bytes(current_operand, 'big'), cycles_count_start)
+                        else:
+                            self.debug_mode = False
                     else:
-                        self.debug_mode = False
-                else:
-                    if counting_enabled and self.nb_cycles_used % 1000 == 0:
-                        self.logger.info(f"Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}")
+                        if counting_enabled and self.nb_cycles_used % 1000 == 0:
+                            self.logger.info(f"Total: {self.nb_cycles_used} R: {self.cpu.r} CC: {self.cpu.cc}")
 
-                    self.cpu.step()
+                        self.cpu.step()
 
-                    if self.breakpoint_in > 0:
-                        self.breakpoint_in -= 1
+                        if self.breakpoint_in > 0:
+                            self.breakpoint_in -= 1
 
-            except Exception as e:
-                self.logger.critical(f"Emulation crashed at ${self.cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}")
-                self.logger.critical(f"{current_instruction} operand: {int.from_bytes(current_operand, 'big'):02X}")
-                self.logger.critical(f"Registers: {self.cpu.r}")
-                self.logger.critical(traceback.format_exc())
-                break
+                except Exception as e:
+                    self.logger.critical(f"Emulation crashed at ${self.cpu.r.pc:04X} (bytecode {current_bytecode:02X}) due to {e.__class__}")
+                    self.logger.critical(f"{current_instruction} operand: {int.from_bytes(current_operand, 'big'):02X}")
+                    self.logger.critical(f"Registers: {self.cpu.r}")
+                    self.logger.critical(traceback.format_exc())
+                    break
 
         self.logger.info(f"Emulation stopped at ${self.cpu.r.pc:04X} with last instruction executed: {current_instruction[0]}")
 
@@ -160,26 +164,26 @@ class Emu6502():
             vals = [int(x) for x in inputs['args']]
 
             if len(vals) == 1:
-                print(f"${vals[0]:04X}: {self.mmu.read(vals[0])}")
+                self.console.print(f"${vals[0]:04X}: {self.mmu.read(vals[0])}")
             else:
                 delta = vals[1] - vals[0] + 1
                 if delta < 1:
-                    print(f"-> Memory range cannot be null or negative: ${delta:04X} = ${vals[1]:04X} - ${vals[0]:04X}")
+                    self.console.print(f"-> Memory range cannot be null or negative: ${delta:04X} = ${vals[1]:04X} - ${vals[0]:04X}")
                 else:
                     modulo = 1 if delta % 16 != 0 else 0
 
                     for i in range((delta // 16) + modulo):
-                        print(f"${vals[0]+(i*16):04X}: ", end= '')
+                        self.console.print(f"${vals[0]+(i*16):04X}: ", end= '')
                         for j in range(min(16, delta - (i*16))):
-                            print(f"{self.mmu.read(vals[0]):02X}", end = ' ')
-                        print()
+                            self.console.print(f"{self.mmu.read(vals[0]):02X}", end = ' ')
+                        self.console.print()
 
         elif inputs['cmd'] == Action.READ_REGISTERS:
             if len(inputs['args']) == 0:
-                print(f"Registers: {self.cpu.r}")
+                self.console.print(f"Registers: {self.cpu.r}")
             else:
                 for r in inputs['args']:
-                    print(f"Register {r}: {eval(f'self.cpu.r.{r.lower()}')} | ${eval(f'self.cpu.r.{r.lower()}'):0X} | %{eval(f'self.cpu.r.{r.lower()}'):0b}")
+                    self.console.print(f"Register {r}: {eval(f'self.cpu.r.{r.lower()}')} | ${eval(f'self.cpu.r.{r.lower()}'):0X} | %{eval(f'self.cpu.r.{r.lower()}'):0b}")
 
         elif inputs['cmd'] == Action.RUN_NEXT:
             if len(inputs['args']) == 0:
@@ -187,24 +191,24 @@ class Emu6502():
             else:
                 self.debug_mode = False
                 self.breakpoint_in = int(inputs['args'][0])
-                print(f"-> Program will stop in {self.breakpoint_in} instructions")
+                self.console.print(f"-> Program will stop in {self.breakpoint_in} instructions")
 
         elif inputs['cmd'] == Action.SHOW_INSTRUCTION:
-            print(f"${self.cpu.r.pc:04X}: {' '.join(inst)} {operand:02X}")
+            self.console.print(f"${self.cpu.r.pc:04X}: {' '.join(inst)} {operand:02X}")
 
         elif inputs['cmd'] == Action.SHOW_CYCLES_COUNT:
             if nb_cycles_start:
-                print(f"${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used since ${nb_cycles_start:04X}")
+                self.console.print(f"${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used since ${nb_cycles_start:04X}")
             else:
-                print(f"${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used")
+                self.console.print(f"${self.cpu.r.pc:04X}: {self.nb_cycles_used} cycles used")
 
         elif inputs['cmd'] == Action.SET_BREAKPOINT:
             if inputs['args']:
                 for bp in [int(v) for v in inputs['args']]:
                     self.reset_breakpoint(bp)
-                    print(f"-> Breakpoint added at ${bp:04X}")
+                    self.console.print(f"-> Breakpoint added at ${bp:04X}")
             else:
-                print(f"-> Breakpoints {[f'${bp:04X}' for bp in self.breakpoints]} cleared")
+                self.console.print(f"-> Breakpoints {[f'${bp:04X}' for bp in self.breakpoints]} cleared")
                 self.clear_beakpoints()
 
         else:
@@ -279,15 +283,15 @@ class Emu6502():
             return (COMMAND_ACTION_CANCEL, None)
 
         def show_help_action(cmd_str, cmd_vars, cmd_dict):
-            print('Available commands:')
-            print('? - show this message')
-            print('e - exit simulator')
-            print('n [nb]- run next nb instructions')
-            print('m - show memory')
-            print('r - show registers')
-            print('i - show instruction')
-            print('c - show cycles count')
-            print('b - set/reset/clear breakpoints')
+            self.console.print('Available commands:')
+            self.console.print('? - show this message')
+            self.console.print('e - exit simulator')
+            self.console.print('n [nb]- run next nb instructions')
+            self.console.print('m - show memory')
+            self.console.print('r - show registers')
+            self.console.print('i - show instruction')
+            self.console.print('c - show cycles count')
+            self.console.print('b - set/reset/clear breakpoints')
 
             return CommandResponse(COMMAND_ACTION_NOP, None)
 
@@ -314,9 +318,9 @@ class Emu6502():
                          "args": res[1:]
                     }
                 else:
-                    print(f"Unknown command {result}, enter ? for help")
+                    self.console.print(f"Unknown command {result}, enter ? for help")
             except ValueError as e:
-                print(f"Bad format: {e}")
+                self.console.print(f"Bad format: {e}")
             except GetInputInterrupt:
                 break
 

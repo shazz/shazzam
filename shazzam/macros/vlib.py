@@ -114,9 +114,18 @@ def copy_dlist(vasyl_segment_load, vasyl_segment_size):
     # Copy a dlist to local RAM:
     # the contents of segment "VASYL" is copied to address 0 in local RAM.
     label("copy_dlist")
-    lda(imm(vasyl_segment_load & 0xff))
+
+    # TODO: change this to a proper VASYL segment, not right after CODE
+    # add 1+c because label at the end of CODE point to last instruction, not next
+    # lda(imm(vasyl_segment_load & 0xff))
+    lda(imm(f"<{vasyl_segment_load}"))
+    clc()
+    adc(imm(1))
     sta(at(tmp_ptr))
-    lda(imm(vasyl_segment_load >> 8))
+    # lda(imm(vasyl_segment_load >> 8))
+    lda(imm(f">{vasyl_segment_load}"))
+
+    adc(imm(0))
     sta(at(tmp_ptr + 1))
     lda(imm(0))
     sta(at(tmp_ptr2))

@@ -80,12 +80,14 @@ def code():
 
         rts()
 
-        vasyl_segment_load = 0x0
+        vasyl_segment_load = &#34;end_main&#34;
         vasyl_segment_size = get_segment_addresses(assembler.get_vasyl_segment()).end_address
 
         # include vlib routines
         vlib.init(vasyl_segment_load, vasyl_segment_size)
         vlib.copy_and_activate_dlist(vasyl_segment_load, vasyl_segment_size)
+
+        label(&#34;end_main&#34;)
 
     # generate listing
     gen_code(assembler, gen_listing=True)

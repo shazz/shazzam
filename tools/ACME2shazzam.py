@@ -145,6 +145,7 @@ if __name__ == "__main__":
                     output.append(call_macro(code_parts[0][1:]))
 
                 elif code_parts[0].endswith(":"):
+
                     output.append(add_label(code_parts[0][0:-1]))
 
                     if len(code_parts) > 1:

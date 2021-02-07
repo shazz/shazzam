@@ -39,7 +39,7 @@ import shazzam.macros.sys as sys
 from shazzam.drivers.assemblers.C64jasm import C64jasm
 
 # define your cross assembler
-assembler = C64jasm(&#34;c64jasm&#34;, &#34;third_party/c64jasm/c64jasm&#34;)
+assembler = C64jasm(&#34;c64jasm&#34;, &#34;/home/shazz/projects/c64/bin/c64jasm&#34;)
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
 @reloading
@@ -87,7 +87,8 @@ def code():
         label(&#34;loop&#34;)
         jmp(at(&#34;loop&#34;))
 
-        label(&#34;msg&#34;)
+    with segment(0xa000, &#34;message&#34;, segment_type=SegmentType.GENERIC_DATA) as s:
+        label(&#34;msg&#34;, is_global=True)
         byte(&#34;WELCOME TO THE MATRIX - THE 8BITS MATRIX&#34;)
 
     with segment(0x1ffe, &#34;charset&#34;, segment_type=SegmentType.CHARACTERS) as s:       #0x2000 - 2 header bytes

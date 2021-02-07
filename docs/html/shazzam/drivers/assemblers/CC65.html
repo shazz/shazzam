@@ -26,7 +26,7 @@
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter
+<pre><code class="python">from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter, DirectiveExport
 from shazzam.Assembler import Assembler
 from shazzam.Segment import Segment
 from shazzam.Program import Program
@@ -125,7 +125,8 @@ clean:
             &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
             &#34;directive&#34;: DirectiveFormat.USE_DOT,
-            &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE
+            &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE,
+            &#34;export&#34;: DirectiveExport.USE_EXPORT_DIRECTIVE
         })
 
     def assemble_segment(self, program: Program, segment: Segment) -&gt; str:
@@ -430,7 +431,8 @@ clean:
             &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
             &#34;directive&#34;: DirectiveFormat.USE_DOT,
-            &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE
+            &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE,
+            &#34;export&#34;: DirectiveExport.USE_EXPORT_DIRECTIVE
         })
 
     def assemble_segment(self, program: Program, segment: Segment) -&gt; str:
@@ -766,7 +768,8 @@ clean:
         &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.CYCLES],
         &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
         &#34;directive&#34;: DirectiveFormat.USE_DOT,
-        &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE
+        &#34;delimiter&#34;: DirectiveDelimiter.DOUBLE_QUOTE,
+        &#34;export&#34;: DirectiveExport.USE_EXPORT_DIRECTIVE
     })</code></pre>
 </details>
 </dd>

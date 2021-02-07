@@ -45,6 +45,10 @@ class DirectiveDelimiter(Enum):
     DOUBLE_QUOTE = auto()
     NO_DELIMITER = auto()
 
+class DirectiveExport(Enum):
+    USE_EXPORT_DIRECTIVE = auto()
+    USE_VARIABLES = auto()
+    NOT_REQUIRED = auto()
 
 class LabelFormat(Enum):
     NO_PREFIX = auto()

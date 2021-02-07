@@ -1,4 +1,4 @@
-from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter
+from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter, DirectiveExport
 from shazzam.Assembler import Assembler
 from shazzam.Segment import Segment
 from shazzam.Program import Program
@@ -97,7 +97,8 @@ clean:
             "code": [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             "comments": CommentsFormat.USE_SEMICOLON,
             "directive": DirectiveFormat.USE_DOT,
-            "delimiter": DirectiveDelimiter.DOUBLE_QUOTE
+            "delimiter": DirectiveDelimiter.DOUBLE_QUOTE,
+            "export": DirectiveExport.USE_EXPORT_DIRECTIVE
         })
 
     def assemble_segment(self, program: Program, segment: Segment) -> str:

@@ -63,9 +63,36 @@ def waste_cycles(n):
 # basic start(addr)
 # generate a compatible basic header, if addr bot set, entry point must follow the macro
 # ------------------------------------------------------------------------------------------
+# def basic_start(addr: int = None):
+
+#     addr = addr if isinstance(addr, int) else 0x0801 + 12
+
+#     byte(0x0b)
+#     byte(0x08)
+#     byte(0x30)
+#     byte(0x03)
+#     byte(0x9e)
+
+#     if (addr &gt;= 10000):
+#         byte(0x30 + (addr//10000)%10)
+
+#     if (addr &gt;= 1000):
+#         byte(0x30 + (addr//1000)%10)
+
+#     if (addr &gt;= 100):
+#         byte(0x30 + (addr//100)%10)
+
+#     if (addr &gt;= 10):
+#         byte(0x30 + (addr//10)%10)
+
+#     byte(0x30 + addr % 10)
+#     byte([0x0, 0x0, 0x0])
+
+#     logger.info(f&#34;after basic header, program start at {get_current_address()}&#34;)
+
 def basic_start(addr: int = None):
 
-    addr = addr if isinstance(addr, int) else 0x0801+10
+    addr = addr if isinstance(addr, int) else 0x0801+12
 
     byte(0x0c)
     byte(0x08)
@@ -253,7 +280,7 @@ def double_irq(end: Any, stableIRQ: Any):
 </summary>
 <pre><code class="python">def basic_start(addr: int = None):
 
-    addr = addr if isinstance(addr, int) else 0x0801+10
+    addr = addr if isinstance(addr, int) else 0x0801+12
 
     byte(0x0c)
     byte(0x08)

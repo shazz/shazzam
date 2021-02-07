@@ -1,4 +1,4 @@
-from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter
+from shazzam.defs import Alias, CodeFormat, CommentsFormat, DirectiveFormat, DirectiveDelimiter, DirectiveExport
 from shazzam.Assembler import Assembler
 from shazzam.Segment import Segment
 from shazzam.Program import Program
@@ -36,7 +36,8 @@ class C64jasm(Assembler):
             "code": [CodeFormat.USE_HEX, CodeFormat.CYCLES],
             "comments": CommentsFormat.USE_SEMICOLON,
             "directive": DirectiveFormat.USE_EXCLAMATION,
-            "delimiter": DirectiveDelimiter.NO_DELIMITER
+            "delimiter": DirectiveDelimiter.NO_DELIMITER,
+            "export": DirectiveExport.NOT_REQUIRED
         })
 
     def assemble_segment(self, program: Program, segment: Segment) -> str:

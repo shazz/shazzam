@@ -1,6 +1,6 @@
 
 import shazzam.globals as g
-from shazzam.defs import CommentsFormat, DirectiveFormat, CodeFormat, Alias, DirectiveDelimiter
+from shazzam.defs import CommentsFormat, DirectiveFormat, CodeFormat, Alias, DirectiveDelimiter, DirectiveExport
 from shazzam.Instruction import Instruction
 from shazzam.Address import Address
 from shazzam.ByteData import ByteData
@@ -64,9 +64,16 @@ class Segment():
         DirectiveDelimiter.DOUBLE_QUOTE : '"'
     }
 
+    directive_export = {
+        DirectiveExport.USE_EXPORT_DIRECTIVE : ["!export", "!import"],
+        DirectiveExport.USE_VARIABLES: None,
+        DirectiveExport.NOT_REQUIRED: None
+    }
+
     def __init__(self, start_adr: int, name: str,
                 code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None,
-                directive_prefix: DirectiveFormat = None, directive_delimiter: DirectiveDelimiter = None, use_relative_addressing: bool = False,
+                directive_prefix: DirectiveFormat = None, directive_delimiter: DirectiveDelimiter = None,
+                directive_export: DirectiveExport = None, use_relative_addressing: bool = False,
                 fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None):
         """[summary]
 
@@ -99,6 +106,8 @@ class Segment():
             directive_prefix = g._DIRECTIVE_PREFIX
         if directive_delimiter is None:
             directive_delimiter = g._DIRECTIVE_DELIMITER
+        if directive_export is None:
+            directive_export = g._DIRECTIVE_EXPORT
 
         self.logger.debug("Prefs: {code_format} / {comments_format} / {directive_prefix}")
 
@@ -112,6 +121,7 @@ class Segment():
         self.comment_char = Segment.comments_chars[comments_format]
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
         self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
+        self.support_export = Segment.directive_export[directive_export]
 
         self.rasterlines = {}
         self.anonymous_labels = {}
@@ -648,12 +658,16 @@ class Segment():
         locals_labels = list(self.labels.keys())
         globals_labels = list(g._PROGRAM.global_labels.keys())
 
-        for label in globals_labels:
-            if label not in locals_labels:
-                code.append(f'\t\t{self.directive_prefix}import {label}\n')
-            else:
-                code.append(f'\t\t{self.directive_prefix}export {label}\n')
-
+        if self.support_export == DirectiveExport.USE_EXPORT_DIRECTIVE:
+            for label in globals_labels:
+                if label not in locals_labels:
+                    code.append(f'\t\t{self.directive_prefix}import {label}\n')
+                else:
+                    code.append(f'\t\t{self.directive_prefix}export {label}\n')
+        elif self.support_export == DirectiveExport.USE_VARIABLES:
+            raise NotImplementedError("DirectiveExport.USE_VARIABLES noy implemented")
+        else:
+            self.logger.warning("This assembler doesn't require import/export for globals")
         code.append('\n')
 
         # add segment directive

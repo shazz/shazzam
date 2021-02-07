@@ -36,7 +36,7 @@ from reloading import reloading
 
 import shazzam.globals as g
 from shazzam.Instruction import Instruction
-from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, System, DetectMode, Alias, DirectiveDelimiter
+from shazzam.defs import CodeFormat, CommentsFormat, DirectiveFormat, System, DetectMode, Alias, DirectiveDelimiter, DirectiveExport
 from shazzam.defs import RegisterACC, RegisterX, RegisterY
 from shazzam.Rasterline import Rasterline
 from shazzam.Segment import Segment, SegmentType
@@ -58,7 +58,7 @@ from typing import List, Any, Dict
 # ---------------------------------------------------------------------
 # py64gen public functions
 # ---------------------------------------------------------------------
-def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter):
+def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter, directive_export: DirectiveExport):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
     g._CODE_FORMAT = code_format
@@ -66,7 +66,7 @@ def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments
     g._DIRECTIVE_PREFIX = directive_prefix
     g._DEFAULT_CODE_SEGMENT = default_code_segment
     g._DIRECTIVE_DELIMITER = directive_delimiter
-
+    g._DIRECTIVE_EXPORT = directive_export
 
 @contextmanager
 def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -&gt; Segment:
@@ -174,7 +174,8 @@ def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True,
         code_format=prefs.code,
         comments_format=prefs.comments,
         directive_prefix=prefs.directive,
-        directive_delimiter=prefs.delimiter
+        directive_delimiter=prefs.delimiter,
+        directive_export=prefs.export
     )
 
     for segment in g._PROGRAM.segments:
@@ -197,7 +198,8 @@ def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True,
                 &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
                 &#34;directive&#34;: DirectiveFormat.USE_DOT,
-                &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER
+                &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER,
+                &#34;export&#34;: DirectiveExport.NOT_REQUIRED
             })
 
         g.logger.debug(f&#34;Setting listing format: {format_listing}&#34;)
@@ -206,7 +208,8 @@ def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True,
             code_format=format_listing.code,
             comments_format=format_listing.comments,
             directive_prefix=format_listing.directive,
-            directive_delimiter=format_listing.delimiter
+            directive_delimiter=format_listing.delimiter,
+            directive_export=format_listing.export
         )
 
         for segment in g._PROGRAM.segments:
@@ -13255,7 +13258,8 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
         code_format=prefs.code,
         comments_format=prefs.comments,
         directive_prefix=prefs.directive,
-        directive_delimiter=prefs.delimiter
+        directive_delimiter=prefs.delimiter,
+        directive_export=prefs.export
     )
 
     for segment in g._PROGRAM.segments:
@@ -13278,7 +13282,8 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
                 &#34;code&#34;: [CodeFormat.USE_HEX, CodeFormat.BYTECODE, CodeFormat.CYCLES, CodeFormat.ADDRESS, CodeFormat.SHOW_LABELS],
                 &#34;comments&#34;: CommentsFormat.USE_SEMICOLON,
                 &#34;directive&#34;: DirectiveFormat.USE_DOT,
-                &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER
+                &#34;delimiter&#34;: DirectiveDelimiter.NO_DELIMITER,
+                &#34;export&#34;: DirectiveExport.NOT_REQUIRED
             })
 
         g.logger.debug(f&#34;Setting listing format: {format_listing}&#34;)
@@ -13287,7 +13292,8 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
             code_format=format_listing.code,
             comments_format=format_listing.comments,
             directive_prefix=format_listing.directive,
-            directive_delimiter=format_listing.delimiter
+            directive_delimiter=format_listing.delimiter,
+            directive_export=format_listing.export
         )
 
         for segment in g._PROGRAM.segments:
@@ -17541,7 +17547,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 </details>
 </dd>
 <dt id="shazzam.py64gen.set_prefs"><code class="name flex">
-<span>def <span class="ident">set_prefs</span></span>(<span>default_code_segment: str, code_format: List[<a title="shazzam.defs.CodeFormat" href="defs.html#shazzam.defs.CodeFormat">CodeFormat</a>], comments_format: <a title="shazzam.defs.CommentsFormat" href="defs.html#shazzam.defs.CommentsFormat">CommentsFormat</a>, directive_prefix: <a title="shazzam.defs.DirectiveFormat" href="defs.html#shazzam.defs.DirectiveFormat">DirectiveFormat</a>, directive_delimiter: <a title="shazzam.defs.DirectiveDelimiter" href="defs.html#shazzam.defs.DirectiveDelimiter">DirectiveDelimiter</a>)</span>
+<span>def <span class="ident">set_prefs</span></span>(<span>default_code_segment: str, code_format: List[<a title="shazzam.defs.CodeFormat" href="defs.html#shazzam.defs.CodeFormat">CodeFormat</a>], comments_format: <a title="shazzam.defs.CommentsFormat" href="defs.html#shazzam.defs.CommentsFormat">CommentsFormat</a>, directive_prefix: <a title="shazzam.defs.DirectiveFormat" href="defs.html#shazzam.defs.DirectiveFormat">DirectiveFormat</a>, directive_delimiter: <a title="shazzam.defs.DirectiveDelimiter" href="defs.html#shazzam.defs.DirectiveDelimiter">DirectiveDelimiter</a>, directive_export: <a title="shazzam.defs.DirectiveExport" href="defs.html#shazzam.defs.DirectiveExport">DirectiveExport</a>)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -17549,14 +17555,15 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter):
+<pre><code class="python">def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter, directive_export: DirectiveExport):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format
     g._DIRECTIVE_PREFIX = directive_prefix
     g._DEFAULT_CODE_SEGMENT = default_code_segment
-    g._DIRECTIVE_DELIMITER = directive_delimiter</code></pre>
+    g._DIRECTIVE_DELIMITER = directive_delimiter
+    g._DIRECTIVE_EXPORT = directive_export</code></pre>
 </details>
 </dd>
 <dt id="shazzam.py64gen.slo"><code class="name flex">

@@ -10,7 +10,7 @@ from shazzam.Assembler import Assembler
 #
 # Logo display list
 
-with segment(0x00, "VASYL") as s:
+with segment(0x0900, "VASYL", relocated_offset=0x0000) as s:
 
     label("dl_start", is_global=True)
     WAIT(48 ,0)
@@ -614,8 +614,3 @@ with segment(0x00, "VASYL") as s:
     BRA(dl_line_24)
     END()
 
-    label("preserve_ctrl1", is_global=True)
-    byte(0)
-
-    label("preserve_ec", is_global=True)
-    byte(0)

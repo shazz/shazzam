@@ -19,10 +19,10 @@ logger = logging.getLogger("shazzam")
 # Ported by Shazz / TRSi
 # Copyright (C)2021 TRSi
 
-tmp_ptr     = 251
-tmp_ptr2    = 253
+tmp_ptr     = 0xFB
+tmp_ptr2    = 0xFD
 
-def init(vasyl_segment_load, vasyl_segment_size, autostart : bool = False):
+def init(vasyl_segment_size, autostart : bool = False):
 
     import shazzam.macros.vasyl
 
@@ -88,26 +88,30 @@ def init(vasyl_segment_load, vasyl_segment_size, autostart : bool = False):
     rts()
 # .endif
 
-def copy_and_activate_dlist(vasyl_segment_load, vasyl_segment_size):
-    copy_dlist(vasyl_segment_load, vasyl_segment_size)
+def copy_and_activate_dlist(vasyl_segment_size):
+    copy_dlist(vasyl_segment_size)
 
 # .ifref copy_and_activate_dlist
     # Copy a dlist to local RAM and activate it:
     # the contents of segment "VASYL" is copied to address 0 in local RAM and then the display list is activated.
-    label("copy_and_activate_dlist")
+    label("copy_and_activate_dlist", is_global=True)
     jsr(at("copy_dlist"))
 
     # start using the new Display List
-    lda(imm("<dl_start"))
+    dl_start = get_segment_addresses("VASYL").relocated_offset
+    logger.info(f"VASYL list will be relocated at ${dl_start:04X} [{get_segment_addresses('VASYL')}]")
+
+    lda(imm(dl_start & 0xff))
     sta(at(VREG_DLIST))
-    lda(imm(">dl_start"))
+    lda(imm(dl_start >> 8))
     sta(at(VREG_DLIST + 1))
+
     lda(imm(1 << CONTROL_DLIST_ON_BIT))
     sta(at(VREG_CONTROL))
     rts()
 # .endif
 
-def copy_dlist(vasyl_segment_load, vasyl_segment_size):
+def copy_dlist(vasyl_segment_size):
     copy_to_lmem()
 
 # .ifref copy_dlist
@@ -115,18 +119,14 @@ def copy_dlist(vasyl_segment_load, vasyl_segment_size):
     # the contents of segment "VASYL" is copied to address 0 in local RAM.
     label("copy_dlist")
 
-    # TODO: change this to a proper VASYL segment, not right after CODE
-    # add 1+c because label at the end of CODE point to last instruction, not next
-    # lda(imm(vasyl_segment_load & 0xff))
-    lda(imm(f"<{vasyl_segment_load}"))
-    clc()
-    adc(imm(1))
-    sta(at(tmp_ptr))
-    # lda(imm(vasyl_segment_load >> 8))
-    lda(imm(f">{vasyl_segment_load}"))
+    dl_start = get_segment_addresses("VASYL").start_address
+    logger.info(f"Setting pointer from VASYL segment address: {dl_start:04X}")
 
-    adc(imm(0))
+    lda(imm(dl_start & 0xff))
+    sta(at(tmp_ptr))
+    lda(imm(dl_start >> 8))
     sta(at(tmp_ptr + 1))
+
     lda(imm(0))
     sta(at(tmp_ptr2))
     sta(at(tmp_ptr2) + 1)

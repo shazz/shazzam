@@ -47,10 +47,10 @@ logger = logging.getLogger(&#34;shazzam&#34;)
 # Ported by Shazz / TRSi
 # Copyright (C)2021 TRSi
 
-tmp_ptr     = 251
-tmp_ptr2    = 253
+tmp_ptr     = 0xFB
+tmp_ptr2    = 0xFD
 
-def init(vasyl_segment_load, vasyl_segment_size, autostart : bool = False):
+def init(vasyl_segment_size, autostart : bool = False):
 
     import shazzam.macros.vasyl
 
@@ -116,26 +116,30 @@ def init(vasyl_segment_load, vasyl_segment_size, autostart : bool = False):
     rts()
 # .endif
 
-def copy_and_activate_dlist(vasyl_segment_load, vasyl_segment_size):
-    copy_dlist(vasyl_segment_load, vasyl_segment_size)
+def copy_and_activate_dlist(vasyl_segment_size):
+    copy_dlist(vasyl_segment_size)
 
 # .ifref copy_and_activate_dlist
     # Copy a dlist to local RAM and activate it:
     # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM and then the display list is activated.
-    label(&#34;copy_and_activate_dlist&#34;)
+    label(&#34;copy_and_activate_dlist&#34;, is_global=True)
     jsr(at(&#34;copy_dlist&#34;))
 
     # start using the new Display List
-    lda(imm(&#34;&lt;dl_start&#34;))
+    dl_start = get_segment_addresses(&#34;VASYL&#34;).relocated_offset
+    logger.info(f&#34;VASYL list will be relocated at ${dl_start:04X} [{get_segment_addresses(&#39;VASYL&#39;)}]&#34;)
+
+    lda(imm(dl_start &amp; 0xff))
     sta(at(VREG_DLIST))
-    lda(imm(&#34;&gt;dl_start&#34;))
+    lda(imm(dl_start &gt;&gt; 8))
     sta(at(VREG_DLIST + 1))
+
     lda(imm(1 &lt;&lt; CONTROL_DLIST_ON_BIT))
     sta(at(VREG_CONTROL))
     rts()
 # .endif
 
-def copy_dlist(vasyl_segment_load, vasyl_segment_size):
+def copy_dlist(vasyl_segment_size):
     copy_to_lmem()
 
 # .ifref copy_dlist
@@ -143,18 +147,14 @@ def copy_dlist(vasyl_segment_load, vasyl_segment_size):
     # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM.
     label(&#34;copy_dlist&#34;)
 
-    # TODO: change this to a proper VASYL segment, not right after CODE
-    # add 1+c because label at the end of CODE point to last instruction, not next
-    # lda(imm(vasyl_segment_load &amp; 0xff))
-    lda(imm(f&#34;&lt;{vasyl_segment_load}&#34;))
-    clc()
-    adc(imm(1))
-    sta(at(tmp_ptr))
-    # lda(imm(vasyl_segment_load &gt;&gt; 8))
-    lda(imm(f&#34;&gt;{vasyl_segment_load}&#34;))
+    dl_start = get_segment_addresses(&#34;VASYL&#34;).start_address
+    logger.info(f&#34;Setting pointer from VASYL segment address: {dl_start:04X}&#34;)
 
-    adc(imm(0))
+    lda(imm(dl_start &amp; 0xff))
+    sta(at(tmp_ptr))
+    lda(imm(dl_start &gt;&gt; 8))
     sta(at(tmp_ptr + 1))
+
     lda(imm(0))
     sta(at(tmp_ptr2))
     sta(at(tmp_ptr2) + 1)
@@ -293,7 +293,7 @@ def print_info():
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="shazzam.macros.vlib.copy_and_activate_dlist"><code class="name flex">
-<span>def <span class="ident">copy_and_activate_dlist</span></span>(<span>vasyl_segment_load, vasyl_segment_size)</span>
+<span>def <span class="ident">copy_and_activate_dlist</span></span>(<span>vasyl_segment_size)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -301,27 +301,31 @@ def print_info():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def copy_and_activate_dlist(vasyl_segment_load, vasyl_segment_size):
-    copy_dlist(vasyl_segment_load, vasyl_segment_size)
+<pre><code class="python">def copy_and_activate_dlist(vasyl_segment_size):
+    copy_dlist(vasyl_segment_size)
 
 # .ifref copy_and_activate_dlist
     # Copy a dlist to local RAM and activate it:
     # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM and then the display list is activated.
-    label(&#34;copy_and_activate_dlist&#34;)
+    label(&#34;copy_and_activate_dlist&#34;, is_global=True)
     jsr(at(&#34;copy_dlist&#34;))
 
     # start using the new Display List
-    lda(imm(&#34;&lt;dl_start&#34;))
+    dl_start = get_segment_addresses(&#34;VASYL&#34;).relocated_offset
+    logger.info(f&#34;VASYL list will be relocated at ${dl_start:04X} [{get_segment_addresses(&#39;VASYL&#39;)}]&#34;)
+
+    lda(imm(dl_start &amp; 0xff))
     sta(at(VREG_DLIST))
-    lda(imm(&#34;&gt;dl_start&#34;))
+    lda(imm(dl_start &gt;&gt; 8))
     sta(at(VREG_DLIST + 1))
+
     lda(imm(1 &lt;&lt; CONTROL_DLIST_ON_BIT))
     sta(at(VREG_CONTROL))
     rts()</code></pre>
 </details>
 </dd>
 <dt id="shazzam.macros.vlib.copy_dlist"><code class="name flex">
-<span>def <span class="ident">copy_dlist</span></span>(<span>vasyl_segment_load, vasyl_segment_size)</span>
+<span>def <span class="ident">copy_dlist</span></span>(<span>vasyl_segment_size)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -329,7 +333,7 @@ def print_info():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def copy_dlist(vasyl_segment_load, vasyl_segment_size):
+<pre><code class="python">def copy_dlist(vasyl_segment_size):
     copy_to_lmem()
 
 # .ifref copy_dlist
@@ -337,18 +341,14 @@ def print_info():
     # the contents of segment &#34;VASYL&#34; is copied to address 0 in local RAM.
     label(&#34;copy_dlist&#34;)
 
-    # TODO: change this to a proper VASYL segment, not right after CODE
-    # add 1+c because label at the end of CODE point to last instruction, not next
-    # lda(imm(vasyl_segment_load &amp; 0xff))
-    lda(imm(f&#34;&lt;{vasyl_segment_load}&#34;))
-    clc()
-    adc(imm(1))
-    sta(at(tmp_ptr))
-    # lda(imm(vasyl_segment_load &gt;&gt; 8))
-    lda(imm(f&#34;&gt;{vasyl_segment_load}&#34;))
+    dl_start = get_segment_addresses(&#34;VASYL&#34;).start_address
+    logger.info(f&#34;Setting pointer from VASYL segment address: {dl_start:04X}&#34;)
 
-    adc(imm(0))
+    lda(imm(dl_start &amp; 0xff))
+    sta(at(tmp_ptr))
+    lda(imm(dl_start &gt;&gt; 8))
     sta(at(tmp_ptr + 1))
+
     lda(imm(0))
     sta(at(tmp_ptr2))
     sta(at(tmp_ptr2) + 1)
@@ -406,7 +406,7 @@ def print_info():
 </details>
 </dd>
 <dt id="shazzam.macros.vlib.init"><code class="name flex">
-<span>def <span class="ident">init</span></span>(<span>vasyl_segment_load, vasyl_segment_size, autostart: bool = False)</span>
+<span>def <span class="ident">init</span></span>(<span>vasyl_segment_size, autostart: bool = False)</span>
 </code></dt>
 <dd>
 <div class="desc"></div>
@@ -414,7 +414,7 @@ def print_info():
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def init(vasyl_segment_load, vasyl_segment_size, autostart : bool = False):
+<pre><code class="python">def init(vasyl_segment_size, autostart : bool = False):
 
     import shazzam.macros.vasyl
 

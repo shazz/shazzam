@@ -61,6 +61,8 @@ from typing import List, Any, Dict
 def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter, directive_export: DirectiveExport):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
+    g.logger.debug(f&#34;Set Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter} / {directive_export}&#34;)
+
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format
     g._DIRECTIVE_PREFIX = directive_prefix
@@ -69,7 +71,7 @@ def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments
     g._DIRECTIVE_EXPORT = directive_export
 
 @contextmanager
-def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -&gt; Segment:
+def segment(start_adr: int, name: str, relocated_offset: int = None, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -&gt; Segment:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -85,7 +87,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
     &#34;&#34;&#34;
     global _CURRENT_CONTEXT, _PROGRAM
 
-    seg = Segment(start_adr=start_adr, name=name.upper(), use_relative_addressing=use_relative_addressing, fixed_address=fixed_address, segment_type=segment_type, group=group)
+    seg = Segment(start_adr=start_adr, name=name.upper(), relocated_offset=relocated_offset, fixed_address=fixed_address, segment_type=segment_type, group=group)
     g._CURRENT_CONTEXT = seg
 
     yield seg
@@ -168,7 +170,7 @@ def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True,
 
 
     prefs = assembler.get_code_format()
-    g.logger.debug(f&#34;Setting assembler pref: {prefs}&#34;)
+    g.logger.debug(f&#34;Setting assembler {assembler.name} pref: {prefs}&#34;)
     set_prefs(
         default_code_segment=assembler.get_code_segment(),
         code_format=prefs.code,
@@ -188,7 +190,7 @@ def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True,
             os.makedirs(f&#34;generated/{g._PROGRAM.name}&#34;, exist_ok=True)
             with open(f&#34;generated/{g._PROGRAM.name}/{segment.name}.asm&#34;, &#34;w&#34;) as f:
                 f.writelines(header)
-                f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
+                # f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
                 f.writelines(code)
 
     if gen_listing:
@@ -290,7 +292,9 @@ def get_segment_addresses(name: str) -&gt; int:
         if segment.name.upper() == name.upper():
             return Alias({
                 &#34;start_address&#34;: segment.start_adr,
-                &#34;end_address&#34;: segment.end_adr
+                &#34;end_address&#34;: segment.end_adr,
+                &#34;relocated_offset&#34;: segment.relocated_offset,
+                &#34;size&#34;: segment.end_adr - segment.relocated_offset if segment.relocated_offset is not None else segment.end_adr - segment.start_adr
             })
 
     raise ValueError(f&#34;Segment {name} not (yet?) found!&#34;)
@@ -645,6 +649,7 @@ def _check_segments_overlap(code_segment: str = &#34;CODE&#34;) -&gt; None:
 
     intervals = []
     for segment in g._PROGRAM.segments:
+        print(f&#34;seg {segment.name} boundaries: {segment.start_adr:04X}-{segment.end_adr:04X}&#34;)
         if segment.name == code_segment:
             # adding basic header 13 bytes
             intervals.append((segment.start_adr, segment.end_adr+13))
@@ -652,13 +657,11 @@ def _check_segments_overlap(code_segment: str = &#34;CODE&#34;) -&gt; None:
             intervals.append((segment.start_adr, segment.end_adr))
 
     intervals.sort()
-    g.logger.info(
-        f&#34;Checking overlapping intervals: {[(hex(interval[0]), hex(interval[1])) for interval in intervals]}&#34;)
+    g.logger.info(f&#34;Checking overlapping intervals: {[(hex(interval[0]), hex(interval[1])) for interval in intervals]}&#34;)
 
     for i in range(1, len(intervals)):
         if intervals[i][0] &lt;= intervals[i-1][1]:
-            raise ValueError(
-                f&#34;The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!&#34;)
+            raise ValueError(f&#34;The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!&#34;)
 
 def _get_segment_by_address(address: int, segments: List[Segment]) -&gt; Segment:
         &#34;&#34;&#34;_get_segment_by_address
@@ -13252,7 +13255,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
 
 
     prefs = assembler.get_code_format()
-    g.logger.debug(f&#34;Setting assembler pref: {prefs}&#34;)
+    g.logger.debug(f&#34;Setting assembler {assembler.name} pref: {prefs}&#34;)
     set_prefs(
         default_code_segment=assembler.get_code_segment(),
         code_format=prefs.code,
@@ -13272,7 +13275,7 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
             os.makedirs(f&#34;generated/{g._PROGRAM.name}&#34;, exist_ok=True)
             with open(f&#34;generated/{g._PROGRAM.name}/{segment.name}.asm&#34;, &#34;w&#34;) as f:
                 f.writelines(header)
-                f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
+                # f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
                 f.writelines(code)
 
     if gen_listing:
@@ -13540,7 +13543,9 @@ tya = TYA = _create_a_function(mnemonic=&#34;tya&#34;)</code></pre>
         if segment.name.upper() == name.upper():
             return Alias({
                 &#34;start_address&#34;: segment.start_adr,
-                &#34;end_address&#34;: segment.end_adr
+                &#34;end_address&#34;: segment.end_adr,
+                &#34;relocated_offset&#34;: segment.relocated_offset,
+                &#34;size&#34;: segment.end_adr - segment.relocated_offset if segment.relocated_offset is not None else segment.end_adr - segment.start_adr
             })
 
     raise ValueError(f&#34;Segment {name} not (yet?) found!&#34;)</code></pre>
@@ -17346,7 +17351,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 </details>
 </dd>
 <dt id="shazzam.py64gen.segment"><code class="name flex">
-<span>def <span class="ident">segment</span></span>(<span>start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False, segment_type: <a title="shazzam.Segment.SegmentType" href="Segment.html#shazzam.Segment.SegmentType">SegmentType</a> = SegmentType.CODE, group: int = None) ‑> <a title="shazzam.Segment.Segment" href="Segment.html#shazzam.Segment.Segment">Segment</a></span>
+<span>def <span class="ident">segment</span></span>(<span>start_adr: int, name: str, relocated_offset: int = None, check_address_dups: bool = True, fixed_address: bool = False, segment_type: <a title="shazzam.Segment.SegmentType" href="Segment.html#shazzam.Segment.SegmentType">SegmentType</a> = SegmentType.CODE, group: int = None) ‑> <a title="shazzam.Segment.Segment" href="Segment.html#shazzam.Segment.Segment">Segment</a></span>
 </code></dt>
 <dd>
 <div class="desc"><p>[summary]</p>
@@ -17374,7 +17379,7 @@ def rasterline(system: System = System.PAL, mode: DetectMode = DetectMode.MANUAL
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@contextmanager
-def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -&gt; Segment:
+def segment(start_adr: int, name: str, relocated_offset: int = None, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -&gt; Segment:
     &#34;&#34;&#34;[summary]
 
     Args:
@@ -17390,7 +17395,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
     &#34;&#34;&#34;
     global _CURRENT_CONTEXT, _PROGRAM
 
-    seg = Segment(start_adr=start_adr, name=name.upper(), use_relative_addressing=use_relative_addressing, fixed_address=fixed_address, segment_type=segment_type, group=group)
+    seg = Segment(start_adr=start_adr, name=name.upper(), relocated_offset=relocated_offset, fixed_address=fixed_address, segment_type=segment_type, group=group)
     g._CURRENT_CONTEXT = seg
 
     yield seg
@@ -17557,6 +17562,8 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
 </summary>
 <pre><code class="python">def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter, directive_export: DirectiveExport):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
+
+    g.logger.debug(f&#34;Set Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter} / {directive_export}&#34;)
 
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format

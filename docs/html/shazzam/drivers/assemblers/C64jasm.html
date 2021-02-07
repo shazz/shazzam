@@ -68,6 +68,14 @@ class C64jasm(Assembler):
             &#34;export&#34;: DirectiveExport.NOT_REQUIRED
         })
 
+    def support_basic(self):
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            [type]: [description]
+        &#34;&#34;&#34;
+        return False
+
     def assemble_segment(self, program: Program, segment: Segment) -&gt; str:
         &#34;&#34;&#34;assemble_segment
 
@@ -95,8 +103,16 @@ class C64jasm(Assembler):
         # cmd = [&#34;node&#34;, self.path, &#39;--disasm-file&#39;, f&#39;generated/{program.name}/{program.name}.lst&#39;, &#39;--labels-file&#39;, f&#39;generated/{program.name}/{program.name}.labels&#39;, &#39;--out&#39;, program_filename]
         cmd = [self.path, &#39;--disasm-file&#39;, f&#39;generated/{program.name}/{program.name}.lst&#39;, &#39;--labels-file&#39;, f&#39;generated/{program.name}/{program.name}.labels&#39;, &#39;--out&#39;, program_filename]
 
-        for segment in program.segments:
-            cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
+        # workaround, create include file
+        with open(f&#39;generated/{program.name}/{program.name}_main.asm&#39;, &#34;w&#34;) as f:
+            segments_def = self.segments_definition_gen(program.segments)
+            f.write(segments_def + &#39;\n&#39;)
+            for segment in program.segments:
+                f.write(f&#39;!include &#34;{segment.name}.asm&#34;\n&#39;)
+
+        cmd.append(f&#34;generated/{program.name}/{program.name}_main.asm&#34;)
+        # for segment in program.segments:
+        #     cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
 
         self.logger.info(f&#34;Assembling {program.name} using c64jasm command: {cmd}&#34;)
         data = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -104,8 +120,8 @@ class C64jasm(Assembler):
 
         print(stdout_data.decode(&#39;utf-8&#39;))
 
-        if len(stderr_data) &gt; 1:
-            self.logger.error(stderr_data.decode(&#39;utf-8&#39;))
+        if len(stderr_data) &gt; 1 or (&#34;Compilation failed.&#34; in stdout_data.decode(&#39;utf-8&#39;)):
+            self.logger.error(f&#34;Assembling failed, check logs {stderr_data.decode(&#39;utf-8&#39;)}&#34;)
         else:
             self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
@@ -171,6 +187,14 @@ class C64jasm(Assembler):
             &#34;export&#34;: DirectiveExport.NOT_REQUIRED
         })
 
+    def support_basic(self):
+        &#34;&#34;&#34;[summary]
+
+        Returns:
+            [type]: [description]
+        &#34;&#34;&#34;
+        return False
+
     def assemble_segment(self, program: Program, segment: Segment) -&gt; str:
         &#34;&#34;&#34;assemble_segment
 
@@ -198,8 +222,16 @@ class C64jasm(Assembler):
         # cmd = [&#34;node&#34;, self.path, &#39;--disasm-file&#39;, f&#39;generated/{program.name}/{program.name}.lst&#39;, &#39;--labels-file&#39;, f&#39;generated/{program.name}/{program.name}.labels&#39;, &#39;--out&#39;, program_filename]
         cmd = [self.path, &#39;--disasm-file&#39;, f&#39;generated/{program.name}/{program.name}.lst&#39;, &#39;--labels-file&#39;, f&#39;generated/{program.name}/{program.name}.labels&#39;, &#39;--out&#39;, program_filename]
 
-        for segment in program.segments:
-            cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
+        # workaround, create include file
+        with open(f&#39;generated/{program.name}/{program.name}_main.asm&#39;, &#34;w&#34;) as f:
+            segments_def = self.segments_definition_gen(program.segments)
+            f.write(segments_def + &#39;\n&#39;)
+            for segment in program.segments:
+                f.write(f&#39;!include &#34;{segment.name}.asm&#34;\n&#39;)
+
+        cmd.append(f&#34;generated/{program.name}/{program.name}_main.asm&#34;)
+        # for segment in program.segments:
+        #     cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
 
         self.logger.info(f&#34;Assembling {program.name} using c64jasm command: {cmd}&#34;)
         data = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -207,8 +239,8 @@ class C64jasm(Assembler):
 
         print(stdout_data.decode(&#39;utf-8&#39;))
 
-        if len(stderr_data) &gt; 1:
-            self.logger.error(stderr_data.decode(&#39;utf-8&#39;))
+        if len(stderr_data) &gt; 1 or (&#34;Compilation failed.&#34; in stdout_data.decode(&#39;utf-8&#39;)):
+            self.logger.error(f&#34;Assembling failed, check logs {stderr_data.decode(&#39;utf-8&#39;)}&#34;)
         else:
             self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
@@ -257,8 +289,16 @@ class C64jasm(Assembler):
     # cmd = [&#34;node&#34;, self.path, &#39;--disasm-file&#39;, f&#39;generated/{program.name}/{program.name}.lst&#39;, &#39;--labels-file&#39;, f&#39;generated/{program.name}/{program.name}.labels&#39;, &#39;--out&#39;, program_filename]
     cmd = [self.path, &#39;--disasm-file&#39;, f&#39;generated/{program.name}/{program.name}.lst&#39;, &#39;--labels-file&#39;, f&#39;generated/{program.name}/{program.name}.labels&#39;, &#39;--out&#39;, program_filename]
 
-    for segment in program.segments:
-        cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
+    # workaround, create include file
+    with open(f&#39;generated/{program.name}/{program.name}_main.asm&#39;, &#34;w&#34;) as f:
+        segments_def = self.segments_definition_gen(program.segments)
+        f.write(segments_def + &#39;\n&#39;)
+        for segment in program.segments:
+            f.write(f&#39;!include &#34;{segment.name}.asm&#34;\n&#39;)
+
+    cmd.append(f&#34;generated/{program.name}/{program.name}_main.asm&#34;)
+    # for segment in program.segments:
+    #     cmd.append(f&#34;generated/{program.name}/{segment.name}.asm&#34;)
 
     self.logger.info(f&#34;Assembling {program.name} using c64jasm command: {cmd}&#34;)
     data = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -266,8 +306,8 @@ class C64jasm(Assembler):
 
     print(stdout_data.decode(&#39;utf-8&#39;))
 
-    if len(stderr_data) &gt; 1:
-        self.logger.error(stderr_data.decode(&#39;utf-8&#39;))
+    if len(stderr_data) &gt; 1 or (&#34;Compilation failed.&#34; in stdout_data.decode(&#39;utf-8&#39;)):
+        self.logger.error(f&#34;Assembling failed, check logs {stderr_data.decode(&#39;utf-8&#39;)}&#34;)
     else:
         self.logger.info(f&#34;{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked&#34;)
 
@@ -350,8 +390,8 @@ class C64jasm(Assembler):
 <ul class="hlist">
 <li><code><a title="shazzam.Assembler.Assembler.assemble_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.assemble_segment">assemble_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.get_code_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.get_code_segment">get_code_segment</a></code></li>
-<li><code><a title="shazzam.Assembler.Assembler.get_vasyl_segment" href="../../Assembler.html#shazzam.Assembler.Assembler.get_vasyl_segment">get_vasyl_segment</a></code></li>
 <li><code><a title="shazzam.Assembler.Assembler.segments_definition_gen" href="../../Assembler.html#shazzam.Assembler.Assembler.segments_definition_gen">segments_definition_gen</a></code></li>
+<li><code><a title="shazzam.Assembler.Assembler.support_basic" href="../../Assembler.html#shazzam.Assembler.Assembler.support_basic">support_basic</a></code></li>
 </ul>
 </li>
 </ul>

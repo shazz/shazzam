@@ -28,7 +28,7 @@ class Program():
         for existing_label_name, existing_label in self.global_labels.items():
             if existing_label_name == label.name and existing_label.value != label.value:
                 raise ValueError(
-                    f"The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.address:04X}")
+                    f"The global label {label.name} already defined at address {existing_label.value:04X}, requested: {label.value:04X}")
 
         self.global_labels[label.name] = label
 

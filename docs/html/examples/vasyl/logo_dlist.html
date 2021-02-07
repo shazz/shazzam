@@ -38,7 +38,7 @@ from shazzam.Assembler import Assembler
 #
 # Logo display list
 
-with segment(0x00, &#34;VASYL&#34;) as s:
+with segment(0x0900, &#34;VASYL&#34;, relocated_offset=0x0000) as s:
 
     label(&#34;dl_start&#34;, is_global=True)
     WAIT(48 ,0)
@@ -640,13 +640,7 @@ with segment(0x00, &#34;VASYL&#34;) as s:
     SKIP()
     WAIT(247 , 59)
     BRA(dl_line_24)
-    END()
-
-    label(&#34;preserve_ctrl1&#34;, is_global=True)
-    byte(0)
-
-    label(&#34;preserve_ec&#34;, is_global=True)
-    byte(0)</code></pre>
+    END()</code></pre>
 </details>
 </section>
 <section>

@@ -22,16 +22,16 @@ class Assembler():
         """
         pass
 
-    def get_vasyl_segment(self) -> str:
-        """get_code_segment
-
-        Returns:
-            str: [description]
-        """
-        return "VASYL"
-
     def get_code_format(self):
         """get_code_format"""
+        pass
+
+    def support_basic(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
         pass
 
     def assemble_segment(self, segment: Segment) -> str:

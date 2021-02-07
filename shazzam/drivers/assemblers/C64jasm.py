@@ -40,6 +40,14 @@ class C64jasm(Assembler):
             "export": DirectiveExport.NOT_REQUIRED
         })
 
+    def support_basic(self):
+        """[summary]
+
+        Returns:
+            [type]: [description]
+        """
+        return False
+
     def assemble_segment(self, program: Program, segment: Segment) -> str:
         """assemble_segment
 
@@ -67,8 +75,16 @@ class C64jasm(Assembler):
         # cmd = ["node", self.path, '--disasm-file', f'generated/{program.name}/{program.name}.lst', '--labels-file', f'generated/{program.name}/{program.name}.labels', '--out', program_filename]
         cmd = [self.path, '--disasm-file', f'generated/{program.name}/{program.name}.lst', '--labels-file', f'generated/{program.name}/{program.name}.labels', '--out', program_filename]
 
-        for segment in program.segments:
-            cmd.append(f"generated/{program.name}/{segment.name}.asm")
+        # workaround, create include file
+        with open(f'generated/{program.name}/{program.name}_main.asm', "w") as f:
+            segments_def = self.segments_definition_gen(program.segments)
+            f.write(segments_def + '\n')
+            for segment in program.segments:
+                f.write(f'!include "{segment.name}.asm"\n')
+
+        cmd.append(f"generated/{program.name}/{program.name}_main.asm")
+        # for segment in program.segments:
+        #     cmd.append(f"generated/{program.name}/{segment.name}.asm")
 
         self.logger.info(f"Assembling {program.name} using c64jasm command: {cmd}")
         data = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -76,8 +92,8 @@ class C64jasm(Assembler):
 
         print(stdout_data.decode('utf-8'))
 
-        if len(stderr_data) > 1:
-            self.logger.error(stderr_data.decode('utf-8'))
+        if len(stderr_data) > 1 or ("Compilation failed." in stdout_data.decode('utf-8')):
+            self.logger.error(f"Assembling failed, check logs {stderr_data.decode('utf-8')}")
         else:
             self.logger.info(f"{program_filename} ({os.path.getsize(program_filename)} bytes) assembled and linked")
 

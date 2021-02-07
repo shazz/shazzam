@@ -38,10 +38,13 @@ from shazzam.macros.aliases import color, vic
 import shazzam.macros.sys as sys
 from shazzam.macros.vasyl import *
 import shazzam.macros.vlib as vlib
-from shazzam.drivers.assemblers.CC65 import CC65
 
 # define your cross assembler
-assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
+# from shazzam.drivers.assemblers.CC65 import CC65
+# assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
+from shazzam.drivers.assemblers.C64jasm import C64jasm
+assembler = C64jasm(&#34;c64jasm&#34;, &#34;/home/shazz/projects/c64/bin/c64jasm&#34;)
+
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
 @reloading
@@ -54,17 +57,18 @@ def code():
     # CC65 generates basic header, no macro needed just to define the CODE segment
     with segment(0x0801, assembler.get_code_segment()) as s:
 
-        # sys.basic_start()
-        label(&#34;init&#34;)
+        if not assembler.support_basic():
+            sys.basic_start()
 
+        label(&#34;init&#34;)
         jsr(at(&#34;knock_knock&#34;))
 
-        lda(at(53265))
+        lda(at(0xd011))
         sta(at(&#34;preserve_ctrl1&#34;))
         lda(at(0xd020))
         sta(at(&#34;preserve_ec&#34;))
         lda(imm(0))                   # turn off VIC-II display fetches
-        sta(at(53265))                # so that badlines do not interfere
+        sta(at(0xd011))                # so that badlines do not interfere
 
         jsr(at(&#34;copy_and_activate_dlist&#34;))
         label(&#34;loop&#34;)
@@ -73,21 +77,28 @@ def code():
 
         lda(imm(0))                   # turn off the display list
         sta(at(VREG_CONTROL))
+
         lda(at(&#34;preserve_ctrl1&#34;))
-        sta(at(53265))
+        sta(at(0xd011))
         lda(at(&#34;preserve_ec&#34;))
         sta(at(0xd020))
 
         rts()
 
-        vasyl_segment_load = &#34;end_main&#34;
-        vasyl_segment_size = get_segment_addresses(assembler.get_vasyl_segment()).end_address
+    with segment(0x02000, &#34;DATA&#34;) as s:
+        label(&#34;preserve_ctrl1&#34;, is_global=True)
+        byte(0)
+
+        label(&#34;preserve_ec&#34;, is_global=True)
+        byte(0)
+
+    with segment(0x1E00, &#34;VLIB&#34;) as s:
 
         # include vlib routines
-        vlib.init(vasyl_segment_load, vasyl_segment_size)
-        vlib.copy_and_activate_dlist(vasyl_segment_load, vasyl_segment_size)
-
-        label(&#34;end_main&#34;)
+        vasyl_segment_size = get_segment_addresses(&#34;VASYL&#34;).size
+        print(f&#34;Copying Dlist at of size {vasyl_segment_size}&#34;)
+        vlib.init(vasyl_segment_size)
+        vlib.copy_and_activate_dlist(vasyl_segment_size)
 
     # generate listing
     gen_code(assembler, gen_listing=True)

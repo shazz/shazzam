@@ -87,7 +87,7 @@ def code():
         label(&#34;loop&#34;)
         jmp(at(&#34;loop&#34;))
 
-    with segment(0xa000, &#34;message&#34;, segment_type=SegmentType.GENERIC_DATA) as s:
+    with segment(0x1000, &#34;message&#34;, segment_type=SegmentType.GENERIC_DATA) as s:
         label(&#34;msg&#34;, is_global=True)
         byte(&#34;WELCOME TO THE MATRIX - THE 8BITS MATRIX&#34;)
 

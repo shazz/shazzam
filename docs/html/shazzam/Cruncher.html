@@ -67,8 +67,7 @@ class Cruncher():
             if extra_params and len(extra_params) &gt; 0:
                 self.prg_cmd[1:1] = extra_params
 
-            self.logger.info(
-                f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
+            self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
             data = subprocess.Popen(self.prg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout_data, stderr_data = data.communicate()
 
@@ -196,8 +195,7 @@ class Cruncher():
             if extra_params and len(extra_params) &gt; 0:
                 self.prg_cmd[1:1] = extra_params
 
-            self.logger.info(
-                f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
+            self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
             data = subprocess.Popen(self.prg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout_data, stderr_data = data.communicate()
 
@@ -393,8 +391,7 @@ class Cruncher():
         if extra_params and len(extra_params) &gt; 0:
             self.prg_cmd[1:1] = extra_params
 
-        self.logger.info(
-            f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
+        self.logger.info(f&#34;Crunching {filename} with {self.packer_name} command: {self.prg_cmd }&#34;)
         data = subprocess.Popen(self.prg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = data.communicate()
 

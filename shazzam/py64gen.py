@@ -33,6 +33,8 @@ from typing import List, Any, Dict
 def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments_format: CommentsFormat, directive_prefix: DirectiveFormat, directive_delimiter: DirectiveDelimiter, directive_export: DirectiveExport):
     global _CODE_FORMAT, _COMMENTS_FORMAT, _DIRECTIVE_PREFIX
 
+    g.logger.debug(f"Set Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter} / {directive_export}")
+
     g._CODE_FORMAT = code_format
     g._COMMENTS_FORMAT = comments_format
     g._DIRECTIVE_PREFIX = directive_prefix
@@ -41,7 +43,7 @@ def set_prefs(default_code_segment: str, code_format: List[CodeFormat], comments
     g._DIRECTIVE_EXPORT = directive_export
 
 @contextmanager
-def segment(start_adr: int, name: str, use_relative_addressing: bool = False, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -> Segment:
+def segment(start_adr: int, name: str, relocated_offset: int = None, check_address_dups: bool = True, fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None) -> Segment:
     """[summary]
 
     Args:
@@ -57,7 +59,7 @@ def segment(start_adr: int, name: str, use_relative_addressing: bool = False, ch
     """
     global _CURRENT_CONTEXT, _PROGRAM
 
-    seg = Segment(start_adr=start_adr, name=name.upper(), use_relative_addressing=use_relative_addressing, fixed_address=fixed_address, segment_type=segment_type, group=group)
+    seg = Segment(start_adr=start_adr, name=name.upper(), relocated_offset=relocated_offset, fixed_address=fixed_address, segment_type=segment_type, group=group)
     g._CURRENT_CONTEXT = seg
 
     yield seg
@@ -140,7 +142,7 @@ def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True,
 
 
     prefs = assembler.get_code_format()
-    g.logger.debug(f"Setting assembler pref: {prefs}")
+    g.logger.debug(f"Setting assembler {assembler.name} pref: {prefs}")
     set_prefs(
         default_code_segment=assembler.get_code_segment(),
         code_format=prefs.code,
@@ -160,7 +162,7 @@ def gen_code(assembler: Assembler, header: str = None, gen_listing: bool = True,
             os.makedirs(f"generated/{g._PROGRAM.name}", exist_ok=True)
             with open(f"generated/{g._PROGRAM.name}/{segment.name}.asm", "w") as f:
                 f.writelines(header)
-                f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
+                # f.writelines(assembler.segments_definition_gen(g._PROGRAM.segments))
                 f.writelines(code)
 
     if gen_listing:
@@ -262,7 +264,9 @@ def get_segment_addresses(name: str) -> int:
         if segment.name.upper() == name.upper():
             return Alias({
                 "start_address": segment.start_adr,
-                "end_address": segment.end_adr
+                "end_address": segment.end_adr,
+                "relocated_offset": segment.relocated_offset,
+                "size": segment.end_adr - segment.relocated_offset if segment.relocated_offset is not None else segment.end_adr - segment.start_adr
             })
 
     raise ValueError(f"Segment {name} not (yet?) found!")
@@ -617,6 +621,7 @@ def _check_segments_overlap(code_segment: str = "CODE") -> None:
 
     intervals = []
     for segment in g._PROGRAM.segments:
+        print(f"seg {segment.name} boundaries: {segment.start_adr:04X}-{segment.end_adr:04X}")
         if segment.name == code_segment:
             # adding basic header 13 bytes
             intervals.append((segment.start_adr, segment.end_adr+13))
@@ -624,13 +629,11 @@ def _check_segments_overlap(code_segment: str = "CODE") -> None:
             intervals.append((segment.start_adr, segment.end_adr))
 
     intervals.sort()
-    g.logger.info(
-        f"Checking overlapping intervals: {[(hex(interval[0]), hex(interval[1])) for interval in intervals]}")
+    g.logger.info(f"Checking overlapping intervals: {[(hex(interval[0]), hex(interval[1])) for interval in intervals]}")
 
     for i in range(1, len(intervals)):
         if intervals[i][0] <= intervals[i-1][1]:
-            raise ValueError(
-                f"The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!")
+            raise ValueError(f"The segments {g._PROGRAM.segments[i-1].name} and {g._PROGRAM.segments[i].name} overlap!")
 
 def _get_segment_by_address(address: int, segments: List[Segment]) -> Segment:
         """_get_segment_by_address

@@ -73,7 +73,7 @@ class Segment():
     def __init__(self, start_adr: int, name: str,
                 code_format: List[CodeFormat] = None, comments_format: CommentsFormat = None,
                 directive_prefix: DirectiveFormat = None, directive_delimiter: DirectiveDelimiter = None,
-                directive_export: DirectiveExport = None, use_relative_addressing: bool = False,
+                directive_export: DirectiveExport = None, relocated_offset: int = None,
                 fixed_address: bool = False, segment_type: SegmentType = SegmentType.CODE, group: int = None):
         """[summary]
 
@@ -81,20 +81,32 @@ class Segment():
             start_adr (int): [description]
             name (str): [description]
             code_format (List[CodeFormat], optional): [description]. Defaults to None.
-            comments_format (CommentsFormat, optional): [description]. Defaults to CommentsFormat.USE_SEMICOLON.
-            directive_prefix (DirectiveFormat, optional): [description]. Defaults to DirectiveFormat.USE_DOT.
+            comments_format (CommentsFormat, optional): [description]. Defaults to None.
+            directive_prefix (DirectiveFormat, optional): [description]. Defaults to None.
+            directive_delimiter (DirectiveDelimiter, optional): [description]. Defaults to None.
+            directive_export (DirectiveExport, optional): [description]. Defaults to None.
+            relocated_offset (int, optional): [description]. Defaults to None.
+            fixed_address (bool, optional): [description]. Defaults to False.
+            segment_type (SegmentType, optional): [description]. Defaults to SegmentType.CODE.
+            group (int, optional): [description]. Defaults to None.
         """
         self.logger = logging.getLogger("shazzam")
+
+        self.relocated_offset = relocated_offset
+        if relocated_offset is not None:
+            self.logger.info(f"Segment {name} is address-indexed from {relocated_offset:04X}")
+
         self.start_adr = start_adr
         self._end_adr = start_adr
+
+        self.next_position = start_adr if self.relocated_offset is None else self.relocated_offset
+
         self.fixed_start_address = start_adr if fixed_address else None
         self.instructions = {}
-        self.next_position = start_adr
         self.name = name
         self.total_cycles_used = 0
         self.labels = {}
         self.required_labels = {}
-        self.use_relative_addressing = use_relative_addressing
         self.segment_type = segment_type
         self.group = group
 
@@ -121,18 +133,26 @@ class Segment():
         self.comment_char = Segment.comments_chars[comments_format]
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
         self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
-        self.support_export = Segment.directive_export[directive_export]
+
+        self.logger.debug(f"Setting export support to: {directive_export} globals is : {g._DIRECTIVE_EXPORT}")
+        self.support_export = directive_export
 
         self.rasterlines = {}
         self.anonymous_labels = {}
 
     @property
     def end_adr(self):
-        return self.next_position
+        if self.relocated_offset is not None:
+            return self.next_position + self.start_adr
+        else:
+            return self.next_position
 
     @property
     def size(self):
-        return self.end_adr - self.start_adr
+        if self.relocated_offset is not None:
+            return self.end_adr - self.relocated_offset
+        else:
+            return self.end_adr - self.start_adr
 
     def change_format(self):
         """change_format"""
@@ -140,8 +160,9 @@ class Segment():
         comments_format = g._COMMENTS_FORMAT
         directive_prefix = g._DIRECTIVE_PREFIX
         directive_delimiter = g._DIRECTIVE_DELIMITER
+        directive_export = g._DIRECTIVE_EXPORT
 
-        self.logger.info(f"Reset Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter}")
+        self.logger.debug(f"Reset Prefs: {code_format} / {comments_format} / {directive_prefix} / {directive_delimiter} / {directive_export}")
 
         self.show_address = True if CodeFormat.ADDRESS in code_format else False
         self.show_bytecode = True if CodeFormat.BYTECODE in code_format else False
@@ -151,6 +172,7 @@ class Segment():
         self.show_labels = True if CodeFormat.SHOW_LABELS in code_format else False
         self.directive_prefix = Segment.directive_prefix[directive_prefix]
         self.directive_delimiter = Segment.directive_delimiter[directive_delimiter]
+        self.support_export = directive_export
 
     def close(self) -> None:
         """[summary]"""
@@ -412,7 +434,7 @@ class Segment():
             label = [k for k, v in self.labels.items() if v.value == adr]
 
             # substract start address if relative addressing
-            address_offset = self.start_adr if self.use_relative_addressing else 0
+            address_offset = 0 #self.start_adr if self.use_relative_addressing else 0
 
             if isinstance(instr, ByteData):
                 if remaining_bytes_to_process != 0:
@@ -548,7 +570,7 @@ class Segment():
             label = [k for k, v in self.labels.items() if v.value == adr]
 
             # substract start address if relative addressing
-            address_offset = self.start_adr if self.use_relative_addressing else 0
+            address_offset = 0 #self.start_adr if self.use_relative_addressing else 0
 
             if isinstance(instr, ByteData):
                 if remaining_bytes_to_process != 0:
@@ -658,13 +680,16 @@ class Segment():
         locals_labels = list(self.labels.keys())
         globals_labels = list(g._PROGRAM.global_labels.keys())
 
-        if self.support_export == DirectiveExport.USE_EXPORT_DIRECTIVE:
+        if self.support_export is DirectiveExport.USE_EXPORT_DIRECTIVE:
+
+            self.logger.info(f"Using import/export directive")
             for label in globals_labels:
                 if label not in locals_labels:
                     code.append(f'\t\t{self.directive_prefix}import {label}\n')
                 else:
                     code.append(f'\t\t{self.directive_prefix}export {label}\n')
-        elif self.support_export == DirectiveExport.USE_VARIABLES:
+
+        elif self.support_export is DirectiveExport.USE_VARIABLES:
             raise NotImplementedError("DirectiveExport.USE_VARIABLES noy implemented")
         else:
             self.logger.warning("This assembler doesn't require import/export for globals")

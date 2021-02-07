@@ -10,16 +10,13 @@ from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 from shazzam.macros.aliases import color, vic
 import shazzam.plugins.plugins as p
 from shazzam.drivers.assemblers.CC65 import CC65
-from shazzam.drivers.crunchers.Exomizer import Exomizer
-from shazzam.drivers.crunchers.Lzsa import Lzsa
+from shazzam.drivers.crunchers.Lzsa1 import Lzsa1
 import shazzam.plugins.plugins as p
 
 
 # define your cross assembler
 assembler = CC65("cc65", "third_party/cc65/bin/cl65")
-
-prg_cruncher  = Exomizer("third_party/exomizer/exomizer")
-data_cruncher = Lzsa("third_party/lzsa/lzsa")
+data_cruncher = Lzsa1("third_party/lzsa/lzsa")
 
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
@@ -123,32 +120,55 @@ def code():
         #
         # out:
         # * LZSA_DST_LO (LO+1, HI+2) contains the last decompressed byte address, +1
+        mode = 2
+
         label("depack")
         packed_data = get_segment_addresses("packedata").start_address
         print(f"Packed data ends at {packed_data:04X}")
 
-        # set packed data src / dst
-        lda(imm(packed_data & 0xff))
-        sta(at("LZSA_SRC")+1)
+        if mode != 2:
+            # set packed data src / dst
+            lda(imm(packed_data & 0xff))
+            sta(at("LZSA_SRC")+1)
 
-        lda(imm(packed_data >> 8))
-        sta(at("LZSA_SRC")+2)
+            lda(imm(packed_data >> 8))
+            sta(at("LZSA_SRC")+2)
 
-        lda(imm(0x1000 & 0xff))
-        sta(at("LZSA_DST")+1)
+            lda(imm(0x1000 & 0xff))
+            sta(at("LZSA_DST")+1)
 
-        lda(imm(0x1000 >> 8))
-        sta(at("LZSA_DST")+2)
+            lda(imm(0x1000 >> 8))
+            sta(at("LZSA_DST")+2)
+        else:
+
+            LZSA_SRC_LO = 0xFC
+            LZSA_SRC_HI = 0xFD
+            LZSA_DST_LO = 0xFE
+            LZSA_DST_HI = 0xFF
+
+            # set packed data src / dst
+            lda(imm(packed_data & 0xff))
+            sta(at(LZSA_SRC_LO))
+
+            lda(imm(packed_data >> 8))
+            sta(at(LZSA_SRC_HI))
+
+            # depacked data are located at apl_dstptr+126 bytes
+            lda(imm(0x1000 & 0xff))
+            sta(at(LZSA_DST_LO))
+
+            lda(imm(0x1000 >> 8))
+            sta(at(LZSA_DST_HI))
 
         # unpack data forward.
         depack_start = get_current_address()
-        jsr(at("DECOMPRESS_LZSA2_FAST"))
+        jsr(at("DECOMPRESS_LZSA1"))
         depack_end = get_current_address()
 
         rts()
 
     with segment(segments["depacker"], "depacker") as s:
-        data_cruncher.generate_depacker_routine(s.get_stats().start_address, use_fast=True)
+        data_cruncher.generate_depacker_routine(s.get_stats().start_address, mode=mode)
 
     # generate listing
     gen_code(assembler, gen_listing=True)
@@ -161,6 +181,7 @@ def code():
 
     routine_size = get_segment_addresses("depacker").end_address - get_segment_addresses("depacker").start_address
     print(f"Depacker used {routine_size} bytes and {cycles_used} cycles (around [{round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)}] vbls [IDLE/ACTIVE]) or [{round(cycles_used/19656/50*1000, 2)}/{round(cycles_used/18656/50*1000, 2)}] ms")
+    print(f"Packed data size: {get_segment_addresses('packedata').end_address - get_segment_addresses('packedata').start_address} bytes")
 
 
 if __name__ == "__main__":

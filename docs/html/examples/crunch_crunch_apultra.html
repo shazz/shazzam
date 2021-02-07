@@ -44,7 +44,6 @@ import shazzam.plugins.plugins as p
 
 # define your cross assembler
 assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
-prg_cruncher  = Exomizer(&#34;third_party/exomizer/exomizer&#34;)
 data_cruncher = Apultra(&#34;third_party/apultra/apultra&#34;, mode=PackingMode.FORWARD)
 
 program_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -185,6 +184,7 @@ def code():
 
     routine_size = get_segment_addresses(&#34;depacker&#34;).end_address - get_segment_addresses(&#34;depacker&#34;).start_address
     print(f&#34;Depacker used {routine_size} bytes and {cycles_used} cycles (around [{round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)}] vbls [IDLE/ACTIVE]) or [{round(cycles_used/19656/50*1000, 2)}/{round(cycles_used/18656/50*1000, 2)}] ms&#34;)
+    print(f&#34;Packed data size: {get_segment_addresses(&#39;packedata&#39;).end_address - get_segment_addresses(&#39;packedata&#39;).start_address} bytes&#34;)
 
 
 if __name__ == &#34;__main__&#34;:

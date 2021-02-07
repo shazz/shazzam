@@ -19,7 +19,7 @@ class Zx7(Cruncher):
         cmd_bin_template = [exe_path, "FILENAME_TO_SET", "OUTPUT_TO_SET"]
         super().__init__("Zx7", exe_path, cmd_prg_template, cmd_bin_template)
 
-    def crunch_incbin2(self, filename: str = None, data: bytearray = None, extra_params: List = None) -> bytearray:
+    def crunch_incbin(self, filename: str = None, data: bytearray = None, extra_params: List = None) -> bytearray:
         """crunch_incbin
 
         Args:

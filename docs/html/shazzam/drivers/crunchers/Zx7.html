@@ -47,7 +47,7 @@ class Zx7(Cruncher):
         cmd_bin_template = [exe_path, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
         super().__init__(&#34;Zx7&#34;, exe_path, cmd_prg_template, cmd_bin_template)
 
-    def crunch_incbin2(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
+    def crunch_incbin(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
         &#34;&#34;&#34;crunch_incbin
 
         Args:
@@ -407,7 +407,7 @@ class Zx7(Cruncher):
         cmd_bin_template = [exe_path, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
         super().__init__(&#34;Zx7&#34;, exe_path, cmd_prg_template, cmd_bin_template)
 
-    def crunch_incbin2(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
+    def crunch_incbin(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
         &#34;&#34;&#34;crunch_incbin
 
         Args:
@@ -743,68 +743,6 @@ class Zx7(Cruncher):
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="shazzam.drivers.crunchers.Zx7.Zx7.crunch_incbin2"><code class="name flex">
-<span>def <span class="ident">crunch_incbin2</span></span>(<span>self, filename: str = None, data: bytearray = None, extra_params: List = None) ‑> bytearray</span>
-</code></dt>
-<dd>
-<div class="desc"><p>crunch_incbin</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>filename</code></strong> :&ensp;<code>str</code></dt>
-<dd>[description]</dd>
-<dt><strong><code>extra_params</code></strong> :&ensp;<code>List</code>, optional</dt>
-<dd>[description]. Defaults to None.</dd>
-</dl>
-<h2 id="raises">Raises</h2>
-<dl>
-<dt><code>RuntimeError</code></dt>
-<dd>[description]</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def crunch_incbin2(self, filename: str = None, data: bytearray = None, extra_params: List = None) -&gt; bytearray:
-    &#34;&#34;&#34;crunch_incbin
-
-    Args:
-        filename (str): [description]
-        extra_params (List, optional): [description]. Defaults to None.
-
-    Raises:
-        RuntimeError: [description]
-    &#34;&#34;&#34;
-    try:
-
-        if filename is None:
-            filename = &#34;resources/tmp.bin&#34;
-            with open(filename, &#34;wb&#34;) as f:
-                f.write(data)
-
-        output_filename = f&#34;{filename}.zx7&#34;
-        if os.path.isfile(output_filename):
-             os.remove(output_filename)
-
-        self.logger.info(f&#34;Crunching {filename} with {self.packer_name}&#34;)
-        new_filename = pyzx7.compress(filename)
-
-        # check packing ratio
-        unpacked_size = os.path.getsize(filename)
-        packed_size = os.path.getsize(output_filename)
-        if packed_size &gt;= unpacked_size:
-            raise RuntimeError(f&#34;Packing doesn&#39;t shrink the incbin. Size increased from {unpacked_size} to {packed_size} bytes&#34;)
-
-        self.logger.info(f&#34;{filename} was {unpacked_size} bytes, packed to {packed_size} bytes&#34;)
-        with open(output_filename, &#34;rb&#34;) as f:
-            barr = f.read()
-
-        return bytearray(barr)
-
-    except Exception as e:
-        self.logger.error(f&#34;Cannot crunch incbin using {self.packer_name} due to {e}&#34;)
-        raise</code></pre>
-</details>
-</dd>
 <dt id="shazzam.drivers.crunchers.Zx7.Zx7.generate_depacker_fast_routine"><code class="name flex">
 <span>def <span class="ident">generate_depacker_fast_routine</span></span>(<span>self, address: int) ‑> NoneType</span>
 </code></dt>
@@ -1145,7 +1083,6 @@ class Zx7(Cruncher):
 <li>
 <h4><code><a title="shazzam.drivers.crunchers.Zx7.Zx7" href="#shazzam.drivers.crunchers.Zx7.Zx7">Zx7</a></code></h4>
 <ul class="">
-<li><code><a title="shazzam.drivers.crunchers.Zx7.Zx7.crunch_incbin2" href="#shazzam.drivers.crunchers.Zx7.Zx7.crunch_incbin2">crunch_incbin2</a></code></li>
 <li><code><a title="shazzam.drivers.crunchers.Zx7.Zx7.generate_depacker_fast_routine" href="#shazzam.drivers.crunchers.Zx7.Zx7.generate_depacker_fast_routine">generate_depacker_fast_routine</a></code></li>
 <li><code><a title="shazzam.drivers.crunchers.Zx7.Zx7.generate_depacker_routine" href="#shazzam.drivers.crunchers.Zx7.Zx7.generate_depacker_routine">generate_depacker_routine</a></code></li>
 </ul>

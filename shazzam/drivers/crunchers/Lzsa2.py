@@ -3,7 +3,7 @@ from shazzam.py64gen import *
 from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
 
 
-class Lzsa(Cruncher):
+class Lzsa2(Cruncher):
 
     def __init__(self, exe_path: str):
 
@@ -11,7 +11,7 @@ class Lzsa(Cruncher):
         cmd_bin_template = [exe_path, "-r", "-f2", "FILENAME_TO_SET", "OUTPUT_TO_SET"]
         super().__init__("lzsa", exe_path, cmd_prg_template, cmd_bin_template)
 
-    def generate_depacker_routine(self, address: int, use_fast: bool = True) -> None:
+    def generate_depacker_routine(self, address: int, mode: int = 2) -> None:
         """[summary]
 
         Args:
@@ -52,8 +52,9 @@ class Lzsa(Cruncher):
 
         NIBCOUNT = 0xfc                          # zero-page location for temp offset
 
-        label("DECOMPRESS_LZSA2_FAST", is_global=True)
-        if use_fast:
+        label("DECOMPRESS_LZSA2", is_global=True)
+
+        if mode == 0:
             self.logger.info("Using Fast lzsa depacker")
 
             ldy(imm(0x00))
@@ -319,7 +320,7 @@ class Lzsa(Cruncher):
             inc(at("GETSRC")+2)
             rts()
 
-        else:
+        elif mode == 1:
 
             self.logger.info("Using Small lzsa depacker")
 
@@ -543,4 +544,270 @@ class Lzsa(Cruncher):
             label("GETSRC_DONE")
             rts()
 
+        elif mode == 2:
 
+            lzsa_cmdbuf = 0xF5
+            lzsa_nibflg = 0xF6
+            lzsa_nibble = 0xF7
+            lzsa_offset = 0xF8
+            lzsa_winptr = 0xFA
+            lzsa_srcptr = 0xFC
+            lzsa_dstptr = 0xFE
+            lzsa_length = lzsa_winptr
+            LZSA_SRC_LO = 0xFC
+            LZSA_SRC_HI = 0xFD
+            LZSA_DST_LO = 0xFE
+            LZSA_DST_HI = 0xFF
+
+            def LZSA_INC_PAGE():
+                inc(at(lzsa_srcptr)+1)
+
+
+            def LZSA_GET_SRC():
+                skip = get_anonymous_label("skip")
+                lda(ind_at(lzsa_srcptr),y)
+                inc(at(lzsa_srcptr)+0)
+                bne(rel_at(skip))
+                LZSA_INC_PAGE()
+                label(skip)
+
+            def LZSA_GET_NIBL():
+                skip = get_anonymous_label("skip")
+                lsr(at(lzsa_nibflg))
+                lda(at(lzsa_nibble))
+                bcs(rel_at(skip))
+                jsr(at("lzsa2_new_nibble"))
+                label(skip)
+                ora(imm(0xF0))
+
+
+            label("lzsa2_unpack")
+            ldy(imm(0))
+            sty(at(lzsa_nibflg))
+
+            beq(rel_at(".cp_length"))              # always taken
+            label(".incsrc1")
+            inc(at(lzsa_srcptr+1))
+            bne(rel_at(".resume_src1"))           # always taken
+
+            label(".cp_length")
+            ldx(imm(0x00))
+            lda(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            beq(rel_at(".incsrc1"))
+
+            label(".resume_src1")
+            sta(at(lzsa_cmdbuf))
+            andr(imm(0x18))
+            beq(rel_at(".lz_offset"))
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            cmp(imm(0x03))
+            bne(rel_at(".got_cp_len"))
+            jsr(at(".get_length"))
+
+            label(".got_cp_len")
+            tay()
+            beq(rel_at(".cp_page"))
+            inx()
+            label(".get_cp_src")
+            clc()
+            adc(at(lzsa_srcptr)+0)
+            sta(at(lzsa_srcptr)+0)
+            bcs(rel_at(".get_cp_dst"))
+            dec(at(lzsa_srcptr)+1)
+
+            label(".get_cp_dst")
+            tya()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_dstptr)+0)
+            bcs(rel_at(".get_cp_idx"))
+            dec(at(lzsa_dstptr)+1)
+
+            label(".get_cp_idx")
+            tya()
+            eor(imm(0xFF))
+            tay()
+            iny()
+
+            label(".cp_page")
+            lda(ind_at(lzsa_srcptr),y)
+            sta(ind_at(lzsa_dstptr),y)
+            iny()
+            bne(rel_at(".cp_page"))
+            inc(at(lzsa_srcptr)+1)
+            inc(at(lzsa_dstptr)+1)
+            dex()
+            bne(rel_at(".cp_page"))
+
+            label(".lz_offset")
+            lda(at(lzsa_cmdbuf))
+            asl(a)
+            bcs(rel_at(".get_13_16_rep"))
+            asl(a)
+            bcs(rel_at(".get_9_bits"))
+
+            label(".get_5_bits")
+            dex()
+
+            label(".get_13_bits")
+            asl(a)
+            php()
+            LZSA_GET_NIBL()
+            plp()
+            rol(a)
+            eor(imm(0x01))
+            cpx(imm(0x00))
+            bne(rel_at(".set_offset"))
+            sbc(imm(2))
+            bne(rel_at(".get_low8x"))
+
+            label(".get_9_bits")
+            dex()
+            asl(a)
+            bcc(rel_at(".get_low8"))
+            dex()
+            bcs(rel_at(".get_low8"))
+
+            label(".get_13_16_rep")
+            asl(a)
+            bcc(rel_at(".get_13_bits"))
+
+            label(".get_16_rep")
+            bmi(rel_at(".lz_length"))
+
+            label(".get_16_bits")
+            jsr(at("lzsa2_get_byte"))
+
+            label(".get_low8x")
+            tax()
+
+            label(".get_low8")
+            lda(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            beq(rel_at(".incsrc3"))
+
+            label(".resume_src3")
+
+            label(".set_offset")
+            stx(at(lzsa_offset)+1)
+            sta(at(lzsa_offset)+0)
+
+            label(".lz_length")
+            ldx(imm(0x00))
+            lda(at(lzsa_cmdbuf))
+            andr(imm(0x07))
+            clc()
+            adc(imm(0x02))
+            cmp(imm(0x09))
+            bne(rel_at(".got_lz_len"))
+            inx()
+            jsr(at(".get_length"))
+
+            label(".got_lz_len")
+            eor(imm(0xFF))
+            tay()
+            iny()
+            beq(rel_at(".calc_lz_addr"))
+            eor(imm(0xFF))
+            inx()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_dstptr)+0)
+            bcs(rel_at(".calc_lz_addr"))
+            dec(at(lzsa_dstptr)+1)
+            label(".calc_lz_addr")
+            clc()
+            lda(at(lzsa_dstptr)+0)
+            adc(at(lzsa_offset)+0)
+            sta(at(lzsa_winptr)+0)
+            lda(at(lzsa_dstptr)+1)
+            adc(at(lzsa_offset)+1)
+            sta(at(lzsa_winptr)+1)
+
+            label(".lz_page")
+            lda(ind_at(lzsa_winptr),y)
+            sta(ind_at(lzsa_dstptr),y)
+            iny()
+            bne(rel_at(".lz_page"))
+            inc(at(lzsa_winptr)+1)
+            inc(at(lzsa_dstptr)+1)
+            dex()
+            bne(rel_at(".lz_page"))
+            jmp(at(".cp_length"))
+
+            label(".incsrc3")
+            inc(at(lzsa_srcptr) + 1)
+            bne(rel_at(".resume_src3"))         # always taken
+
+            label(".nibl_len_tbl")
+            byte(3 + 0x10)                  # 0+3 (for literal).
+            byte(9 + 0x10)                  # 2+7 (for match).
+
+            label(".byte_len_tbl")
+            byte(18 - 1)                    # 0+3+15 - CS (for literal).
+            byte(24 - 1)                    # 2+7+15 - CS (for match).
+
+            label(".get_length")
+            LZSA_GET_NIBL()
+            cmp(imm(0xFF))
+            bcs(rel_at(".byte_length"))
+            adc(at(".nibl_len_tbl"),x)
+
+            label(".got_length")
+            ldx(imm(0x00))
+            rts()
+
+            label(".byte_length")
+            jsr(at("lzsa2_get_byte"))
+            adc(at(".byte_len_tbl"),x)
+            bcc(rel_at(".got_length"))
+            beq(rel_at(".finished"))
+
+            label(".word_length")
+            jsr(at("lzsa2_get_byte"))
+            pha()
+            jsr(at("lzsa2_get_byte"))
+            tax()
+            pla()
+            rts()
+
+            label("lzsa2_get_byte")
+            lda(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            beq(rel_at("lzsa2_next_page"))
+            rts()
+
+            label("lzsa2_next_page")
+            inc(at(lzsa_srcptr)+1)
+            rts()
+
+            label(".finished")
+            pla()
+            pla()
+            rts()
+
+            label("lzsa2_new_nibble")
+            inc(at(lzsa_nibflg))
+
+            lda(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            beq(rel_at(".incsrc4"))
+
+            label(".resume_src4")
+            sta(at(lzsa_nibble))
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            rts()
+
+            label(".incsrc4")
+            inc(at(lzsa_srcptr) + 1)
+            bne(rel_at(".resume_src4"))            # always taken
+
+        else:
+
+            raise ValueError(f"Mode {mode} unknown!")

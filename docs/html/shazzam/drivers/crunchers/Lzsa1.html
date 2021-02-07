@@ -1,0 +1,1575 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>shazzam.drivers.crunchers.Lzsa1 API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>shazzam.drivers.crunchers.Lzsa1</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from shazzam.Cruncher import Cruncher
+from shazzam.py64gen import *
+from shazzam.py64gen import RegisterX as x, RegisterY as y, RegisterACC as a
+
+
+class Lzsa1(Cruncher):
+
+    def __init__(self, exe_path: str):
+
+        cmd_prg_template = None
+        cmd_bin_template = [exe_path, &#34;-r&#34;, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+        super().__init__(&#34;lzsa&#34;, exe_path, cmd_prg_template, cmd_bin_template)
+
+    def generate_depacker_routine(self, address: int, mode: int = 2) -&gt; None:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            address (int): [description]
+            mode (int, optional): [description]. Defaults to 2.
+        &#34;&#34;&#34;
+        label(&#34;DECOMPRESS_LZSA1&#34;, is_global=True)
+
+        if mode == 0:
+            ldy(imm(0x00))
+
+            label(&#34;DECODE_TOKEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            pha()
+            andr(imm(0x70))
+            beq(rel_at(&#34;NO_LITERALS&#34;))
+            cmp(imm(0x70))
+            bne(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+
+            sbc(imm(0xF9))
+            bcc(rel_at(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;))
+            beq(rel_at(&#34;LARGE_VARLEN_LITERALS&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+            bcs(rel_at(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;))
+
+            label(&#34;LARGE_VARLEN_LITERALS&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+            txa()
+            bcs(rel_at(&#34;PREPARE_COPY_LARGE_LITERALS&#34;))
+
+            label(&#34;PREPARE_COPY_LITERALS&#34;)
+            tax()
+            lda(at(&#34;SHIFT_TABLE&#34;)-1,x)
+
+            label(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;)
+            tax()
+
+            label(&#34;PREPARE_COPY_LARGE_LITERALS&#34;)
+            beq(rel_at(&#34;COPY_LITERALS&#34;))
+            iny()
+
+            label(&#34;COPY_LITERALS&#34;)
+            jsr(at(&#34;GETPUT&#34;))
+            dex()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+
+            label(&#34;NO_LITERALS&#34;)
+            pla()
+            pha()
+            bmi(rel_at(&#34;GET_LONG_OFFSET&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+            lda(imm(0xFF))
+            bne(rel_at(&#34;GOT_OFFSET&#34;))
+
+            label(&#34;SHORT_VARLEN_MATCHLEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+
+            label(&#34;PREPARE_COPY_MATCH&#34;)
+            tax()
+            label(&#34;PREPARE_COPY_MATCH_Y&#34;)
+            txa()
+            beq(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            iny()
+
+            label(&#34;COPY_MATCH_LOOP&#34;)
+            lda(at(0xdead))
+            jsr(at(&#34;PUTDST&#34;))
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            beq(rel_at(&#34;GETMATCH_ADJ_HI&#34;))
+
+            label(&#34;GETMATCH_DONE&#34;)
+            dex()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            beq(rel_at(&#34;DECODE_TOKEN&#34;))
+
+            label(&#34;GETMATCH_ADJ_HI&#34;)
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+            jmp(at(&#34;GETMATCH_DONE&#34;))
+
+            label(&#34;GET_LONG_OFFSET&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+
+            label(&#34;GOT_OFFSET&#34;)
+            # sta(at(&#34;OFFSHI&#34;)
+            sta(at(&#34;OFFSHI&#34;)+1)
+            txa()
+
+            clc()
+            adc(at(&#34;PUTDST&#34;)+1)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            # OFFSHI = *+1
+            label(&#34;OFFSHI&#34;)
+            lda(imm(0xAA))
+
+            adc(at(&#34;PUTDST&#34;)+2)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+
+            pla()
+            andr(imm(0x0F))
+            adc(imm(0x02))
+            cmp(imm(0x12))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+
+            sbc(imm(0xEE))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+            bne(rel_at(&#34;SHORT_VARLEN_MATCHLEN&#34;))
+
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+
+            bne(rel_at(&#34;PREPARE_COPY_MATCH_Y&#34;))
+
+            label(&#34;DECOMPRESSION_DONE&#34;)
+            rts()
+
+            label(&#34;SHIFT_TABLE&#34;)
+            byte([     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00])
+            byte([ 0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01])
+            byte([ 0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02])
+            byte([ 0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03])
+            byte([ 0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04])
+            byte([ 0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05])
+            byte([ 0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06])
+            byte([ 0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07])
+
+            label(&#34;GETPUT&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+
+            label(&#34;PUTDST&#34;)
+            # LZSA_DST_LO = *+1
+            # LZSA_DST_HI = *+2
+            label(&#34;LZSA_DST&#34;, is_global=True)
+            sta(at(0xAAAA))
+            inc(at(&#34;PUTDST&#34;)+1)
+            beq(rel_at(&#34;PUTDST_ADJ_HI&#34;))
+            rts()
+
+            label(&#34;PUTDST_ADJ_HI&#34;)
+            inc(at(&#34;PUTDST&#34;)+2)
+            rts()
+
+            label(&#34;GETLARGESRC&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+
+            label(&#34;GETSRC&#34;)
+            # LZSA_SRC_LO = *+1
+            # LZSA_SRC_HI = *+2
+            label(&#34;LZSA_SRC&#34;, is_global=True)
+            lda(at(0xAAAA))
+            inc(at(&#34;GETSRC&#34;)+1)
+            beq(rel_at(&#34;GETSRC_ADJ_HI&#34;))
+            rts()
+
+            label(&#34;GETSRC_ADJ_HI&#34;)
+            inc(at(&#34;GETSRC&#34;)+2)
+            rts()
+
+        elif mode == 1:
+            ldy(imm(0x00))
+
+            label(&#34;DECODE_TOKEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            pha()
+            andr(imm(0x70))
+            beq(rel_at(&#34;NO_LITERALS&#34;))
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            cmp(imm(0x07))
+            bcc(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            sbc(imm(0xF9))
+            bcc(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+            beq(rel_at(&#34;LARGE_VARLEN_LITERALS&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+            bcs(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+
+            label(&#34;LARGE_VARLEN_LITERALS&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+            txa()
+            label(&#34;PREPARE_COPY_LITERALS&#34;)
+            tax()
+            beq(rel_at(&#34;COPY_LITERALS&#34;))
+            iny()
+
+            label(&#34;COPY_LITERALS&#34;)
+            jsr(at(&#34;GETPUT&#34;))
+            dex()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+
+            label(&#34;NO_LITERALS&#34;)
+            pla()
+            pha()
+            bmi(rel_at(&#34;GET_LONG_OFFSET&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+            lda(imm(0xFF))
+            bne(rel_at(&#34;GOT_OFFSET&#34;))
+
+            label(&#34;SHORT_VARLEN_MATCHLEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+            label(&#34;PREPARE_COPY_MATCH&#34;)
+            tax()
+
+            label(&#34;PREPARE_COPY_MATCH_Y&#34;)
+            txa()
+            beq(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            iny()
+
+            label(&#34;COPY_MATCH_LOOP&#34;)
+            lda(at(0xAAAA))
+            jsr(at(&#34;PUTDST&#34;))
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            bne(rel_at(&#34;GETMATCH_DONE&#34;))
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+
+            label(&#34;GETMATCH_DONE&#34;)
+            dex()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            beq(rel_at(&#34;DECODE_TOKEN&#34;))
+            label(&#34;GET_LONG_OFFSET&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+            label(&#34;GOT_OFFSET&#34;)
+            sta(at(&#34;OFFSHI&#34;)+1)
+            txa()
+            clc()
+            adc(at(&#34;PUTDST&#34;)+1)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            # OFFSHI = *+1
+            label(&#34;OFFSHI&#34;)
+            lda(imm(0xAA))
+            adc(at(&#34;PUTDST&#34;)+2)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+            pla()
+            andr(imm(0x0F))
+            adc(imm(0x02))
+            cmp(imm(0x12))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            sbc(imm(0xEE))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+            bne(rel_at(&#34;SHORT_VARLEN_MATCHLEN&#34;))
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+            bne(rel_at(&#34;PREPARE_COPY_MATCH_Y&#34;))
+
+            label(&#34;DECOMPRESSION_DONE&#34;)
+            rts()
+
+            label(&#34;GETPUT&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            label(&#34;PUTDST&#34;)
+            # LZSA_DST_LO = *+1
+            # LZSA_DST_HI = *+2
+            label(&#34;LZSA_DST&#34;, is_global=True)
+            sta(at(0xAAAA))
+            inc(at(&#34;PUTDST&#34;)+1)
+            bne(rel_at(&#34;PUTDST_DONE&#34;))
+            inc(at(&#34;PUTDST&#34;)+2)
+
+            label(&#34;PUTDST_DONE&#34;)
+            rts()
+
+            label(&#34;GETLARGESRC&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+            label(&#34;GETSRC&#34;)
+            # LZSA_SRC_LO = *+1
+            # LZSA_SRC_HI = *+2
+            label(&#34;LZSA_SRC&#34;, is_global=True)
+            lda(at(0xAAAA))
+            inc(at(&#34;GETSRC&#34;)+1)
+            bne(rel_at(&#34;GETSRC_DONE&#34;))
+            inc(at(&#34;GETSRC&#34;)+2)
+
+            label(&#34;GETSRC_DONE&#34;)
+            rts()
+
+        elif mode == 2:
+
+            lzsa_cmdbuf = 0xF9
+            lzsa_winptr = 0xFA
+            lzsa_srcptr = 0xFC
+            lzsa_dstptr = 0xFE
+
+            LZSA_SRC_LO = 0xFC
+            LZSA_SRC_HI = 0xFD
+            LZSA_DST_LO = 0xFE
+            LZSA_DST_HI = 0xFF
+
+            def LZSA_INC_PAGE():
+                inc(at(lzsa_srcptr)+1)
+
+
+            def LZSA_GET_SRC():
+                skip = get_anonymous_label(&#34;skip&#34;)
+                lda(ind_at(lzsa_srcptr),y)
+                inc(at(lzsa_srcptr)+0)
+                bne(rel_at(skip))
+                LZSA_INC_PAGE()
+                label(skip)
+
+            label(&#34;lzsa1_unpack&#34;)
+            ldy(imm(0))
+            ldx(imm(0))
+            label(&#34;.cp_length&#34;)
+            LZSA_GET_SRC()
+            sta(at(lzsa_cmdbuf))
+            andr(imm(0x70))
+            beq(rel_at(&#34;.lz_offset&#34;))
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            cmp(imm(0x07))
+            bne(rel_at(&#34;.got_cp_len&#34;))
+            jsr(at(&#34;.get_length&#34;))
+
+            label(&#34;.got_cp_len&#34;)
+            tay()
+            beq(rel_at(&#34;.cp_page&#34;))
+            inx()
+
+            label(&#34;.get_cp_src&#34;)
+            clc()
+            adc(at(lzsa_srcptr)+0)
+            sta(at(lzsa_srcptr)+0)
+            bcs(rel_at(&#34;.get_cp_dst&#34;))
+            dec(at(lzsa_srcptr)+1)
+
+            label(&#34;.get_cp_dst&#34;)
+            tya()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_dstptr)+0)
+            bcs(rel_at(&#34;.get_cp_idx&#34;))
+            dec(at(lzsa_dstptr)+1)
+
+            label(&#34;.get_cp_idx&#34;)
+            tya()
+            eor(imm(0xFF))
+            tay()
+            iny()
+
+            label(&#34;.cp_page&#34;)
+            lda(ind_at(lzsa_srcptr),y)
+            sta(ind_at(lzsa_dstptr),y)
+            iny()
+            bne(rel_at(&#34;.cp_page&#34;))
+            inc(at(lzsa_srcptr)+1)
+            inc(at(lzsa_dstptr)+1)
+            dex()
+            bne(rel_at(&#34;.cp_page&#34;))
+            label(&#34;.lz_offset&#34;)
+            LZSA_GET_SRC()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_winptr)+0)
+            lda(imm(0xFF))
+            bit(at(lzsa_cmdbuf))
+            bpl(rel_at(&#34;.hi_offset&#34;))
+            LZSA_GET_SRC()
+
+            label(&#34;.hi_offset&#34;)
+            adc(at(lzsa_dstptr)+1)
+            sta(at(lzsa_winptr)+1)
+            label(&#34;.lz_length&#34;)
+            lda(at(lzsa_cmdbuf))
+            andr(imm(0x0F))
+            adc(imm(0x03-1))
+            cmp(imm(0x12))
+            bne(rel_at(&#34;.got_lz_len&#34;))
+            jsr(at(&#34;.get_length&#34;))
+
+            label(&#34;.got_lz_len&#34;)
+            tay()
+            beq(rel_at(&#34;.lz_page&#34;))
+            inx()
+
+            label(&#34;.get_lz_win&#34;)
+            clc()
+            adc(at(lzsa_winptr)+0)
+            sta(at(lzsa_winptr)+0)
+            bcs(rel_at(&#34;.get_lz_dst&#34;))
+            dec(at(lzsa_winptr)+1)
+
+            label(&#34;.get_lz_dst&#34;)
+            tya()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_dstptr)+0)
+            bcs(rel_at(&#34;.get_lz_idx&#34;))
+            dec(at(lzsa_dstptr)+1)
+
+            label(&#34;.get_lz_idx&#34;)
+            tya()
+            eor(imm(0xFF))
+            tay()
+            iny()
+
+            label(&#34;.lz_page&#34;)
+            lda(ind_at(lzsa_winptr),y)
+            sta(ind_at(lzsa_dstptr),y)
+            iny()
+            bne(rel_at(&#34;.lz_page&#34;))
+            inc(at(lzsa_winptr)+1)
+            inc(at(lzsa_dstptr)+1)
+            dex()
+            bne(rel_at(&#34;.lz_page&#34;))
+            jmp(at(&#34;.cp_length&#34;))
+            label(&#34;.get_length&#34;)
+            clc()
+            adc(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            bne(rel_at(&#34;.skip_inc&#34;))
+            LZSA_INC_PAGE()
+
+            label(&#34;.skip_inc&#34;)
+            bcc(rel_at(&#34;.got_length&#34;))
+            cmp(imm(0x00))
+            beq(rel_at(&#34;.extra_word&#34;))
+
+            label(&#34;.extra_byte&#34;)
+            inx()
+            jmp(at(&#34;lzsa1_get_byte&#34;))
+
+            label(&#34;.extra_word&#34;)
+            jsr(at(&#34;lzsa1_get_byte&#34;))
+            pha()
+            jsr(at(&#34;lzsa1_get_byte&#34;))
+            tax()
+            beq(rel_at(&#34;.finished&#34;))
+            pla()
+            rts()
+
+            label(&#34;lzsa1_get_byte&#34;)
+            lda(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            beq(rel_at(&#34;lzsa1_next_page&#34;))
+
+            label(&#34;.got_length&#34;)
+            rts()
+
+            label(&#34;lzsa1_next_page&#34;)
+            inc(at(lzsa_srcptr)+1)
+            rts()
+
+            label(&#34;.finished&#34;)
+            pla()
+            pla()
+            pla()
+            rts()
+
+        else:
+            raise ValueError(f&#34;Unknown mode: {mode}&#34;)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="shazzam.drivers.crunchers.Lzsa1.Lzsa1"><code class="flex name class">
+<span>class <span class="ident">Lzsa1</span></span>
+<span>(</span><span>exe_path: str)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class Lzsa1(Cruncher):
+
+    def __init__(self, exe_path: str):
+
+        cmd_prg_template = None
+        cmd_bin_template = [exe_path, &#34;-r&#34;, &#34;FILENAME_TO_SET&#34;, &#34;OUTPUT_TO_SET&#34;]
+        super().__init__(&#34;lzsa&#34;, exe_path, cmd_prg_template, cmd_bin_template)
+
+    def generate_depacker_routine(self, address: int, mode: int = 2) -&gt; None:
+        &#34;&#34;&#34;[summary]
+
+        Args:
+            address (int): [description]
+            mode (int, optional): [description]. Defaults to 2.
+        &#34;&#34;&#34;
+        label(&#34;DECOMPRESS_LZSA1&#34;, is_global=True)
+
+        if mode == 0:
+            ldy(imm(0x00))
+
+            label(&#34;DECODE_TOKEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            pha()
+            andr(imm(0x70))
+            beq(rel_at(&#34;NO_LITERALS&#34;))
+            cmp(imm(0x70))
+            bne(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+
+            sbc(imm(0xF9))
+            bcc(rel_at(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;))
+            beq(rel_at(&#34;LARGE_VARLEN_LITERALS&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+            bcs(rel_at(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;))
+
+            label(&#34;LARGE_VARLEN_LITERALS&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+            txa()
+            bcs(rel_at(&#34;PREPARE_COPY_LARGE_LITERALS&#34;))
+
+            label(&#34;PREPARE_COPY_LITERALS&#34;)
+            tax()
+            lda(at(&#34;SHIFT_TABLE&#34;)-1,x)
+
+            label(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;)
+            tax()
+
+            label(&#34;PREPARE_COPY_LARGE_LITERALS&#34;)
+            beq(rel_at(&#34;COPY_LITERALS&#34;))
+            iny()
+
+            label(&#34;COPY_LITERALS&#34;)
+            jsr(at(&#34;GETPUT&#34;))
+            dex()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+
+            label(&#34;NO_LITERALS&#34;)
+            pla()
+            pha()
+            bmi(rel_at(&#34;GET_LONG_OFFSET&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+            lda(imm(0xFF))
+            bne(rel_at(&#34;GOT_OFFSET&#34;))
+
+            label(&#34;SHORT_VARLEN_MATCHLEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+
+            label(&#34;PREPARE_COPY_MATCH&#34;)
+            tax()
+            label(&#34;PREPARE_COPY_MATCH_Y&#34;)
+            txa()
+            beq(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            iny()
+
+            label(&#34;COPY_MATCH_LOOP&#34;)
+            lda(at(0xdead))
+            jsr(at(&#34;PUTDST&#34;))
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            beq(rel_at(&#34;GETMATCH_ADJ_HI&#34;))
+
+            label(&#34;GETMATCH_DONE&#34;)
+            dex()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            beq(rel_at(&#34;DECODE_TOKEN&#34;))
+
+            label(&#34;GETMATCH_ADJ_HI&#34;)
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+            jmp(at(&#34;GETMATCH_DONE&#34;))
+
+            label(&#34;GET_LONG_OFFSET&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+
+            label(&#34;GOT_OFFSET&#34;)
+            # sta(at(&#34;OFFSHI&#34;)
+            sta(at(&#34;OFFSHI&#34;)+1)
+            txa()
+
+            clc()
+            adc(at(&#34;PUTDST&#34;)+1)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            # OFFSHI = *+1
+            label(&#34;OFFSHI&#34;)
+            lda(imm(0xAA))
+
+            adc(at(&#34;PUTDST&#34;)+2)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+
+            pla()
+            andr(imm(0x0F))
+            adc(imm(0x02))
+            cmp(imm(0x12))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+
+            jsr(at(&#34;GETSRC&#34;))
+
+            sbc(imm(0xEE))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+            bne(rel_at(&#34;SHORT_VARLEN_MATCHLEN&#34;))
+
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+
+            bne(rel_at(&#34;PREPARE_COPY_MATCH_Y&#34;))
+
+            label(&#34;DECOMPRESSION_DONE&#34;)
+            rts()
+
+            label(&#34;SHIFT_TABLE&#34;)
+            byte([     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00])
+            byte([ 0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01])
+            byte([ 0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02])
+            byte([ 0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03])
+            byte([ 0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04])
+            byte([ 0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05])
+            byte([ 0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06])
+            byte([ 0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07])
+
+            label(&#34;GETPUT&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+
+            label(&#34;PUTDST&#34;)
+            # LZSA_DST_LO = *+1
+            # LZSA_DST_HI = *+2
+            label(&#34;LZSA_DST&#34;, is_global=True)
+            sta(at(0xAAAA))
+            inc(at(&#34;PUTDST&#34;)+1)
+            beq(rel_at(&#34;PUTDST_ADJ_HI&#34;))
+            rts()
+
+            label(&#34;PUTDST_ADJ_HI&#34;)
+            inc(at(&#34;PUTDST&#34;)+2)
+            rts()
+
+            label(&#34;GETLARGESRC&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+
+            label(&#34;GETSRC&#34;)
+            # LZSA_SRC_LO = *+1
+            # LZSA_SRC_HI = *+2
+            label(&#34;LZSA_SRC&#34;, is_global=True)
+            lda(at(0xAAAA))
+            inc(at(&#34;GETSRC&#34;)+1)
+            beq(rel_at(&#34;GETSRC_ADJ_HI&#34;))
+            rts()
+
+            label(&#34;GETSRC_ADJ_HI&#34;)
+            inc(at(&#34;GETSRC&#34;)+2)
+            rts()
+
+        elif mode == 1:
+            ldy(imm(0x00))
+
+            label(&#34;DECODE_TOKEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            pha()
+            andr(imm(0x70))
+            beq(rel_at(&#34;NO_LITERALS&#34;))
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            cmp(imm(0x07))
+            bcc(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            sbc(imm(0xF9))
+            bcc(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+            beq(rel_at(&#34;LARGE_VARLEN_LITERALS&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+            bcs(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+
+            label(&#34;LARGE_VARLEN_LITERALS&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+            txa()
+            label(&#34;PREPARE_COPY_LITERALS&#34;)
+            tax()
+            beq(rel_at(&#34;COPY_LITERALS&#34;))
+            iny()
+
+            label(&#34;COPY_LITERALS&#34;)
+            jsr(at(&#34;GETPUT&#34;))
+            dex()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_LITERALS&#34;))
+
+            label(&#34;NO_LITERALS&#34;)
+            pla()
+            pha()
+            bmi(rel_at(&#34;GET_LONG_OFFSET&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+            lda(imm(0xFF))
+            bne(rel_at(&#34;GOT_OFFSET&#34;))
+
+            label(&#34;SHORT_VARLEN_MATCHLEN&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            iny()
+            label(&#34;PREPARE_COPY_MATCH&#34;)
+            tax()
+
+            label(&#34;PREPARE_COPY_MATCH_Y&#34;)
+            txa()
+            beq(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            iny()
+
+            label(&#34;COPY_MATCH_LOOP&#34;)
+            lda(at(0xAAAA))
+            jsr(at(&#34;PUTDST&#34;))
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            bne(rel_at(&#34;GETMATCH_DONE&#34;))
+            inc(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+
+            label(&#34;GETMATCH_DONE&#34;)
+            dex()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            dey()
+            bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+            beq(rel_at(&#34;DECODE_TOKEN&#34;))
+            label(&#34;GET_LONG_OFFSET&#34;)
+            jsr(at(&#34;GETLARGESRC&#34;))
+            label(&#34;GOT_OFFSET&#34;)
+            sta(at(&#34;OFFSHI&#34;)+1)
+            txa()
+            clc()
+            adc(at(&#34;PUTDST&#34;)+1)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+            # OFFSHI = *+1
+            label(&#34;OFFSHI&#34;)
+            lda(imm(0xAA))
+            adc(at(&#34;PUTDST&#34;)+2)
+            sta(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+            pla()
+            andr(imm(0x0F))
+            adc(imm(0x02))
+            cmp(imm(0x12))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+            jsr(at(&#34;GETSRC&#34;))
+            sbc(imm(0xEE))
+            bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+            bne(rel_at(&#34;SHORT_VARLEN_MATCHLEN&#34;))
+            jsr(at(&#34;GETLARGESRC&#34;))
+            tay()
+            bne(rel_at(&#34;PREPARE_COPY_MATCH_Y&#34;))
+
+            label(&#34;DECOMPRESSION_DONE&#34;)
+            rts()
+
+            label(&#34;GETPUT&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            label(&#34;PUTDST&#34;)
+            # LZSA_DST_LO = *+1
+            # LZSA_DST_HI = *+2
+            label(&#34;LZSA_DST&#34;, is_global=True)
+            sta(at(0xAAAA))
+            inc(at(&#34;PUTDST&#34;)+1)
+            bne(rel_at(&#34;PUTDST_DONE&#34;))
+            inc(at(&#34;PUTDST&#34;)+2)
+
+            label(&#34;PUTDST_DONE&#34;)
+            rts()
+
+            label(&#34;GETLARGESRC&#34;)
+            jsr(at(&#34;GETSRC&#34;))
+            tax()
+            label(&#34;GETSRC&#34;)
+            # LZSA_SRC_LO = *+1
+            # LZSA_SRC_HI = *+2
+            label(&#34;LZSA_SRC&#34;, is_global=True)
+            lda(at(0xAAAA))
+            inc(at(&#34;GETSRC&#34;)+1)
+            bne(rel_at(&#34;GETSRC_DONE&#34;))
+            inc(at(&#34;GETSRC&#34;)+2)
+
+            label(&#34;GETSRC_DONE&#34;)
+            rts()
+
+        elif mode == 2:
+
+            lzsa_cmdbuf = 0xF9
+            lzsa_winptr = 0xFA
+            lzsa_srcptr = 0xFC
+            lzsa_dstptr = 0xFE
+
+            LZSA_SRC_LO = 0xFC
+            LZSA_SRC_HI = 0xFD
+            LZSA_DST_LO = 0xFE
+            LZSA_DST_HI = 0xFF
+
+            def LZSA_INC_PAGE():
+                inc(at(lzsa_srcptr)+1)
+
+
+            def LZSA_GET_SRC():
+                skip = get_anonymous_label(&#34;skip&#34;)
+                lda(ind_at(lzsa_srcptr),y)
+                inc(at(lzsa_srcptr)+0)
+                bne(rel_at(skip))
+                LZSA_INC_PAGE()
+                label(skip)
+
+            label(&#34;lzsa1_unpack&#34;)
+            ldy(imm(0))
+            ldx(imm(0))
+            label(&#34;.cp_length&#34;)
+            LZSA_GET_SRC()
+            sta(at(lzsa_cmdbuf))
+            andr(imm(0x70))
+            beq(rel_at(&#34;.lz_offset&#34;))
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            lsr(a)
+            cmp(imm(0x07))
+            bne(rel_at(&#34;.got_cp_len&#34;))
+            jsr(at(&#34;.get_length&#34;))
+
+            label(&#34;.got_cp_len&#34;)
+            tay()
+            beq(rel_at(&#34;.cp_page&#34;))
+            inx()
+
+            label(&#34;.get_cp_src&#34;)
+            clc()
+            adc(at(lzsa_srcptr)+0)
+            sta(at(lzsa_srcptr)+0)
+            bcs(rel_at(&#34;.get_cp_dst&#34;))
+            dec(at(lzsa_srcptr)+1)
+
+            label(&#34;.get_cp_dst&#34;)
+            tya()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_dstptr)+0)
+            bcs(rel_at(&#34;.get_cp_idx&#34;))
+            dec(at(lzsa_dstptr)+1)
+
+            label(&#34;.get_cp_idx&#34;)
+            tya()
+            eor(imm(0xFF))
+            tay()
+            iny()
+
+            label(&#34;.cp_page&#34;)
+            lda(ind_at(lzsa_srcptr),y)
+            sta(ind_at(lzsa_dstptr),y)
+            iny()
+            bne(rel_at(&#34;.cp_page&#34;))
+            inc(at(lzsa_srcptr)+1)
+            inc(at(lzsa_dstptr)+1)
+            dex()
+            bne(rel_at(&#34;.cp_page&#34;))
+            label(&#34;.lz_offset&#34;)
+            LZSA_GET_SRC()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_winptr)+0)
+            lda(imm(0xFF))
+            bit(at(lzsa_cmdbuf))
+            bpl(rel_at(&#34;.hi_offset&#34;))
+            LZSA_GET_SRC()
+
+            label(&#34;.hi_offset&#34;)
+            adc(at(lzsa_dstptr)+1)
+            sta(at(lzsa_winptr)+1)
+            label(&#34;.lz_length&#34;)
+            lda(at(lzsa_cmdbuf))
+            andr(imm(0x0F))
+            adc(imm(0x03-1))
+            cmp(imm(0x12))
+            bne(rel_at(&#34;.got_lz_len&#34;))
+            jsr(at(&#34;.get_length&#34;))
+
+            label(&#34;.got_lz_len&#34;)
+            tay()
+            beq(rel_at(&#34;.lz_page&#34;))
+            inx()
+
+            label(&#34;.get_lz_win&#34;)
+            clc()
+            adc(at(lzsa_winptr)+0)
+            sta(at(lzsa_winptr)+0)
+            bcs(rel_at(&#34;.get_lz_dst&#34;))
+            dec(at(lzsa_winptr)+1)
+
+            label(&#34;.get_lz_dst&#34;)
+            tya()
+            clc()
+            adc(at(lzsa_dstptr)+0)
+            sta(at(lzsa_dstptr)+0)
+            bcs(rel_at(&#34;.get_lz_idx&#34;))
+            dec(at(lzsa_dstptr)+1)
+
+            label(&#34;.get_lz_idx&#34;)
+            tya()
+            eor(imm(0xFF))
+            tay()
+            iny()
+
+            label(&#34;.lz_page&#34;)
+            lda(ind_at(lzsa_winptr),y)
+            sta(ind_at(lzsa_dstptr),y)
+            iny()
+            bne(rel_at(&#34;.lz_page&#34;))
+            inc(at(lzsa_winptr)+1)
+            inc(at(lzsa_dstptr)+1)
+            dex()
+            bne(rel_at(&#34;.lz_page&#34;))
+            jmp(at(&#34;.cp_length&#34;))
+            label(&#34;.get_length&#34;)
+            clc()
+            adc(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            bne(rel_at(&#34;.skip_inc&#34;))
+            LZSA_INC_PAGE()
+
+            label(&#34;.skip_inc&#34;)
+            bcc(rel_at(&#34;.got_length&#34;))
+            cmp(imm(0x00))
+            beq(rel_at(&#34;.extra_word&#34;))
+
+            label(&#34;.extra_byte&#34;)
+            inx()
+            jmp(at(&#34;lzsa1_get_byte&#34;))
+
+            label(&#34;.extra_word&#34;)
+            jsr(at(&#34;lzsa1_get_byte&#34;))
+            pha()
+            jsr(at(&#34;lzsa1_get_byte&#34;))
+            tax()
+            beq(rel_at(&#34;.finished&#34;))
+            pla()
+            rts()
+
+            label(&#34;lzsa1_get_byte&#34;)
+            lda(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            beq(rel_at(&#34;lzsa1_next_page&#34;))
+
+            label(&#34;.got_length&#34;)
+            rts()
+
+            label(&#34;lzsa1_next_page&#34;)
+            inc(at(lzsa_srcptr)+1)
+            rts()
+
+            label(&#34;.finished&#34;)
+            pla()
+            pla()
+            pla()
+            rts()
+
+        else:
+            raise ValueError(f&#34;Unknown mode: {mode}&#34;)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="shazzam.Cruncher.Cruncher" href="../../Cruncher.html#shazzam.Cruncher.Cruncher">Cruncher</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="shazzam.drivers.crunchers.Lzsa1.Lzsa1.generate_depacker_routine"><code class="name flex">
+<span>def <span class="ident">generate_depacker_routine</span></span>(<span>self, address: int, mode: int = 2) ‑> NoneType</span>
+</code></dt>
+<dd>
+<div class="desc"><p>[summary]</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>address</code></strong> :&ensp;<code>int</code></dt>
+<dd>[description]</dd>
+<dt><strong><code>mode</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>[description]. Defaults to 2.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def generate_depacker_routine(self, address: int, mode: int = 2) -&gt; None:
+    &#34;&#34;&#34;[summary]
+
+    Args:
+        address (int): [description]
+        mode (int, optional): [description]. Defaults to 2.
+    &#34;&#34;&#34;
+    label(&#34;DECOMPRESS_LZSA1&#34;, is_global=True)
+
+    if mode == 0:
+        ldy(imm(0x00))
+
+        label(&#34;DECODE_TOKEN&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+        pha()
+        andr(imm(0x70))
+        beq(rel_at(&#34;NO_LITERALS&#34;))
+        cmp(imm(0x70))
+        bne(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+
+        jsr(at(&#34;GETSRC&#34;))
+
+        sbc(imm(0xF9))
+        bcc(rel_at(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;))
+        beq(rel_at(&#34;LARGE_VARLEN_LITERALS&#34;))
+
+        jsr(at(&#34;GETSRC&#34;))
+        iny()
+        bcs(rel_at(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;))
+
+        label(&#34;LARGE_VARLEN_LITERALS&#34;)
+        jsr(at(&#34;GETLARGESRC&#34;))
+        tay()
+        txa()
+        bcs(rel_at(&#34;PREPARE_COPY_LARGE_LITERALS&#34;))
+
+        label(&#34;PREPARE_COPY_LITERALS&#34;)
+        tax()
+        lda(at(&#34;SHIFT_TABLE&#34;)-1,x)
+
+        label(&#34;PREPARE_COPY_LITERALS_DIRECT&#34;)
+        tax()
+
+        label(&#34;PREPARE_COPY_LARGE_LITERALS&#34;)
+        beq(rel_at(&#34;COPY_LITERALS&#34;))
+        iny()
+
+        label(&#34;COPY_LITERALS&#34;)
+        jsr(at(&#34;GETPUT&#34;))
+        dex()
+        bne(rel_at(&#34;COPY_LITERALS&#34;))
+        dey()
+        bne(rel_at(&#34;COPY_LITERALS&#34;))
+
+        label(&#34;NO_LITERALS&#34;)
+        pla()
+        pha()
+        bmi(rel_at(&#34;GET_LONG_OFFSET&#34;))
+
+        jsr(at(&#34;GETSRC&#34;))
+        tax()
+        lda(imm(0xFF))
+        bne(rel_at(&#34;GOT_OFFSET&#34;))
+
+        label(&#34;SHORT_VARLEN_MATCHLEN&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+        iny()
+
+        label(&#34;PREPARE_COPY_MATCH&#34;)
+        tax()
+        label(&#34;PREPARE_COPY_MATCH_Y&#34;)
+        txa()
+        beq(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+        iny()
+
+        label(&#34;COPY_MATCH_LOOP&#34;)
+        lda(at(0xdead))
+        jsr(at(&#34;PUTDST&#34;))
+        inc(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+        beq(rel_at(&#34;GETMATCH_ADJ_HI&#34;))
+
+        label(&#34;GETMATCH_DONE&#34;)
+        dex()
+        bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+        dey()
+        bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+        beq(rel_at(&#34;DECODE_TOKEN&#34;))
+
+        label(&#34;GETMATCH_ADJ_HI&#34;)
+        inc(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+        jmp(at(&#34;GETMATCH_DONE&#34;))
+
+        label(&#34;GET_LONG_OFFSET&#34;)
+        jsr(at(&#34;GETLARGESRC&#34;))
+
+        label(&#34;GOT_OFFSET&#34;)
+        # sta(at(&#34;OFFSHI&#34;)
+        sta(at(&#34;OFFSHI&#34;)+1)
+        txa()
+
+        clc()
+        adc(at(&#34;PUTDST&#34;)+1)
+        sta(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+        # OFFSHI = *+1
+        label(&#34;OFFSHI&#34;)
+        lda(imm(0xAA))
+
+        adc(at(&#34;PUTDST&#34;)+2)
+        sta(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+
+        pla()
+        andr(imm(0x0F))
+        adc(imm(0x02))
+        cmp(imm(0x12))
+        bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+
+        jsr(at(&#34;GETSRC&#34;))
+
+        sbc(imm(0xEE))
+        bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+        bne(rel_at(&#34;SHORT_VARLEN_MATCHLEN&#34;))
+
+        jsr(at(&#34;GETLARGESRC&#34;))
+        tay()
+
+        bne(rel_at(&#34;PREPARE_COPY_MATCH_Y&#34;))
+
+        label(&#34;DECOMPRESSION_DONE&#34;)
+        rts()
+
+        label(&#34;SHIFT_TABLE&#34;)
+        byte([     0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00])
+        byte([ 0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01,0x01])
+        byte([ 0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02,0x02])
+        byte([ 0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03,0x03])
+        byte([ 0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x04])
+        byte([ 0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05,0x05])
+        byte([ 0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06,0x06])
+        byte([ 0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07,0x07])
+
+        label(&#34;GETPUT&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+
+        label(&#34;PUTDST&#34;)
+        # LZSA_DST_LO = *+1
+        # LZSA_DST_HI = *+2
+        label(&#34;LZSA_DST&#34;, is_global=True)
+        sta(at(0xAAAA))
+        inc(at(&#34;PUTDST&#34;)+1)
+        beq(rel_at(&#34;PUTDST_ADJ_HI&#34;))
+        rts()
+
+        label(&#34;PUTDST_ADJ_HI&#34;)
+        inc(at(&#34;PUTDST&#34;)+2)
+        rts()
+
+        label(&#34;GETLARGESRC&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+        tax()
+
+        label(&#34;GETSRC&#34;)
+        # LZSA_SRC_LO = *+1
+        # LZSA_SRC_HI = *+2
+        label(&#34;LZSA_SRC&#34;, is_global=True)
+        lda(at(0xAAAA))
+        inc(at(&#34;GETSRC&#34;)+1)
+        beq(rel_at(&#34;GETSRC_ADJ_HI&#34;))
+        rts()
+
+        label(&#34;GETSRC_ADJ_HI&#34;)
+        inc(at(&#34;GETSRC&#34;)+2)
+        rts()
+
+    elif mode == 1:
+        ldy(imm(0x00))
+
+        label(&#34;DECODE_TOKEN&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+        pha()
+        andr(imm(0x70))
+        beq(rel_at(&#34;NO_LITERALS&#34;))
+        lsr(a)
+        lsr(a)
+        lsr(a)
+        lsr(a)
+        cmp(imm(0x07))
+        bcc(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+        jsr(at(&#34;GETSRC&#34;))
+        sbc(imm(0xF9))
+        bcc(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+        beq(rel_at(&#34;LARGE_VARLEN_LITERALS&#34;))
+        jsr(at(&#34;GETSRC&#34;))
+        iny()
+        bcs(rel_at(&#34;PREPARE_COPY_LITERALS&#34;))
+
+        label(&#34;LARGE_VARLEN_LITERALS&#34;)
+        jsr(at(&#34;GETLARGESRC&#34;))
+        tay()
+        txa()
+        label(&#34;PREPARE_COPY_LITERALS&#34;)
+        tax()
+        beq(rel_at(&#34;COPY_LITERALS&#34;))
+        iny()
+
+        label(&#34;COPY_LITERALS&#34;)
+        jsr(at(&#34;GETPUT&#34;))
+        dex()
+        bne(rel_at(&#34;COPY_LITERALS&#34;))
+        dey()
+        bne(rel_at(&#34;COPY_LITERALS&#34;))
+
+        label(&#34;NO_LITERALS&#34;)
+        pla()
+        pha()
+        bmi(rel_at(&#34;GET_LONG_OFFSET&#34;))
+        jsr(at(&#34;GETSRC&#34;))
+        tax()
+        lda(imm(0xFF))
+        bne(rel_at(&#34;GOT_OFFSET&#34;))
+
+        label(&#34;SHORT_VARLEN_MATCHLEN&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+        iny()
+        label(&#34;PREPARE_COPY_MATCH&#34;)
+        tax()
+
+        label(&#34;PREPARE_COPY_MATCH_Y&#34;)
+        txa()
+        beq(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+        iny()
+
+        label(&#34;COPY_MATCH_LOOP&#34;)
+        lda(at(0xAAAA))
+        jsr(at(&#34;PUTDST&#34;))
+        inc(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+        bne(rel_at(&#34;GETMATCH_DONE&#34;))
+        inc(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+
+        label(&#34;GETMATCH_DONE&#34;)
+        dex()
+        bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+        dey()
+        bne(rel_at(&#34;COPY_MATCH_LOOP&#34;))
+        beq(rel_at(&#34;DECODE_TOKEN&#34;))
+        label(&#34;GET_LONG_OFFSET&#34;)
+        jsr(at(&#34;GETLARGESRC&#34;))
+        label(&#34;GOT_OFFSET&#34;)
+        sta(at(&#34;OFFSHI&#34;)+1)
+        txa()
+        clc()
+        adc(at(&#34;PUTDST&#34;)+1)
+        sta(at(&#34;COPY_MATCH_LOOP&#34;)+1)
+        # OFFSHI = *+1
+        label(&#34;OFFSHI&#34;)
+        lda(imm(0xAA))
+        adc(at(&#34;PUTDST&#34;)+2)
+        sta(at(&#34;COPY_MATCH_LOOP&#34;)+2)
+        pla()
+        andr(imm(0x0F))
+        adc(imm(0x02))
+        cmp(imm(0x12))
+        bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+        jsr(at(&#34;GETSRC&#34;))
+        sbc(imm(0xEE))
+        bcc(rel_at(&#34;PREPARE_COPY_MATCH&#34;))
+        bne(rel_at(&#34;SHORT_VARLEN_MATCHLEN&#34;))
+        jsr(at(&#34;GETLARGESRC&#34;))
+        tay()
+        bne(rel_at(&#34;PREPARE_COPY_MATCH_Y&#34;))
+
+        label(&#34;DECOMPRESSION_DONE&#34;)
+        rts()
+
+        label(&#34;GETPUT&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+        label(&#34;PUTDST&#34;)
+        # LZSA_DST_LO = *+1
+        # LZSA_DST_HI = *+2
+        label(&#34;LZSA_DST&#34;, is_global=True)
+        sta(at(0xAAAA))
+        inc(at(&#34;PUTDST&#34;)+1)
+        bne(rel_at(&#34;PUTDST_DONE&#34;))
+        inc(at(&#34;PUTDST&#34;)+2)
+
+        label(&#34;PUTDST_DONE&#34;)
+        rts()
+
+        label(&#34;GETLARGESRC&#34;)
+        jsr(at(&#34;GETSRC&#34;))
+        tax()
+        label(&#34;GETSRC&#34;)
+        # LZSA_SRC_LO = *+1
+        # LZSA_SRC_HI = *+2
+        label(&#34;LZSA_SRC&#34;, is_global=True)
+        lda(at(0xAAAA))
+        inc(at(&#34;GETSRC&#34;)+1)
+        bne(rel_at(&#34;GETSRC_DONE&#34;))
+        inc(at(&#34;GETSRC&#34;)+2)
+
+        label(&#34;GETSRC_DONE&#34;)
+        rts()
+
+    elif mode == 2:
+
+        lzsa_cmdbuf = 0xF9
+        lzsa_winptr = 0xFA
+        lzsa_srcptr = 0xFC
+        lzsa_dstptr = 0xFE
+
+        LZSA_SRC_LO = 0xFC
+        LZSA_SRC_HI = 0xFD
+        LZSA_DST_LO = 0xFE
+        LZSA_DST_HI = 0xFF
+
+        def LZSA_INC_PAGE():
+            inc(at(lzsa_srcptr)+1)
+
+
+        def LZSA_GET_SRC():
+            skip = get_anonymous_label(&#34;skip&#34;)
+            lda(ind_at(lzsa_srcptr),y)
+            inc(at(lzsa_srcptr)+0)
+            bne(rel_at(skip))
+            LZSA_INC_PAGE()
+            label(skip)
+
+        label(&#34;lzsa1_unpack&#34;)
+        ldy(imm(0))
+        ldx(imm(0))
+        label(&#34;.cp_length&#34;)
+        LZSA_GET_SRC()
+        sta(at(lzsa_cmdbuf))
+        andr(imm(0x70))
+        beq(rel_at(&#34;.lz_offset&#34;))
+        lsr(a)
+        lsr(a)
+        lsr(a)
+        lsr(a)
+        cmp(imm(0x07))
+        bne(rel_at(&#34;.got_cp_len&#34;))
+        jsr(at(&#34;.get_length&#34;))
+
+        label(&#34;.got_cp_len&#34;)
+        tay()
+        beq(rel_at(&#34;.cp_page&#34;))
+        inx()
+
+        label(&#34;.get_cp_src&#34;)
+        clc()
+        adc(at(lzsa_srcptr)+0)
+        sta(at(lzsa_srcptr)+0)
+        bcs(rel_at(&#34;.get_cp_dst&#34;))
+        dec(at(lzsa_srcptr)+1)
+
+        label(&#34;.get_cp_dst&#34;)
+        tya()
+        clc()
+        adc(at(lzsa_dstptr)+0)
+        sta(at(lzsa_dstptr)+0)
+        bcs(rel_at(&#34;.get_cp_idx&#34;))
+        dec(at(lzsa_dstptr)+1)
+
+        label(&#34;.get_cp_idx&#34;)
+        tya()
+        eor(imm(0xFF))
+        tay()
+        iny()
+
+        label(&#34;.cp_page&#34;)
+        lda(ind_at(lzsa_srcptr),y)
+        sta(ind_at(lzsa_dstptr),y)
+        iny()
+        bne(rel_at(&#34;.cp_page&#34;))
+        inc(at(lzsa_srcptr)+1)
+        inc(at(lzsa_dstptr)+1)
+        dex()
+        bne(rel_at(&#34;.cp_page&#34;))
+        label(&#34;.lz_offset&#34;)
+        LZSA_GET_SRC()
+        clc()
+        adc(at(lzsa_dstptr)+0)
+        sta(at(lzsa_winptr)+0)
+        lda(imm(0xFF))
+        bit(at(lzsa_cmdbuf))
+        bpl(rel_at(&#34;.hi_offset&#34;))
+        LZSA_GET_SRC()
+
+        label(&#34;.hi_offset&#34;)
+        adc(at(lzsa_dstptr)+1)
+        sta(at(lzsa_winptr)+1)
+        label(&#34;.lz_length&#34;)
+        lda(at(lzsa_cmdbuf))
+        andr(imm(0x0F))
+        adc(imm(0x03-1))
+        cmp(imm(0x12))
+        bne(rel_at(&#34;.got_lz_len&#34;))
+        jsr(at(&#34;.get_length&#34;))
+
+        label(&#34;.got_lz_len&#34;)
+        tay()
+        beq(rel_at(&#34;.lz_page&#34;))
+        inx()
+
+        label(&#34;.get_lz_win&#34;)
+        clc()
+        adc(at(lzsa_winptr)+0)
+        sta(at(lzsa_winptr)+0)
+        bcs(rel_at(&#34;.get_lz_dst&#34;))
+        dec(at(lzsa_winptr)+1)
+
+        label(&#34;.get_lz_dst&#34;)
+        tya()
+        clc()
+        adc(at(lzsa_dstptr)+0)
+        sta(at(lzsa_dstptr)+0)
+        bcs(rel_at(&#34;.get_lz_idx&#34;))
+        dec(at(lzsa_dstptr)+1)
+
+        label(&#34;.get_lz_idx&#34;)
+        tya()
+        eor(imm(0xFF))
+        tay()
+        iny()
+
+        label(&#34;.lz_page&#34;)
+        lda(ind_at(lzsa_winptr),y)
+        sta(ind_at(lzsa_dstptr),y)
+        iny()
+        bne(rel_at(&#34;.lz_page&#34;))
+        inc(at(lzsa_winptr)+1)
+        inc(at(lzsa_dstptr)+1)
+        dex()
+        bne(rel_at(&#34;.lz_page&#34;))
+        jmp(at(&#34;.cp_length&#34;))
+        label(&#34;.get_length&#34;)
+        clc()
+        adc(ind_at(lzsa_srcptr),y)
+        inc(at(lzsa_srcptr)+0)
+        bne(rel_at(&#34;.skip_inc&#34;))
+        LZSA_INC_PAGE()
+
+        label(&#34;.skip_inc&#34;)
+        bcc(rel_at(&#34;.got_length&#34;))
+        cmp(imm(0x00))
+        beq(rel_at(&#34;.extra_word&#34;))
+
+        label(&#34;.extra_byte&#34;)
+        inx()
+        jmp(at(&#34;lzsa1_get_byte&#34;))
+
+        label(&#34;.extra_word&#34;)
+        jsr(at(&#34;lzsa1_get_byte&#34;))
+        pha()
+        jsr(at(&#34;lzsa1_get_byte&#34;))
+        tax()
+        beq(rel_at(&#34;.finished&#34;))
+        pla()
+        rts()
+
+        label(&#34;lzsa1_get_byte&#34;)
+        lda(ind_at(lzsa_srcptr),y)
+        inc(at(lzsa_srcptr)+0)
+        beq(rel_at(&#34;lzsa1_next_page&#34;))
+
+        label(&#34;.got_length&#34;)
+        rts()
+
+        label(&#34;lzsa1_next_page&#34;)
+        inc(at(lzsa_srcptr)+1)
+        rts()
+
+        label(&#34;.finished&#34;)
+        pla()
+        pla()
+        pla()
+        rts()
+
+    else:
+        raise ValueError(f&#34;Unknown mode: {mode}&#34;)</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Inherited members</h3>
+<ul class="hlist">
+<li><code><b><a title="shazzam.Cruncher.Cruncher" href="../../Cruncher.html#shazzam.Cruncher.Cruncher">Cruncher</a></b></code>:
+<ul class="hlist">
+<li><code><a title="shazzam.Cruncher.Cruncher.crunch_incbin" href="../../Cruncher.html#shazzam.Cruncher.Cruncher.crunch_incbin">crunch_incbin</a></code></li>
+<li><code><a title="shazzam.Cruncher.Cruncher.crunch_prg" href="../../Cruncher.html#shazzam.Cruncher.Cruncher.crunch_prg">crunch_prg</a></code></li>
+</ul>
+</li>
+</ul>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="shazzam.drivers.crunchers" href="index.html">shazzam.drivers.crunchers</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="shazzam.drivers.crunchers.Lzsa1.Lzsa1" href="#shazzam.drivers.crunchers.Lzsa1.Lzsa1">Lzsa1</a></code></h4>
+<ul class="">
+<li><code><a title="shazzam.drivers.crunchers.Lzsa1.Lzsa1.generate_depacker_routine" href="#shazzam.drivers.crunchers.Lzsa1.Lzsa1.generate_depacker_routine">generate_depacker_routine</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

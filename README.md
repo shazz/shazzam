@@ -6,31 +6,33 @@ Not your daddy's C64 cross-assembler... :)
 
 **Table of Content**
 
-- [`shazzam`](#-shazzam-)
-  * [What is `shazzam`?](#what-is--shazzam--)
-    + [Features in brief](#features-in-brief)
-  * [Installation](#installation)
-    + [From pypi](#from-pypi)
+- [`shazzam`](#shazzam)
+  - [What is `shazzam`?](#what-is-shazzam)
+    - [Features in brief](#features-in-brief)
+  - [Installation](#installation)
+    - [From pypi](#from-pypi)
       - [Cross-Assemblers](#cross-assemblers)
       - [Packers](#packers)
       - [IRQ Loaders](#irq-loaders)
-    + [From sources](#from-sources)
-  * [4 lines example](#4-lines-example)
-  * [Features](#features)
-    + [Python and Assembly](#python-and-assembly)
-    + [Realtime code generation](#realtime-code-generation)
-    + [Python-based macros](#python-based-macros)
-    + [Inline testing thru emulation](#inline-testing-thru-emulation)
-    + [Segments support](#segments-support)
-    + [Crunchers support](#crunchers-support)
-    + [IRQ Loaders support](#irq-loaders-support)
-    + [Rasterline racer](#rasterline-racer)
-    + [Python-based C64 files parsers](#python-based-c64-files-parsers)
-    + [BeamRacer support](#beamracer-support)
-    + [Multi-files application](#multi-files-application)
-    + [Simple disassembler](#simple-disassembler)
-  * [shazzam assembler directives](#shazzam-assembler-directives)
-  * [Thanks to](#thanks-to)
+    - [From sources](#from-sources)
+  - [4 lines example](#4-lines-example)
+  - [Features](#features)
+    - [Python and Assembly](#python-and-assembly)
+    - [Realtime code generation](#realtime-code-generation)
+    - [Python-based macros](#python-based-macros)
+    - [Inline testing thru emulation](#inline-testing-thru-emulation)
+    - [Segments support](#segments-support)
+    - [Crunchers support](#crunchers-support)
+- [finally assemble segments to PRG using cross assembler then crunch it!](#finally-assemble-segments-to-prg-using-cross-assembler-then-crunch-it)
+      - [Packing / depacking performance](#packing--depacking-performance)
+    - [IRQ Loaders support](#irq-loaders-support)
+    - [Rasterline racer](#rasterline-racer)
+    - [Python-based C64 files parsers](#python-based-c64-files-parsers)
+    - [BeamRacer support](#beamracer-support)
+    - [Multi-files application](#multi-files-application)
+    - [Simple disassembler](#simple-disassembler)
+  - [shazzam assembler directives](#shazzam-assembler-directives)
+  - [Thanks to](#thanks-to)
 
 ## What is `shazzam`?
 
@@ -311,6 +313,19 @@ def code():
 ````
 
 With each data cruncher, the depacking routine is also provided, just call `generate_depacker_routine()` as shown in the example.
+
+#### Packing / depacking performance
+
+The `crunch_crunch_[packer]` uses a SID file (`resources/Meetro.sid`) of size 3224 bytes. Here are the performance of each depacker assembly routines:
+
+|  Agorithm  | Packed size | Slow routine size | Slow routine time | Fast routine size | Fast routine time | Faster routine size | Faster routine size | Size ratio  |
+|:----------:|:-----------:|:-----------------:|:-----------------:|:-----------------:|:-----------------:|:-------------------:|:-------------------:|:-----------:|
+| c64f (zx7) |     2268    |        147        |       231011      |        267        |       166750      |                     |                     |    70.3%    |
+|    pyzx7   |     2269    |                   |                   |        150        |       389571      |                     |                     |    70.3%    |
+|   lzsa 2   |     2260    |        241        |       239593      |        252        |       231471      |         282         |        158762       |    70.1%    |
+|   lzsa 1   |     2489    |        172        |       195494      |        306        |       188114      |         205         |        105565       |    77.2%    |
+|   Apultra  |     2163    |                   |                   |        252        |       239632      |                     |                     |    67.1%    |
+
 
 ### IRQ Loaders support
 

@@ -44,7 +44,6 @@ import shazzam.plugins.plugins as p
 
 # define your cross assembler
 assembler = CC65(&#34;cc65&#34;, &#34;third_party/cc65/bin/cl65&#34;)
-prg_cruncher  = Exomizer(&#34;third_party/exomizer/exomizer&#34;)
 data_cruncher = Zx7()
 
 program_name = os.path.splitext(os.path.basename(__file__))[0]
@@ -161,7 +160,10 @@ def code():
         ldx(imm(0x10))
         ldy(imm(0))
 
+        depack_start = get_current_address()
         jsr(at(&#34;zx7_unpack&#34;))
+        depack_end = get_current_address()
+
         rts()
 
     with segment(segments[&#34;depacker&#34;], &#34;depacker&#34;) as s:
@@ -172,6 +174,14 @@ def code():
 
     # finally assemble segments to PRG using cross assembler then crunch it!
     assemble_prg(assembler, start_address=0x0801)
+
+    print(f&#34;Counting cycles from {depack_start:04X} to {depack_end:04X}&#34;)
+    _, _, cycles_used = emulate_program(entry_point_address=0x0801, stop_address=depack_end, cycles_count_start=depack_start, cycles_count_end=depack_end, debug_mode=False)
+
+    routine_size = get_segment_addresses(&#34;depacker&#34;).end_address - get_segment_addresses(&#34;depacker&#34;).start_address
+    print(f&#34;Depacker used {routine_size} bytes and {cycles_used} cycles (around [{round(cycles_used/19656, 2)}/{round(cycles_used/18656, 2)}] vbls [IDLE/ACTIVE]) or [{round(cycles_used/19656/50*1000, 2)}/{round(cycles_used/18656/50*1000, 2)}] ms&#34;)
+    print(f&#34;Packed data size: {get_segment_addresses(&#39;packedata&#39;).end_address - get_segment_addresses(&#39;packedata&#39;).start_address} bytes&#34;)
+
 
 if __name__ == &#34;__main__&#34;:
     generate(code, program_name)</code></pre>

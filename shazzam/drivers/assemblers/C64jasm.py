@@ -17,7 +17,7 @@ class C64jasm(Assembler):
         raise NotImplementedError()
 
     def get_code_segment(self) -> str:
-        raise NotImplementedError()
+        return "CODE"
 
     def get_data_segment(self) -> str:
         raise NotImplementedError()
@@ -63,11 +63,11 @@ class C64jasm(Assembler):
         program_filename = f'generated/{program.name}/{program.name}.prg'
 
         # calling c64jasm
-        cmd = ["node", self.path, '--disasm-file', f'generated/{program.name}/{program.name}.lst', '--labels-file', f'generated/{program.name}/{program.name}.labels', '--out', program_filename]
+        # cmd = ["node", self.path, '--disasm-file', f'generated/{program.name}/{program.name}.lst', '--labels-file', f'generated/{program.name}/{program.name}.labels', '--out', program_filename]
+        cmd = [self.path, '--disasm-file', f'generated/{program.name}/{program.name}.lst', '--labels-file', f'generated/{program.name}/{program.name}.labels', '--out', program_filename]
 
         for segment in program.segments:
             cmd.append(f"generated/{program.name}/{segment.name}.asm")
-            break
 
         self.logger.info(f"Assembling {program.name} using c64jasm command: {cmd}")
         data = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

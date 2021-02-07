@@ -11,7 +11,7 @@ import shazzam.macros.sys as sys
 from shazzam.drivers.assemblers.C64jasm import C64jasm
 
 # define your cross assembler
-assembler = C64jasm("c64jasm", "third_party/c64jasm/c64jasm")
+assembler = C64jasm("c64jasm", "/home/shazz/projects/c64/bin/c64jasm")
 program_name = os.path.splitext(os.path.basename(__file__))[0]
 
 @reloading
